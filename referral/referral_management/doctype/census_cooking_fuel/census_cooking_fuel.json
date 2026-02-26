@@ -4,23 +4,14 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "cooking_fuel_code",
-  "fuel"
+  "cooking_fuel_code"
  ],
  "fields": [
   {
-   "fetch_from": "cooking_fuel_code.fuel_name",
-   "fieldname": "fuel",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Cooking Fuel",
-   "options": "Cooking Fuel Master",
-   "reqd": 1
-  },
-  {
    "fieldname": "cooking_fuel_code",
    "fieldtype": "Link",
-   "label": "Cooking Fuel code",
+   "in_list_view": 1,
+   "label": "Cooking Fuel",
    "options": "Cooking Fuel Master",
    "reqd": 1
   }
@@ -28,7 +19,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-23 13:53:49.769064",
+ "modified": "2026-02-26 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Cooking Fuel",

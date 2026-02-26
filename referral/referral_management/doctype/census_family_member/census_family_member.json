@@ -47,7 +47,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Gender",
-   "options": "1\n2",
+   "options": "1=Male\n2=Female",
    "reqd": 1
   },
   {
@@ -75,7 +75,7 @@
    "fieldname": "family_planning_operation",
    "fieldtype": "Select",
    "label": "Family Planning Operation",
-   "options": "0\n1\n2"
+   "options": "0=Not Recorded\n1=Yes\n2=No"
   },
   {
    "fieldname": "education",
@@ -87,7 +87,7 @@
    "fieldname": "currently_studying",
    "fieldtype": "Select",
    "label": "Currently Reading/Writing",
-   "options": "0\n1\n2"
+   "options": "0=Not Recorded\n1=Yes\n2=No"
   },
   {
    "fieldname": "migration_section",
@@ -113,7 +113,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-24 14:51:48.170114",
+ "modified": "2026-02-26 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Family Member",

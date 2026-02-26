@@ -1,6 +1,5 @@
 {
  "actions": [],
- "allow_import": 1,
  "allow_rename": 1,
  "autoname": "format:HH-{village_number}-{house_number}-{family_number}",
  "creation": "2026-02-18 10:00:00",
@@ -29,23 +28,23 @@
   "dry_land_guntha",
   "well_in_farm",
   "housing_section",
+  "material_wall",
+  "material_floor",
+  "material_roof",
   "electricity_connection",
   "house_ownership",
   "total_rooms",
   "separate_bathroom",
   "toilet_present",
   "toilet_usage",
-  "material_wall",
-  "material_floor",
-  "material_roof",
   "facilities_section",
-  "water_source",
-  "cooking_fuel",
+  "external_kitchen",
   "bednet_available",
   "bednet_usage",
   "total_bednets",
-  "external_kitchen",
   "total_beds",
+  "cooking_fuel",
+  "water_source",
   "schemes_section",
   "ration_card",
   "health_scheme_card",
@@ -190,41 +189,58 @@
    "fieldname": "electricity_connection",
    "fieldtype": "Select",
    "label": "Electricity Connection",
-   "options": "0\n1\n2"
+   "options": "1\n2"
   },
   {
    "default": "2",
    "fieldname": "house_ownership",
    "fieldtype": "Select",
    "label": "House Ownership",
-   "options": "0\n1\n2"
+   "options": "1\n2"
   },
   {
    "fieldname": "total_rooms",
    "fieldtype": "Int",
-   "label": "Total Rooms",
-   "options": "0\n1\n2"
+   "label": "Total Rooms"
   },
   {
    "default": "2",
    "fieldname": "separate_bathroom",
    "fieldtype": "Select",
    "label": "Separate Bathroom",
-   "options": "0\n1\n2"
+   "options": "1\n2"
   },
   {
    "default": "2",
    "fieldname": "toilet_present",
    "fieldtype": "Select",
    "label": "Toilet Present",
-   "options": "0\n1\n2"
+   "options": "1\n2"
   },
   {
    "depends_on": "eval:doc.toilet_present=='1=Yes'",
    "fieldname": "toilet_usage",
    "fieldtype": "Select",
    "label": "Toilet Usage",
-   "options": "0=No\n1=Yes\n2=No"
+   "options": "0\n1\n2"
+  },
+  {
+   "fieldname": "material_wall",
+   "fieldtype": "Table",
+   "label": "Material Wall",
+   "options": "Census Building Material"
+  },
+  {
+   "fieldname": "material_floor",
+   "fieldtype": "Table",
+   "label": "Material Floor",
+   "options": "Census Building Material-Floor"
+  },
+  {
+   "fieldname": "material_roof",
+   "fieldtype": "Table",
+   "label": "Material Roof",
+   "options": "Census Building Material-Roof"
   },
   {
    "fieldname": "facilities_section",
@@ -232,18 +248,23 @@
    "label": "Facilities"
   },
   {
-   "default": "2",
-   "fieldname": "external_kitchen",
-   "fieldtype": "Select",
-   "label": "External Kitchen",
-   "options": "0\n1\n2"
+   "fieldname": "water_source",
+   "fieldtype": "Table",
+   "label": "Water Source",
+   "options": "Census Water Source"
+  },
+  {
+   "fieldname": "cooking_fuel",
+   "fieldtype": "Table",
+   "label": "Cooking Fuel",
+   "options": "Census Cooking Fuel"
   },
   {
    "default": "2",
    "fieldname": "bednet_available",
    "fieldtype": "Select",
    "label": "Bednet Available",
-   "options": "0\n1\n2"
+   "options": "1\n2"
   },
   {
    "depends_on": "eval:doc.bednet_available=='1=Yes'",
@@ -257,6 +278,13 @@
    "fieldname": "total_bednets",
    "fieldtype": "Int",
    "label": "Total Bednets"
+  },
+  {
+   "default": "2",
+   "fieldname": "external_kitchen",
+   "fieldtype": "Select",
+   "label": "External Kitchen",
+   "options": "1\n2"
   },
   {
    "fieldname": "total_beds",
@@ -341,46 +369,11 @@
    "fieldtype": "Select",
    "label": "Cowshed Location",
    "options": "0\n1\n2"
-  },
-  {
-   "fieldname": "cooking_fuel",
-   "fieldtype": "Table",
-   "label": "Cooking Fuel",
-   "options": "Census Cooking Fuel",
-   "reqd": 1
-  },
-  {
-   "fieldname": "water_source",
-   "fieldtype": "Table",
-   "label": "Water Source ",
-   "options": "Census Water Source",
-   "reqd": 1
-  },
-  {
-   "fieldname": "material_wall",
-   "fieldtype": "Table",
-   "label": "Material Wall",
-   "options": "Census Building Material",
-   "reqd": 1
-  },
-  {
-   "fieldname": "material_floor",
-   "fieldtype": "Table",
-   "label": "Material Floor",
-   "options": "Census Building Material-Floor",
-   "reqd": 1
-  },
-  {
-   "fieldname": "material_roof",
-   "fieldtype": "Table",
-   "label": "Material Roof",
-   "options": "Census Building Material-Roof",
-   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-24 14:42:29.246265",
+ "modified": "2026-02-26 17:04:37.375264",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Household",
