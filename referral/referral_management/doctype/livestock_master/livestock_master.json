@@ -30,7 +30,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 10:00:00.000000",
+ "modified": "2026-02-26 18:50:55.337031",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Livestock Master",
@@ -52,9 +52,10 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "animal_code",
  "sort_order": "ASC",
  "states": [],
- "track_changes": 1,
- "title_field": "animal_name"
+ "title_field": "animal_name",
+ "track_changes": 1
 }

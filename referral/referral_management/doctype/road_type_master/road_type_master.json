@@ -30,7 +30,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-24 13:42:50.832239",
+ "modified": "2026-02-26 18:48:42.831190",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Road Type Master",
@@ -52,8 +52,10 @@
  ],
  "quick_entry": 1,
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "road_type_code",
  "sort_order": "ASC",
  "states": [],
+ "title_field": "road_type_name",
  "track_changes": 1
 }

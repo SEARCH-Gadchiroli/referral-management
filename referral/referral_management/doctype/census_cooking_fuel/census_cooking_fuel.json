@@ -13,7 +13,8 @@
    "in_list_view": 1,
    "label": "Cooking Fuel",
    "options": "Cooking Fuel Master",
-   "reqd": 1
+   "reqd": 1,
+   "show_title_field_in_link": 1
   }
  ],
  "index_web_pages_for_search": 1,
