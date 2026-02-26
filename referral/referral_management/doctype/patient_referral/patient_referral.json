@@ -1,0 +1,241 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:reference_number",
+ "creation": "2026-02-18 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_number",
+  "referral_date",
+  "status",
+  "referrer_section",
+  "referrer",
+  "referrer_phone",
+  "phc",
+  "village_of_reference",
+  "patient_section",
+  "patient_name",
+  "patient_father_name",
+  "patient_gender",
+  "patient_age",
+  "patient_village",
+  "patient_phone",
+  "census_section",
+  "census_match",
+  "match_confidence",
+  "match_status",
+  "tribal_classification",
+  "opd_section",
+  "opd_departments",
+  "additional_notes",
+  "visit_section",
+  "hospital_registration_number",
+  "visit_date",
+  "raw_data_section",
+  "raw_patient_data"
+ ],
+ "fields": [
+  {
+   "fieldname": "reference_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Reference Number",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "referral_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Referral Date",
+   "reqd": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nVisited\nNo-Show\nCancelled",
+   "reqd": 1
+  },
+  {
+   "fieldname": "referrer_section",
+   "fieldtype": "Section Break",
+   "label": "Referrer Info"
+  },
+  {
+   "fieldname": "referrer",
+   "fieldtype": "Link",
+   "label": "Referrer (User)",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "referrer_phone",
+   "fieldtype": "Data",
+   "label": "Referrer Phone",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phc",
+   "fieldtype": "Link",
+   "label": "PHC",
+   "options": "PHC",
+   "reqd": 1
+  },
+  {
+   "fieldname": "village_of_reference",
+   "fieldtype": "Link",
+   "label": "Village of Reference",
+   "options": "Village",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_section",
+   "fieldtype": "Section Break",
+   "label": "Patient Info"
+  },
+  {
+   "fieldname": "patient_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Patient Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_father_name",
+   "fieldtype": "Data",
+   "label": "Father's Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_gender",
+   "fieldtype": "Select",
+   "label": "Gender",
+   "options": "Male\nFemale\nOther",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_age",
+   "fieldtype": "Int",
+   "label": "Age",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_village",
+   "fieldtype": "Link",
+   "label": "Patient Village",
+   "options": "Village",
+   "reqd": 1
+  },
+  {
+   "fieldname": "patient_phone",
+   "fieldtype": "Data",
+   "label": "Patient Phone"
+  },
+  {
+   "fieldname": "census_section",
+   "fieldtype": "Section Break",
+   "label": "Census Matching"
+  },
+  {
+   "fieldname": "census_match",
+   "fieldtype": "Link",
+   "label": "Census Match",
+   "options": "Census Data"
+  },
+  {
+   "fieldname": "match_confidence",
+   "fieldtype": "Float",
+   "label": "Match Confidence (%)"
+  },
+  {
+   "default": "Unmatched",
+   "fieldname": "match_status",
+   "fieldtype": "Select",
+   "label": "Match Status",
+   "options": "Unmatched\nAuto-Matched\nMultiple Matches\nManually Verified"
+  },
+  {
+   "fieldname": "tribal_classification",
+   "fieldtype": "Select",
+   "label": "Tribal Classification",
+   "options": "\nTribal\nNon-Tribal"
+  },
+  {
+   "fieldname": "opd_section",
+   "fieldtype": "Section Break",
+   "label": "OPD Departments"
+  },
+  {
+   "fieldname": "opd_departments",
+   "fieldtype": "Table",
+   "label": "OPD Departments",
+   "options": "Medical Department",
+   "reqd": 1
+  },
+  {
+   "fieldname": "additional_notes",
+   "fieldtype": "Text Editor",
+   "label": "Additional Notes"
+  },
+  {
+   "fieldname": "visit_section",
+   "fieldtype": "Section Break",
+   "label": "Hospital Visit"
+  },
+  {
+   "fieldname": "hospital_registration_number",
+   "fieldtype": "Data",
+   "label": "Hospital Registration No."
+  },
+  {
+   "fieldname": "visit_date",
+   "fieldtype": "Date",
+   "label": "Visit Date"
+  },
+  {
+   "fieldname": "raw_data_section",
+   "fieldtype": "Section Break",
+   "label": "Raw Data"
+  },
+  {
+   "fieldname": "raw_patient_data",
+   "fieldtype": "Link",
+   "label": "Raw Patient Data",
+   "options": "Raw Patient Data",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-18 09:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Patient Referral",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1
+}

@@ -1,0 +1,126 @@
+{
+ "actions": [],
+ "creation": "2026-02-18 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identification_number",
+  "member_name",
+  "age",
+  "gender",
+  "birth_date",
+  "birth_id_number",
+  "demographics_section",
+  "marital_status",
+  "family_planning_operation",
+  "education",
+  "currently_studying",
+  "migration_section",
+  "date_in_migration",
+  "date_out_migration",
+  "date_of_death"
+ ],
+ "fields": [
+  {
+   "fieldname": "identification_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Identification Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "member_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "age",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Age (Years)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Gender",
+   "options": "1\n2",
+   "reqd": 1
+  },
+  {
+   "fieldname": "birth_date",
+   "fieldtype": "Data",
+   "label": "Birth Date"
+  },
+  {
+   "fieldname": "birth_id_number",
+   "fieldtype": "Data",
+   "label": "Birth ID Number"
+  },
+  {
+   "fieldname": "demographics_section",
+   "fieldtype": "Section Break",
+   "label": "Demographics"
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Link",
+   "label": "Marital Status",
+   "options": "Marital Status Master"
+  },
+  {
+   "fieldname": "family_planning_operation",
+   "fieldtype": "Select",
+   "label": "Family Planning Operation",
+   "options": "0\n1\n2"
+  },
+  {
+   "fieldname": "education",
+   "fieldtype": "Link",
+   "label": "Education Level",
+   "options": "Education Master"
+  },
+  {
+   "fieldname": "currently_studying",
+   "fieldtype": "Select",
+   "label": "Currently Reading/Writing",
+   "options": "0\n1\n2"
+  },
+  {
+   "fieldname": "migration_section",
+   "fieldtype": "Section Break",
+   "label": "Migration & Status"
+  },
+  {
+   "fieldname": "date_in_migration",
+   "fieldtype": "Date",
+   "label": "Date of In-Migration to Home"
+  },
+  {
+   "fieldname": "date_out_migration",
+   "fieldtype": "Date",
+   "label": "Date of Out-Migration from Home"
+  },
+  {
+   "fieldname": "date_of_death",
+   "fieldtype": "Data",
+   "label": "Date of Death"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-24 14:51:48.170114",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Census Family Member",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

@@ -1,0 +1,75 @@
+# Copyright (c) 2026, SEARCH and contributors
+# For license information, please see license.txt
+
+import frappe
+from frappe.model.document import Document
+
+
+class CensusHousehold(Document):
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from census_family_member import CensusFamilyMember
+		from census_household_item import CensusHouseholdItem
+		from census_livestock import CensusLivestock
+		from census_occupation import CensusOccupation
+		from frappe.types import DF
+
+		bednet_available: DF.Literal["1=Yes", "2=No"]
+		bednet_usage: DF.Literal["0=No", "1=Yes", "2=No"]
+		caste_of_head: DF.Link | None
+		cooking_fuel_1: DF.Link | None
+		cooking_fuel_2: DF.Link | None
+		cooking_fuel_3: DF.Link | None
+		cowshed_location: DF.Literal["0=No", "1=Inside", "2=Outside"]
+		cowshed_present: DF.Literal["0=No", "1=Yes", "2=No"]
+		dev: DF.Int
+		drinking_water_source_1: DF.Link | None
+		drinking_water_source_2: DF.Link | None
+		drinking_water_source_3: DF.Link | None
+		dry_land_acre: DF.Float
+		dry_land_guntha: DF.Float
+		electricity_connection: DF.Literal["1=Yes", "2=No"]
+		external_kitchen: DF.Literal["1=Yes", "2=No"]
+		family_members: DF.Table[CensusFamilyMember]
+		family_number: DF.Int
+		floor_material_1: DF.Link | None
+		floor_material_2: DF.Link | None
+		floor_material_3: DF.Link | None
+		health_scheme_card: DF.Link | None
+		house_number: DF.Int
+		house_ownership: DF.Literal["1=Yes", "2=No"]
+		household_items: DF.Table[CensusHouseholdItem]
+		livestock: DF.Table[CensusLivestock]
+		mobile_number: DF.Data | None
+		occupations: DF.Table[CensusOccupation]
+		old_family_number: DF.Data | None
+		old_household_number: DF.Data | None
+		ration_card: DF.Link | None
+		register_page_number: DF.Int
+		religion_of_head: DF.Link | None
+		roof_material_1: DF.Link | None
+		roof_material_2: DF.Link | None
+		roof_material_3: DF.Link | None
+		separate_bathroom: DF.Literal["1=Yes", "2=No"]
+		toilet_present: DF.Literal["1=Yes", "2=No"]
+		toilet_usage: DF.Literal["0=No", "1=Yes", "2=No"]
+		total_beds: DF.Int
+		total_bednets: DF.Int
+		total_family_members: DF.Int
+		total_rooms: DF.Int
+		village: DF.Link | None
+		village_number: DF.Int
+		wall_material_1: DF.Link | None
+		wall_material_2: DF.Link | None
+		wall_material_3: DF.Link | None
+		well_in_farm: DF.Literal["", "0=No", "1=No", "2=Yes"]
+		wet_land_acre: DF.Float
+		wet_land_guntha: DF.Float
+
+	def validate(self):
+		"""Validate family member count matches child table"""
+		if self.family_members:
+			actual_count = len(self.family_members)
+			if self.total_family_members != actual_count:
+				frappe.msgprint(f"Warning: Total family members ({self.total_family_members}) doesn't match actual count ({actual_count})")

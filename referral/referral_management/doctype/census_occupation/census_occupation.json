@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "creation": "2026-02-18 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "occupation_type",
+  "occupation"
+ ],
+ "fields": [
+  {
+   "fieldname": "occupation_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Occupation Type",
+   "options": "Main\nSecondary 1\nSecondary 2\nSecondary 3",
+   "reqd": 1
+  },
+  {
+   "fieldname": "occupation",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Occupation",
+   "options": "Occupation Master",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-02-18 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Census Occupation",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

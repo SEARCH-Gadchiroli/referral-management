@@ -1,0 +1,480 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:HH-{village_number}-{house_number}-{family_number}",
+ "creation": "2026-02-18 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identification_section",
+  "village_number",
+  "register_page_number",
+  "house_number",
+  "family_number",
+  "old_household_number",
+  "old_family_number",
+  "column_break_basic",
+  "total_family_members",
+  "mobile_number",
+  "village",
+  "family_head_section",
+  "caste_of_head",
+  "religion_of_head",
+  "dev",
+  "property_section",
+  "wet_land_acre",
+  "wet_land_guntha",
+  "dry_land_acre",
+  "dry_land_guntha",
+  "well_in_farm",
+  "housing_section",
+  "wall_material_1",
+  "wall_material_2",
+  "wall_material_3",
+  "roof_material_1",
+  "roof_material_2",
+  "roof_material_3",
+  "column_break_housing",
+  "floor_material_1",
+  "floor_material_2",
+  "floor_material_3",
+  "electricity_connection",
+  "house_ownership",
+  "total_rooms",
+  "separate_bathroom",
+  "toilet_present",
+  "toilet_usage",
+  "facilities_section",
+  "cooking_fuel_1",
+  "cooking_fuel_2",
+  "cooking_fuel_3",
+  "external_kitchen",
+  "drinking_water_source_1",
+  "drinking_water_source_2",
+  "drinking_water_source_3",
+  "column_break_facilities",
+  "bednet_available",
+  "bednet_usage",
+  "total_bednets",
+  "total_beds",
+  "schemes_section",
+  "ration_card",
+  "health_scheme_card",
+  "family_members_section",
+  "family_members",
+  "occupations_section",
+  "occupations",
+  "household_items_section",
+  "household_items",
+  "livestock_section",
+  "livestock",
+  "cowshed_present",
+  "cowshed_location"
+ ],
+ "fields": [
+  {
+   "fieldname": "identification_section",
+   "fieldtype": "Section Break",
+   "label": "Household Identification"
+  },
+  {
+   "fieldname": "village_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Village Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "register_page_number",
+   "fieldtype": "Int",
+   "label": "Register Page Number"
+  },
+  {
+   "fieldname": "house_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "House Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "family_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Family Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "old_household_number",
+   "fieldtype": "Data",
+   "label": "Old Household Number"
+  },
+  {
+   "fieldname": "old_family_number",
+   "fieldtype": "Data",
+   "label": "Old Family Number"
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_family_members",
+   "fieldtype": "Int",
+   "label": "Total Family Members",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mobile_number",
+   "fieldtype": "Data",
+   "label": "Mobile Number"
+  },
+  {
+   "fieldname": "village",
+   "fieldtype": "Link",
+   "label": "Village",
+   "options": "Village"
+  },
+  {
+   "fieldname": "family_head_section",
+   "fieldtype": "Section Break",
+   "label": "Family Head Information"
+  },
+  {
+   "fieldname": "caste_of_head",
+   "fieldtype": "Link",
+   "label": "Caste of Head",
+   "options": "Caste Master"
+  },
+  {
+   "fieldname": "religion_of_head",
+   "fieldtype": "Link",
+   "label": "Religion of Head",
+   "options": "Religion Master"
+  },
+  {
+   "fieldname": "dev",
+   "fieldtype": "Int",
+   "label": "Dev Number"
+  },
+  {
+   "fieldname": "property_section",
+   "fieldtype": "Section Break",
+   "label": "Land & Property"
+  },
+  {
+   "fieldname": "wet_land_acre",
+   "fieldtype": "Float",
+   "label": "Wet Land (Acres)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "wet_land_guntha",
+   "fieldtype": "Float",
+   "label": "Wet Land (Guntha)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "dry_land_acre",
+   "fieldtype": "Float",
+   "label": "Dry Land (Acres)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "dry_land_guntha",
+   "fieldtype": "Float",
+   "label": "Dry Land (Guntha)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "well_in_farm",
+   "fieldtype": "Select",
+   "label": "Well in Farm",
+   "options": "\n0=No\n1=No\n2=Yes"
+  },
+  {
+   "fieldname": "housing_section",
+   "fieldtype": "Section Break",
+   "label": "Housing Details"
+  },
+  {
+   "fieldname": "wall_material_1",
+   "fieldtype": "Link",
+   "label": "Wall Material 1",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "wall_material_2",
+   "fieldtype": "Link",
+   "label": "Wall Material 2",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "wall_material_3",
+   "fieldtype": "Link",
+   "label": "Wall Material 3",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "roof_material_1",
+   "fieldtype": "Link",
+   "label": "Roof Material 1",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "roof_material_2",
+   "fieldtype": "Link",
+   "label": "Roof Material 2",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "roof_material_3",
+   "fieldtype": "Link",
+   "label": "Roof Material 3",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "column_break_housing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "floor_material_1",
+   "fieldtype": "Link",
+   "label": "Floor Material 1",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "floor_material_2",
+   "fieldtype": "Link",
+   "label": "Floor Material 2",
+   "options": "Material Master"
+  },
+  {
+   "fieldname": "floor_material_3",
+   "fieldtype": "Link",
+   "label": "Floor Material 3",
+   "options": "Material Master"
+  },
+  {
+   "default": "2",
+   "fieldname": "electricity_connection",
+   "fieldtype": "Select",
+   "label": "Electricity Connection",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "default": "2",
+   "fieldname": "house_ownership",
+   "fieldtype": "Select",
+   "label": "House Ownership",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "fieldname": "total_rooms",
+   "fieldtype": "Int",
+   "label": "Total Rooms"
+  },
+  {
+   "default": "2",
+   "fieldname": "separate_bathroom",
+   "fieldtype": "Select",
+   "label": "Separate Bathroom",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "default": "2",
+   "fieldname": "toilet_present",
+   "fieldtype": "Select",
+   "label": "Toilet Present",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "depends_on": "eval:doc.toilet_present=='1=Yes'",
+   "fieldname": "toilet_usage",
+   "fieldtype": "Select",
+   "label": "Toilet Usage",
+   "options": "0=No\n1=Yes\n2=No"
+  },
+  {
+   "fieldname": "facilities_section",
+   "fieldtype": "Section Break",
+   "label": "Facilities"
+  },
+  {
+   "fieldname": "cooking_fuel_1",
+   "fieldtype": "Link",
+   "label": "Cooking Fuel 1",
+   "options": "Cooking Fuel Master"
+  },
+  {
+   "fieldname": "cooking_fuel_2",
+   "fieldtype": "Link",
+   "label": "Cooking Fuel 2",
+   "options": "Cooking Fuel Master"
+  },
+  {
+   "fieldname": "cooking_fuel_3",
+   "fieldtype": "Link",
+   "label": "Cooking Fuel 3",
+   "options": "Cooking Fuel Master"
+  },
+  {
+   "default": "2",
+   "fieldname": "external_kitchen",
+   "fieldtype": "Select",
+   "label": "External Kitchen",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "fieldname": "drinking_water_source_1",
+   "fieldtype": "Link",
+   "label": "Water Source 1",
+   "options": "Water Source Master"
+  },
+  {
+   "fieldname": "drinking_water_source_2",
+   "fieldtype": "Link",
+   "label": "Water Source 2",
+   "options": "Water Source Master"
+  },
+  {
+   "fieldname": "drinking_water_source_3",
+   "fieldtype": "Link",
+   "label": "Water Source 3",
+   "options": "Water Source Master"
+  },
+  {
+   "fieldname": "column_break_facilities",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "2",
+   "fieldname": "bednet_available",
+   "fieldtype": "Select",
+   "label": "Bednet Available",
+   "options": "1=Yes\n2=No"
+  },
+  {
+   "depends_on": "eval:doc.bednet_available=='1=Yes'",
+   "fieldname": "bednet_usage",
+   "fieldtype": "Select",
+   "label": "Bednet Usage",
+   "options": "0=No\n1=Yes\n2=No"
+  },
+  {
+   "depends_on": "eval:doc.bednet_available=='1=Yes'",
+   "fieldname": "total_bednets",
+   "fieldtype": "Int",
+   "label": "Total Bednets"
+  },
+  {
+   "fieldname": "total_beds",
+   "fieldtype": "Int",
+   "label": "Total Beds"
+  },
+  {
+   "fieldname": "schemes_section",
+   "fieldtype": "Section Break",
+   "label": "Government Schemes"
+  },
+  {
+   "fieldname": "ration_card",
+   "fieldtype": "Link",
+   "label": "Ration Card",
+   "options": "Ration Card Master"
+  },
+  {
+   "fieldname": "health_scheme_card",
+   "fieldtype": "Link",
+   "label": "Health Scheme Card",
+   "options": "Health Scheme Master"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "family_members_section",
+   "fieldtype": "Section Break",
+   "label": "Family Members"
+  },
+  {
+   "fieldname": "family_members",
+   "fieldtype": "Table",
+   "label": "Family Members",
+   "options": "Census Family Member"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "occupations_section",
+   "fieldtype": "Section Break",
+   "label": "Occupations"
+  },
+  {
+   "fieldname": "occupations",
+   "fieldtype": "Table",
+   "label": "Occupations",
+   "options": "Census Occupation"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "household_items_section",
+   "fieldtype": "Section Break",
+   "label": "Household Items & Amenities"
+  },
+  {
+   "fieldname": "household_items",
+   "fieldtype": "Table",
+   "label": "Household Items",
+   "options": "Census Household Item"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "livestock_section",
+   "fieldtype": "Section Break",
+   "label": "Livestock"
+  },
+  {
+   "fieldname": "livestock",
+   "fieldtype": "Table",
+   "label": "Livestock",
+   "options": "Census Livestock"
+  },
+  {
+   "default": "2",
+   "fieldname": "cowshed_present",
+   "fieldtype": "Select",
+   "label": "Cowshed Present",
+   "options": "0=No\n1=Yes\n2=No"
+  },
+  {
+   "depends_on": "eval:doc.cowshed_present=='1=Yes'",
+   "fieldname": "cowshed_location",
+   "fieldtype": "Select",
+   "label": "Cowshed Location",
+   "options": "0=No\n1=Inside\n2=Outside"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-18 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Census Household",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

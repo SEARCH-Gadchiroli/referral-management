@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:RAW-{YYYY}-{####}",
+ "creation": "2026-02-18 09:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "glific_section",
+  "glific_contact_id",
+  "received_at",
+  "raw_data_section",
+  "selected_phc",
+  "referrer_village",
+  "patient_name_raw",
+  "father_name_raw",
+  "gender_raw",
+  "age_raw",
+  "village_raw",
+  "departments_raw",
+  "additional_notes_raw",
+  "processing_section",
+  "patient_referral"
+ ],
+ "fields": [
+  {
+   "fieldname": "glific_section",
+   "fieldtype": "Section Break",
+   "label": "Glific Info"
+  },
+  {
+   "fieldname": "glific_contact_id",
+   "fieldtype": "Data",
+   "label": "Glific Referrer ID"
+  },
+  {
+   "fieldname": "received_at",
+   "fieldtype": "Datetime",
+   "label": "Received At"
+  },
+  {
+   "fieldname": "raw_data_section",
+   "fieldtype": "Section Break",
+   "label": "Raw Patient Data"
+  },
+  {
+   "fieldname": "selected_phc",
+   "fieldtype": "Data",
+   "label": "Selected PHC"
+  },
+  {
+   "fieldname": "referrer_village",
+   "fieldtype": "Data",
+   "label": "Referrer Village"
+  },
+  {
+   "fieldname": "patient_name_raw",
+   "fieldtype": "Data",
+   "label": "Patient Name (Raw)"
+  },
+  {
+   "fieldname": "father_name_raw",
+   "fieldtype": "Data",
+   "label": "Father Name (Raw)"
+  },
+  {
+   "fieldname": "gender_raw",
+   "fieldtype": "Data",
+   "label": "Gender (Raw)"
+  },
+  {
+   "fieldname": "age_raw",
+   "fieldtype": "Data",
+   "label": "Age (Raw)"
+  },
+  {
+   "fieldname": "village_raw",
+   "fieldtype": "Data",
+   "label": "Village (Raw)"
+  },
+  {
+   "fieldname": "departments_raw",
+   "fieldtype": "Link",
+   "label": "Departments (Raw)",
+   "options": "Medical Department"
+  },
+  {
+   "fieldname": "additional_notes_raw",
+   "fieldtype": "Long Text",
+   "label": "Additional Notes (Raw)"
+  },
+  {
+   "fieldname": "processing_section",
+   "fieldtype": "Section Break",
+   "label": "Processing"
+  },
+  {
+   "fieldname": "patient_referral",
+   "fieldtype": "Link",
+   "label": "Patient Referral",
+   "options": "Patient Referral",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-19 09:32:25.228528",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Raw Patient Referral Data",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

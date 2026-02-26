@@ -1,0 +1,353 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:village_name",
+ "creation": "2026-02-20 10:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "identification_section",
+  "serial_number",
+  "village_number",
+  "village_name",
+  "gram_panchayat",
+  "column_break_id",
+  "state",
+  "district",
+  "taluka",
+  "distances_section",
+  "distance_from_search",
+  "distance_from_district_hospital",
+  "transportation_section",
+  "st_bus_available",
+  "st_bus_distance_if_no",
+  "roads_asphalt_cement",
+  "infrastructure_section",
+  "water_tank",
+  "anganwadi_center",
+  "subcenter",
+  "phc_available",
+  "column_break_infra",
+  "school_available",
+  "school_class_level",
+  "drains_constructed",
+  "sewage_accumulation",
+  "markets_commerce_section",
+  "weekly_market_village",
+  "weekly_market_day",
+  "bank_branch",
+  "bank_distance_if_no",
+  "column_break_commerce",
+  "private_clinic",
+  "kirana_shops_count",
+  "paan_shops_count",
+  "ration_shop_pds",
+  "connectivity_section",
+  "mobile_networks",
+  "administrative_section",
+  "distance_to_gram_panchayat",
+  "distance_to_police_station",
+  "women_self_help_groups",
+  "key_personnel_section",
+  "key_personnel"
+ ],
+ "fields": [
+  {
+   "fieldname": "identification_section",
+   "fieldtype": "Section Break",
+   "label": "Village Identification"
+  },
+  {
+   "fieldname": "serial_number",
+   "fieldtype": "Int",
+   "label": "Serial Number"
+  },
+  {
+   "fieldname": "village_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Village Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "village_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Village Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "gram_panchayat",
+   "fieldtype": "Data",
+   "label": "Gram Panchayat"
+  },
+  {
+   "fieldname": "column_break_id",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Link",
+   "label": "State",
+   "options": "State"
+  },
+  {
+   "fieldname": "district",
+   "fieldtype": "Link",
+   "label": "District",
+   "options": "District"
+  },
+  {
+   "fieldname": "taluka",
+   "fieldtype": "Link",
+   "label": "Taluka",
+   "options": "Taluka"
+  },
+  {
+   "fieldname": "distances_section",
+   "fieldtype": "Section Break",
+   "label": "Distances"
+  },
+  {
+   "fieldname": "distance_from_search",
+   "fieldtype": "Float",
+   "label": "Distance from SEARCH (km)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "distance_from_district_hospital",
+   "fieldtype": "Float",
+   "label": "Distance from District Hospital (km)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "transportation_section",
+   "fieldtype": "Section Break",
+   "label": "Transportation"
+  },
+  {
+   "default": "2",
+   "fieldname": "st_bus_available",
+   "fieldtype": "Select",
+   "label": "ST Bus Available",
+   "options": "1\n2"
+  },
+  {
+   "depends_on": "eval:doc.st_bus_available=='2=No'",
+   "fieldname": "st_bus_distance_if_no",
+   "fieldtype": "Float",
+   "label": "Distance to Nearest Bus Stop (km)",
+   "precision": "2"
+  },
+  {
+   "default": "2",
+   "fieldname": "roads_asphalt_cement",
+   "fieldtype": "Select",
+   "label": "Roads Asphalt/Cement",
+   "options": "1\n2"
+  },
+  {
+   "fieldname": "infrastructure_section",
+   "fieldtype": "Section Break",
+   "label": "Infrastructure"
+  },
+  {
+   "default": "2",
+   "fieldname": "water_tank",
+   "fieldtype": "Select",
+   "label": "Water Tank",
+   "options": "1\n2"
+  },
+  {
+   "default": "2",
+   "fieldname": "anganwadi_center",
+   "fieldtype": "Select",
+   "label": "Anganwadi Center",
+   "options": "1\n2"
+  },
+  {
+   "default": "2",
+   "fieldname": "subcenter",
+   "fieldtype": "Select",
+   "label": "Sub-center",
+   "options": "1\n2"
+  },
+  {
+   "default": "2",
+   "fieldname": "phc_available",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "PHC Available",
+   "options": "1\n2"
+  },
+  {
+   "fieldname": "column_break_infra",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "2",
+   "fieldname": "school_available",
+   "fieldtype": "Select",
+   "label": "School Available",
+   "options": "1\n2"
+  },
+  {
+   "depends_on": "eval:doc.school_available=='1=Yes'",
+   "fieldname": "school_class_level",
+   "fieldtype": "Int",
+   "label": "School Class Level (1-12)"
+  },
+  {
+   "default": "2",
+   "fieldname": "drains_constructed",
+   "fieldtype": "Select",
+   "label": "Drains Constructed",
+   "options": "1\n2"
+  },
+  {
+   "default": "2",
+   "depends_on": "eval:doc.drains_constructed=='1=Yes'",
+   "fieldname": "sewage_accumulation",
+   "fieldtype": "Select",
+   "label": "Sewage Accumulation",
+   "options": "1\n2"
+  },
+  {
+   "fieldname": "markets_commerce_section",
+   "fieldtype": "Section Break",
+   "label": "Markets & Commerce"
+  },
+  {
+   "fieldname": "weekly_market_village",
+   "fieldtype": "Data",
+   "label": "Weekly Market Village"
+  },
+  {
+   "fieldname": "weekly_market_day",
+   "fieldtype": "Link",
+   "label": "Weekly Market Day",
+   "options": "Day of Week Master"
+  },
+  {
+   "default": "2",
+   "fieldname": "bank_branch",
+   "fieldtype": "Select",
+   "label": "Bank Branch",
+   "options": "1\n2"
+  },
+  {
+   "depends_on": "eval:doc.bank_branch=='2=No'",
+   "fieldname": "bank_distance_if_no",
+   "fieldtype": "Float",
+   "label": "Distance to Nearest Bank (km)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "column_break_commerce",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "2",
+   "fieldname": "private_clinic",
+   "fieldtype": "Select",
+   "label": "Private Clinic",
+   "options": "1\n2"
+  },
+  {
+   "fieldname": "kirana_shops_count",
+   "fieldtype": "Int",
+   "label": "Kirana Shops Count"
+  },
+  {
+   "fieldname": "paan_shops_count",
+   "fieldtype": "Int",
+   "label": "Paan Shops Count"
+  },
+  {
+   "default": "2",
+   "fieldname": "ration_shop_pds",
+   "fieldtype": "Select",
+   "label": "Ration Shop (PDS)",
+   "options": "1\n2"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "connectivity_section",
+   "fieldtype": "Section Break",
+   "label": "Connectivity"
+  },
+  {
+   "fieldname": "mobile_networks",
+   "fieldtype": "Table",
+   "label": "Mobile Networks",
+   "options": "Village Mobile Networks"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "administrative_section",
+   "fieldtype": "Section Break",
+   "label": "Administrative"
+  },
+  {
+   "fieldname": "distance_to_gram_panchayat",
+   "fieldtype": "Float",
+   "label": "Distance to Gram Panchayat (km)",
+   "precision": "2"
+  },
+  {
+   "fieldname": "distance_to_police_station",
+   "fieldtype": "Float",
+   "label": "Distance to Police Station (km)",
+   "precision": "2"
+  },
+  {
+   "default": "2",
+   "fieldname": "women_self_help_groups",
+   "fieldtype": "Select",
+   "label": "Women's Self-Help Groups",
+   "options": "1\n2"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "key_personnel_section",
+   "fieldtype": "Section Break",
+   "label": "Key Personnel"
+  },
+  {
+   "fieldname": "key_personnel",
+   "fieldtype": "Table",
+   "label": "Key Personnel",
+   "options": "Village Key Personnel"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-02-25 01:33:31.117723",
+ "modified_by": "Administrator",
+ "module": "Referral Management",
+ "name": "Village Profile",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "village_number",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1,
+ "track_seen": 1
+}
