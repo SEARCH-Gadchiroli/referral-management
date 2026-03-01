@@ -23,22 +23,22 @@ class CensusHousehold(Document):
 		from referral.referral_management.doctype.census_occupation.census_occupation import CensusOccupation
 		from referral.referral_management.doctype.census_water_source.census_water_source import CensusWaterSource
 
-		bednet_available: DF.Literal["1", "2"]
-		bednet_usage: DF.Literal["0=No", "1=Yes", "2=No"]
+		bednet_available: DF.Link | None
+		bednet_usage: DF.Link | None
 		caste_of_head: DF.Link | None
 		cooking_fuel: DF.Table[CensusCookingFuel]
-		cowshed_location: DF.Literal["0", "1", "2"]
-		cowshed_present: DF.Literal["0", "1", "2"]
+		cowshed_location: DF.Link | None
+		cowshed_present: DF.Link | None
 		dev: DF.Int
 		dry_land_acre: DF.Float
 		dry_land_guntha: DF.Float
-		electricity_connection: DF.Literal["1", "2"]
-		external_kitchen: DF.Literal["1", "2"]
+		electricity_connection: DF.Link | None
+		external_kitchen: DF.Link | None
 		family_members: DF.Table[CensusFamilyMember]
 		family_number: DF.Int
 		health_scheme_card: DF.Link | None
 		house_number: DF.Int
-		house_ownership: DF.Literal["1", "2"]
+		house_ownership: DF.Link | None
 		household_items: DF.Table[CensusHouseholdItem]
 		livestock: DF.Table[CensusLivestock]
 		material_floor: DF.Table[CensusBuildingMaterialFloor]
@@ -51,17 +51,17 @@ class CensusHousehold(Document):
 		ration_card: DF.Link | None
 		register_page_number: DF.Int
 		religion_of_head: DF.Link | None
-		separate_bathroom: DF.Literal["1", "2"]
-		toilet_present: DF.Literal["1", "2"]
-		toilet_usage: DF.Literal["0", "1", "2"]
+		separate_bathroom: DF.Link | None
+		toilet_present: DF.Link | None
+		toilet_usage: DF.Link | None
 		total_bednets: DF.Int
 		total_beds: DF.Int
 		total_family_members: DF.Int
 		total_rooms: DF.Int
 		village: DF.Link | None
-		village_number: DF.Int
+		village_number: DF.Link
 		water_source: DF.Table[CensusWaterSource]
-		well_in_farm: DF.Literal["0", "1", "2"]
+		well_in_farm: DF.Link | None
 		wet_land_acre: DF.Float
 		wet_land_guntha: DF.Float
 	# end: auto-generated types

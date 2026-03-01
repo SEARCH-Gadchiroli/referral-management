@@ -44,10 +44,10 @@
   },
   {
    "fieldname": "gender",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Gender",
-   "options": "1=Male\n2=Female",
+   "options": "Gender Master",
    "reqd": 1
   },
   {
@@ -69,27 +69,25 @@
    "fieldname": "marital_status",
    "fieldtype": "Link",
    "label": "Marital Status",
-   "options": "Marital Status Master",
-   "show_title_field_in_link": 1
+   "options": "Marital Status Master"
   },
   {
    "fieldname": "family_planning_operation",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Family Planning Operation",
-   "options": "0=Not Recorded\n1=Yes\n2=No"
+   "options": "Yes No Master"
   },
   {
    "fieldname": "education",
    "fieldtype": "Link",
    "label": "Education Level",
-   "options": "Education Master",
-   "show_title_field_in_link": 1
+   "options": "Education Master"
   },
   {
    "fieldname": "currently_studying",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Currently Reading/Writing",
-   "options": "0=Not Recorded\n1=Yes\n2=No"
+   "options": "Yes No Master"
   },
   {
    "fieldname": "migration_section",
@@ -115,7 +113,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-02-26 10:00:00.000000",
+ "modified": "2026-03-02 01:27:18.155456",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Family Member",

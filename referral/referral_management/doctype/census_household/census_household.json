@@ -66,10 +66,12 @@
    "label": "Household Identification"
   },
   {
+   "fetch_from": "village.village_number",
    "fieldname": "village_number",
-   "fieldtype": "Int",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Village Number",
+   "options": "Village Profile",
    "reqd": 1
   },
   {
@@ -117,10 +119,11 @@
    "label": "Mobile Number"
   },
   {
+   "fetch_from": "village_number.village_name",
    "fieldname": "village",
    "fieldtype": "Link",
    "label": "Village",
-   "options": "Village"
+   "options": "Village Profile"
   },
   {
    "fieldname": "family_head_section",
@@ -175,9 +178,9 @@
   },
   {
    "fieldname": "well_in_farm",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Well in Farm",
-   "options": "0\n1\n2"
+   "options": "Well In Farm Master"
   },
   {
    "fieldname": "housing_section",
@@ -187,16 +190,16 @@
   {
    "default": "2",
    "fieldname": "electricity_connection",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Electricity Connection",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "default": "2",
    "fieldname": "house_ownership",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "House Ownership",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "fieldname": "total_rooms",
@@ -206,23 +209,23 @@
   {
    "default": "2",
    "fieldname": "separate_bathroom",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Separate Bathroom",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "default": "2",
    "fieldname": "toilet_present",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Toilet Present",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "depends_on": "eval:doc.toilet_present=='1=Yes'",
    "fieldname": "toilet_usage",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Toilet Usage",
-   "options": "0\n1\n2"
+   "options": "Yes No Master"
   },
   {
    "fieldname": "material_wall",
@@ -262,16 +265,16 @@
   {
    "default": "2",
    "fieldname": "bednet_available",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Bednet Available",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "depends_on": "eval:doc.bednet_available=='1=Yes'",
    "fieldname": "bednet_usage",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Bednet Usage",
-   "options": "0=No\n1=Yes\n2=No"
+   "options": "Yes No Master"
   },
   {
    "depends_on": "eval:doc.bednet_available=='1=Yes'",
@@ -282,9 +285,9 @@
   {
    "default": "2",
    "fieldname": "external_kitchen",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "External Kitchen",
-   "options": "1\n2"
+   "options": "Yes No Master"
   },
   {
    "fieldname": "total_beds",
@@ -359,21 +362,21 @@
   {
    "default": "2",
    "fieldname": "cowshed_present",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Cowshed Present",
-   "options": "0\n1\n2"
+   "options": "Yes No Master"
   },
   {
    "depends_on": "eval:doc.cowshed_present=='1=Yes'",
    "fieldname": "cowshed_location",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "label": "Cowshed Location",
-   "options": "0\n1\n2"
+   "options": "Cowshed Location Master"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-26 17:44:41.852256",
+ "modified": "2026-03-02 01:40:39.394644",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Household",

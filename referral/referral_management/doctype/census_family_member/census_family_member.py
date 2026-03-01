@@ -16,13 +16,13 @@ class CensusFamilyMember(Document):
 		age: DF.Int
 		birth_date: DF.Data | None
 		birth_id_number: DF.Data | None
-		currently_studying: DF.Literal["0", "1", "2"]
+		currently_studying: DF.Link | None
 		date_in_migration: DF.Date | None
 		date_of_death: DF.Data | None
 		date_out_migration: DF.Date | None
 		education: DF.Link | None
-		family_planning_operation: DF.Literal["0", "1", "2"]
-		gender: DF.Literal["1", "2"]
+		family_planning_operation: DF.Link | None
+		gender: DF.Link
 		identification_number: DF.Int
 		marital_status: DF.Link | None
 		member_name: DF.Data
