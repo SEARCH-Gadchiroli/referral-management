@@ -16,39 +16,39 @@ class VillageProfile(Document):
 		from referral.referral_management.doctype.village_key_personnel.village_key_personnel import VillageKeyPersonnel
 		from referral.referral_management.doctype.village_mobile_networks.village_mobile_networks import VillageMobileNetworks
 
-		anganwadi_center: DF.Literal["1", "2"]
-		bank_branch: DF.Literal["1", "2"]
+		anganwadi_center: DF.Link | None
+		bank_branch: DF.Link | None
 		bank_distance_if_no: DF.Float
 		distance_from_district_hospital: DF.Float
 		distance_from_search: DF.Float
 		distance_to_gram_panchayat: DF.Float
 		distance_to_police_station: DF.Float
 		district: DF.Link | None
-		drains_constructed: DF.Literal["1", "2"]
+		drains_constructed: DF.Link | None
 		gram_panchayat: DF.Data | None
 		key_personnel: DF.Table[VillageKeyPersonnel]
 		kirana_shops_count: DF.Int
 		mobile_networks: DF.Table[VillageMobileNetworks]
 		paan_shops_count: DF.Int
-		phc_available: DF.Literal["1", "2"]
-		private_clinic: DF.Literal["1", "2"]
-		ration_shop_pds: DF.Literal["1", "2"]
-		roads_asphalt_cement: DF.Literal["1", "2"]
-		school_available: DF.Literal["1", "2"]
+		phc_available: DF.Link | None
+		private_clinic: DF.Link | None
+		ration_shop_pds: DF.Link | None
+		roads_asphalt_cement: DF.Link | None
+		school_available: DF.Link | None
 		school_class_level: DF.Int
 		serial_number: DF.Int
-		sewage_accumulation: DF.Literal["1", "2"]
-		st_bus_available: DF.Literal["1", "2"]
+		sewage_accumulation: DF.Link | None
+		st_bus_available: DF.Link | None
 		st_bus_distance_if_no: DF.Float
 		state: DF.Link | None
-		subcenter: DF.Literal["1", "2"]
+		subcenter: DF.Link | None
 		taluka: DF.Link | None
 		village_name: DF.Data
 		village_number: DF.Int
-		water_tank: DF.Literal["1", "2"]
+		water_tank: DF.Link | None
 		weekly_market_day: DF.Link | None
 		weekly_market_village: DF.Data | None
-		women_self_help_groups: DF.Literal["1", "2"]
+		women_self_help_groups: DF.Link | None
 	# end: auto-generated types
 
 	from typing import TYPE_CHECKING

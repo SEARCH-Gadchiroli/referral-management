@@ -367,7 +367,7 @@
    "options": "Yes No Master"
   },
   {
-   "depends_on": "eval:doc.cowshed_present=='1=Yes'",
+   "depends_on": "eval:doc.cowshed_present=='1'",
    "fieldname": "cowshed_location",
    "fieldtype": "Link",
    "label": "Cowshed Location",
@@ -376,7 +376,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-02 01:40:39.394644",
+ "modified": "2026-03-11 14:05:24.183312",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Census Household",
