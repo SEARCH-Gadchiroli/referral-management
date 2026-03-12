@@ -68,7 +68,7 @@
   {
    "fetch_from": "village.village_number",
    "fieldname": "village_number",
-   "fieldtype": "Link",
+   "fieldtype": "Int",
    "in_list_view": 1,
    "label": "Village Number",
    "options": "Village Profile",

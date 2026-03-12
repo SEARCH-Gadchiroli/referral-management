@@ -59,7 +59,7 @@ class CensusHousehold(Document):
 		total_family_members: DF.Int
 		total_rooms: DF.Int
 		village: DF.Link | None
-		village_number: DF.Link
+		village_number: DF.Int | None
 		water_source: DF.Table[CensusWaterSource]
 		well_in_farm: DF.Link | None
 		wet_land_acre: DF.Float
