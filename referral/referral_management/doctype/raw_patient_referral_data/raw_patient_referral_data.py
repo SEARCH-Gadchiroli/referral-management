@@ -16,13 +16,16 @@ class RawPatientReferralData(Document):
 
 		additional_notes_raw: DF.LongText | None
 		age_raw: DF.Data | None
-		departments_raw: DF.Link | None
+		departments_raw: DF.Data | None
 		father_name_raw: DF.Data | None
 		gender_raw: DF.Data | None
 		glific_contact_id: DF.Data | None
 		patient_name_raw: DF.Data | None
+		patient_phone_raw: DF.Data | None
 		patient_referral: DF.Link | None
 		received_at: DF.Datetime | None
+		referrer_latitude: DF.Float
+		referrer_longitude: DF.Float
 		referrer_village: DF.Data | None
 		selected_phc: DF.Data | None
 		village_raw: DF.Data | None

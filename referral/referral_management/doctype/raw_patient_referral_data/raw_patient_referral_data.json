@@ -11,100 +11,111 @@
   "received_at",
   "raw_data_section",
   "selected_phc",
-  "referrer_village",
+  "referrer_latitude",
+  "referrer_longitude",
   "patient_name_raw",
   "father_name_raw",
   "gender_raw",
   "age_raw",
   "village_raw",
+  "patient_phone_raw",
   "departments_raw",
   "additional_notes_raw",
   "processing_section",
   "patient_referral"
- ],
- "fields": [
+],
+"fields": [
   {
-   "fieldname": "glific_section",
-   "fieldtype": "Section Break",
-   "label": "Glific Info"
+    "fieldname": "glific_section",
+    "fieldtype": "Section Break",
+    "label": "Glific Info"
   },
   {
-   "fieldname": "glific_contact_id",
-   "fieldtype": "Data",
-   "label": "Glific Referrer ID"
+    "fieldname": "glific_contact_id",
+    "fieldtype": "Data",
+    "label": "Glific Referrer Phone"
   },
   {
-   "fieldname": "received_at",
-   "fieldtype": "Datetime",
-   "label": "Received At"
+    "fieldname": "received_at",
+    "fieldtype": "Datetime",
+    "label": "Received At"
   },
   {
-   "fieldname": "raw_data_section",
-   "fieldtype": "Section Break",
-   "label": "Raw Patient Data"
+    "fieldname": "raw_data_section",
+    "fieldtype": "Section Break",
+    "label": "Raw Patient Data"
   },
   {
-   "fieldname": "selected_phc",
-   "fieldtype": "Data",
-   "label": "Selected PHC"
+    "fieldname": "selected_phc",
+    "fieldtype": "Data",
+    "label": "Selected PHC"
   },
   {
-   "fieldname": "referrer_village",
-   "fieldtype": "Data",
-   "label": "Referrer Village"
+    "fieldname": "referrer_latitude",
+    "fieldtype": "Data",
+    "label": "Referrer Latitude"
   },
   {
-   "fieldname": "patient_name_raw",
-   "fieldtype": "Data",
-   "label": "Patient Name (Raw)"
+    "fieldname": "referrer_longitude",
+    "fieldtype": "Data",
+    "label": "Referrer Longitude"
   },
   {
-   "fieldname": "father_name_raw",
-   "fieldtype": "Data",
-   "label": "Father Name (Raw)"
+    "fieldname": "patient_name_raw",
+    "fieldtype": "Data",
+    "label": "Patient Name (Raw)"
   },
   {
-   "fieldname": "gender_raw",
-   "fieldtype": "Data",
-   "label": "Gender (Raw)"
+    "fieldname": "father_name_raw",
+    "fieldtype": "Data",
+    "label": "Father Name (Raw)"
   },
   {
-   "fieldname": "age_raw",
-   "fieldtype": "Data",
-   "label": "Age (Raw)"
+    "fieldname": "gender_raw",
+    "fieldtype": "Data",
+    "label": "Gender (Raw)"
   },
   {
-   "fieldname": "village_raw",
-   "fieldtype": "Data",
-   "label": "Village (Raw)"
+    "fieldname": "age_raw",
+    "fieldtype": "Data",
+    "label": "Age (Raw)"
   },
   {
-   "fieldname": "departments_raw",
-   "fieldtype": "Link",
-   "label": "Departments (Raw)",
-   "options": "Medical Department"
+    "fieldname": "village_raw",
+    "fieldtype": "Data",
+    "label": "Village (Raw)"
   },
   {
-   "fieldname": "additional_notes_raw",
-   "fieldtype": "Long Text",
-   "label": "Additional Notes (Raw)"
+    "fieldname": "patient_phone_raw",
+    "fieldtype": "Data",
+    "label": "Patient Phone (Raw)"
   },
   {
-   "fieldname": "processing_section",
-   "fieldtype": "Section Break",
-   "label": "Processing"
+    "fieldname": "departments_raw",
+    "fieldtype": "Data",
+    "label": "Departments (Raw)"
   },
   {
-   "fieldname": "patient_referral",
-   "fieldtype": "Link",
-   "label": "Patient Referral",
-   "options": "Patient Referral",
-   "read_only": 1
+    "fieldname": "additional_notes_raw",
+    "fieldtype": "Long Text",
+    "label": "Additional Notes (Raw)"
+  },
+  {
+    "fieldname": "processing_section",
+    "fieldtype": "Section Break",
+    "label": "Processing"
+  },
+  {
+    "fieldname": "patient_referral",
+    "fieldtype": "Link",
+    "label": "Patient Referral",
+    "options": "Patient Referral",
+    "read_only": 1
   }
- ],
+],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-19 09:32:25.228528",
+ "modified": "2026-03-15 23:42:09.668421",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Raw Patient Referral Data",
