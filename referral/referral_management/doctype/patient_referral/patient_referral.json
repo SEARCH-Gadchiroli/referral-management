@@ -193,7 +193,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "OPD 1\nOPD 2\nOPD 3\nOPD 4\nOPD 5\nOPD 6\nOPD 7\nOther",
+   "options": "Orthopedics\nSpine\nGynaecology\nCardiology\nMental Health\nGeneral Surgeon\nOthers",
    "reqd": 1
   },
   {

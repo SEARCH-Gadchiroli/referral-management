@@ -38,13 +38,12 @@
    "fieldname": "state",
    "fieldtype": "Link",
    "label": "State",
-   "options": "State",
-   "read_only": 1
+   "options": "State"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 09:43:24.976150",
+ "modified": "2026-03-19 11:43:37.143491",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Taluka",

@@ -17,6 +17,8 @@
   "total_family_members",
   "mobile_number",
   "village",
+  "district",
+  "taluka",
   "family_head_section",
   "caste_of_head",
   "religion_of_head",
@@ -124,6 +126,20 @@
    "fieldtype": "Link",
    "label": "Village",
    "options": "Village Profile"
+  },
+  {
+   "fieldname": "district",
+   "fieldtype": "Link",
+   "label": "District",
+   "options": "District",
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "taluka",
+   "fieldtype": "Link",
+   "label": "Taluka",
+   "options": "Taluka",
+   "in_list_view": 0
   },
   {
    "fieldname": "family_head_section",

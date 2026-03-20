@@ -19,7 +19,7 @@ class PatientReferral(Document):
         match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
-        opd_departments: DF.Literal["OPD 1", "OPD 2", "OPD 3", "OPD 4", "OPD 5", "OPD 6", "OPD 7", "Other"]
+        opd_departments: DF.Literal["Orthopedics", "Spine", "Gynaecology", "Cardiology", "Mental Health", "General Surgeon", "Others"]
         patient_age: DF.Int
         patient_father_name: DF.Data
         patient_gender: DF.Literal["Male", "Female", "Other"]
@@ -51,7 +51,7 @@ class PatientReferral(Document):
         hospital_registration_number: DF.Data | None
         match_confidence: DF.Float
         match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
-        opd_departments: DF.Literal["OPD 1", "OPD 2", "OPD 3", "OPD 4", "OPD 5", "OPD 6", "OPD 7", "Other"]
+        opd_departments: DF.Literal["Orthopedics", "Spine", "Gynaecology", "Cardiology", "Mental Health", "General Surgeon", "Others"]
         patient_age: DF.Int
         patient_father_name: DF.Data
         patient_gender: DF.Literal["Male", "Female", "Other"]

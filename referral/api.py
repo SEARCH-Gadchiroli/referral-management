@@ -1,6 +1,6 @@
 import frappe
 
-VALID_DEPARTMENTS = ["OPD 1", "OPD 2", "OPD 3", "OPD 4", "OPD 5", "OPD 6", "OPD 7", "Other"]
+VALID_DEPARTMENTS = ["Orthopedics", "Spine", "Gynaecology", "Cardiology", "Mental Health", "General Surgeon", "Others"]
 
 
 @frappe.whitelist(allow_guest=False)
