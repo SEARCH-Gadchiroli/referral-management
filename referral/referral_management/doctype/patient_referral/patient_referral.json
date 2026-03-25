@@ -193,7 +193,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "Orthopedics\nSpine\nGynaecology\nCardiology\nMental Health\nGeneral Surgeon\nOthers",
+   "options": "Orthopedics\nSpine\nGynaecology\nCardiology\nMental Health\nGeneral Surgeon\nCataract Surgery\nOthers",
    "reqd": 1
   },
   {
