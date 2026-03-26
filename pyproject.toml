@@ -9,6 +9,8 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    "deep-translator>=1.11.4",
+    "indic-transliteration>=2.3.0",
 ]
 
 [build-system]
