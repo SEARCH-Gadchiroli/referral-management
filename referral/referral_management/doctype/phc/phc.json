@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "phc_name",
+  "phc_name_marathi",
   "code",
   "geography_section",
   "state",
@@ -21,6 +22,14 @@
    "label": "PHC Name",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "phc_name_marathi",
+   "fieldtype": "Data",
+   "in_list_view": 0,
+   "label": "PHC Name (Marathi)",
+   "reqd": 0,
+   "unique": 0
   },
   {
    "fieldname": "code",
@@ -58,7 +67,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-18 09:00:00.000000",
+ "modified": "2026-03-30 14:40:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "PHC",

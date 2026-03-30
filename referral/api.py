@@ -4,41 +4,105 @@ from indic_transliteration import sanscript
 from indic_transliteration.sanscript import transliterate
 
 VALID_DEPARTMENTS = [
-    "Orthopedics", "Spine", "Gynaecology", "Cardiology",
-    "Mental Health", "General Surgeon", "Cataract Surgery", "Others"
+    "Orthopedics", "Spine", "Surgery", "Medicine",
+    "Gynaecology", "Oncology", "Sickle Cell", "Diabetology",
+    "Cardiology", "ENT", "Head & Neck", "Gastrology",
+    "Dermatology", "Psychiatry", "Mental Health Clinic", "Dental",
+    "Cataract Surgery", "Ophthalmology", "Rheumatology", "Epilepsy",
+    "Neurology", "Urology", "Plastic Surgery", "Pulmonology",
+    "Others"
 ]
 
 # Hindi/Marathi keywords → English OPD department mapping
 DEPARTMENT_KEYWORDS = {
-    # Marathi / Hindi terms
+    # Gynaecology
     "स्त्रीरोग": "Gynaecology",
     "स्त्री रोग": "Gynaecology",
     "गायनेकॉलॉजी": "Gynaecology",
     "प्रसूती": "Gynaecology",
     "प्रसूतिशास्त्र": "Gynaecology",
+    # Orthopedics
     "हाडरोग": "Orthopedics",
     "अस्थिरोग": "Orthopedics",
     "ऑर्थोपेडिक्स": "Orthopedics",
     "हड्डी": "Orthopedics",
+    # Spine
     "पाठीचा कणा": "Spine",
     "स्पाइन": "Spine",
     "मणका": "Spine",
     "रीढ़": "Spine",
+    # Cardiology
     "हृदयरोग": "Cardiology",
     "कार्डिओलॉजी": "Cardiology",
     "हृदय": "Cardiology",
     "दिल": "Cardiology",
-    "मानसिक आरोग्य": "Mental Health",
-    "मानसिक": "Mental Health",
-    "मनोविकार": "Mental Health",
-    "सर्जन": "General Surgeon",
-    "शल्यचिकित्सक": "General Surgeon",
-    "सर्जरी": "General Surgeon",
-    "जनरल सर्जन": "General Surgeon",
+    # Mental Health Clinic
+    "मानसिक आरोग्य": "Mental Health Clinic",
+    "मानसिक": "Mental Health Clinic",
+    "मनोविकार": "Mental Health Clinic",
+    # Surgery
+    "सर्जन": "Surgery",
+    "शल्यचिकित्सक": "Surgery",
+    "सर्जरी": "Surgery",
+    "जनरल सर्जन": "Surgery",
+    "शस्त्रक्रिया": "Surgery",
+    # Cataract Surgery
     "मोतीबिंदू": "Cataract Surgery",
     "मोतियाबिंद": "Cataract Surgery",
-    "नेत्र": "Cataract Surgery",
-    "डोळा": "Cataract Surgery",
+    # Ophthalmology
+    "नेत्र": "Ophthalmology",
+    "डोळा": "Ophthalmology",
+    "नेत्रविज्ञान": "Ophthalmology",
+    # ENT
+    "कान नाक घसा": "ENT",
+    "कान": "ENT",
+    # Dermatology
+    "त्वचा": "Dermatology",
+    "त्वचारोग": "Dermatology",
+    "चर्मरोग": "Dermatology",
+    # Dental
+    "दंत": "Dental",
+    "दात": "Dental",
+    "दंतचिकित्सा": "Dental",
+    # Psychiatry
+    "मानसोपचार": "Psychiatry",
+    "मनोचिकित्सा": "Psychiatry",
+    # Oncology
+    "कर्करोग": "Oncology",
+    "ऑन्कोलॉजी": "Oncology",
+    # Sickle Cell
+    "सिकल सेल": "Sickle Cell",
+    "विकृतिरक्तकोशिका": "Sickle Cell",
+    # Diabetology
+    "मधुमेह": "Diabetology",
+    # Gastrology
+    "पोट": "Gastrology",
+    "जठर": "Gastrology",
+    "पोटरोग": "Gastrology",
+    # Pulmonology
+    "फुफ्फुस": "Pulmonology",
+    "श्वसन": "Pulmonology",
+    # Head & Neck
+    "डोके आणि मान": "Head & Neck",
+    # Rheumatology
+    "संधिवात": "Rheumatology",
+    "सांधेदुखी": "Rheumatology",
+    # Epilepsy
+    "अपस्मार": "Epilepsy",
+    "मिरगी": "Epilepsy",
+    "फेफरे": "Epilepsy",
+    # Neurology
+    "मज्जातंतू": "Neurology",
+    "न्यूरोलॉजी": "Neurology",
+    # Urology
+    "मूत्ररोग": "Urology",
+    "यूरोलॉजी": "Urology",
+    # Plastic Surgery
+    "प्लास्टिक सर्जरी": "Plastic Surgery",
+    # Medicine
+    "औषध": "Medicine",
+    "मेडिसिन": "Medicine",
+    # Others
     "इतर": "Others",
     "अन्य": "Others",
 }
@@ -149,106 +213,171 @@ def translate_to_english(text: str) -> str:
 def resolve_village(village_raw: str) -> str | None:
     """
     Resolve village name to Village Profile record.
-    Tries original text first, then transliterated version.
+    Tries: original text, Marathi name, transliterated, case-insensitive, fuzzy.
+    Returns None if no match found (never falls back to a random village).
     """
     if not village_raw:
-        return frappe.db.get_value("Village Profile", {}, "name")
+        frappe.logger().warning("Village name is empty — leaving unset")
+        return None
 
-    # Try original text exact match
+    village_raw = village_raw.strip()
+    frappe.logger().info(f"[resolve_village] Starting search for: '{village_raw}'")
+
+    # Try original text exact match (English or Marathi)
     village = frappe.db.get_value(
         "Village Profile", {"village_name": village_raw}, "name"
     )
     if village:
+        frappe.logger().info(f"[resolve_village] Exact English match found: {village}")
         return village
 
-    # Try case-insensitive match
+    # Try by Marathi name if input is Devanagari
+    if is_devanagari(village_raw):
+        village = frappe.db.get_value(
+            "Village Profile", {"village_name_marathi": village_raw}, "name"
+        )
+        if village:
+            frappe.logger().info(f"[resolve_village] Exact Marathi match found: {village}")
+            return village
+
+    # Try case-insensitive match on English name
     village = frappe.db.sql("""
         SELECT name FROM `tabVillage Profile`
         WHERE LOWER(village_name) = LOWER(%(name)s)
         LIMIT 1
     """, {"name": village_raw}, as_dict=True)
     if village:
+        frappe.logger().info(f"[resolve_village] Case-insensitive English match found: {village[0].name}")
         return village[0].name
 
     # Try transliterated version
     if is_devanagari(village_raw):
         transliterated = transliterate_to_roman(village_raw)
-        village = frappe.db.get_value(
-            "Village Profile", {"village_name": transliterated}, "name"
-        )
-        if village:
-            return village
+        frappe.logger().info(f"[resolve_village] Transliterated to: '{transliterated}'")
+        if transliterated:
+            village = frappe.db.get_value(
+                "Village Profile", {"village_name": transliterated}, "name"
+            )
+            if village:
+                frappe.logger().info(f"[resolve_village] Transliterated exact match found: {village}")
+                return village
 
-        # Case-insensitive on transliterated
-        village = frappe.db.sql("""
-            SELECT name FROM `tabVillage Profile`
-            WHERE LOWER(village_name) = LOWER(%(name)s)
-            LIMIT 1
-        """, {"name": transliterated}, as_dict=True)
-        if village:
-            return village[0].name
+            # Case-insensitive on transliterated
+            village = frappe.db.sql("""
+                SELECT name FROM `tabVillage Profile`
+                WHERE LOWER(village_name) = LOWER(%(name)s)
+                LIMIT 1
+            """, {"name": transliterated}, as_dict=True)
+            if village:
+                frappe.logger().info(f"[resolve_village] Transliterated case-insensitive match found: {village[0].name}")
+                return village[0].name
 
-        # Fuzzy match: schwa deletion may strip trailing 'a'/'aa'
-        # so try LIKE match (e.g. "Girol" matches "Girola")
-        village = frappe.db.sql("""
-            SELECT name FROM `tabVillage Profile`
-            WHERE LOWER(village_name) LIKE CONCAT(LOWER(%(name)s), '%%')
-            LIMIT 1
-        """, {"name": transliterated}, as_dict=True)
-        if village:
-            return village[0].name
+            # Bidirectional fuzzy: transliterated starts with village OR village starts with transliterated
+            # Also require minimum 3 chars to avoid over-matching
+            if len(transliterated) >= 3:
+                village = frappe.db.sql("""
+                    SELECT name, village_name FROM `tabVillage Profile`
+                    WHERE LOWER(village_name) LIKE CONCAT(LOWER(%(name)s), '%%')
+                       OR LOWER(%(name)s) LIKE CONCAT(LOWER(village_name), '%%')
+                    ORDER BY
+                        ABS(CHAR_LENGTH(village_name) - CHAR_LENGTH(%(name)s)) ASC
+                    LIMIT 1
+                """, {"name": transliterated}, as_dict=True)
+                if village:
+                    frappe.logger().info(
+                        f"[resolve_village] Fuzzy match: '{village_raw}' → '{transliterated}' → '{village[0].village_name}'"
+                    )
+                    return village[0].name
 
-    # Fallback to first village
-    return frappe.db.get_value("Village Profile", {}, "name")
+    # No match found — log available villages and return None
+    all_villages = frappe.db.get_list("Village Profile", fields=["name", "village_name"])
+    village_names = [v.get("village_name", v.get("name")) for v in all_villages]
+    frappe.logger().warning(
+        f"No village match found for '{village_raw}' (transliterated: '{transliterate_to_roman(village_raw) if is_devanagari(village_raw) else 'N/A'}') — leaving unset for manual correction. Available villages: {village_names[:10]}"
+    )
+    return None
 
 
 def resolve_phc(phc_raw: str) -> str | None:
     """
     Resolve PHC name to PHC record.
-    Tries original text first, then transliterated version.
+    Tries: original text, Marathi name, transliterated, case-insensitive, fuzzy.
+    Returns None if no match found (never falls back to a random PHC).
     """
     if not phc_raw:
-        return frappe.db.get_value("PHC", {}, "name")
+        frappe.logger().warning("PHC name is empty — leaving unset")
+        return None
 
-    # Try original exact match
+    phc_raw = phc_raw.strip()
+    frappe.logger().info(f"[resolve_phc] Starting search for: '{phc_raw}'")
+
+    # Try original exact match (English or Marathi)
     phc = frappe.db.get_value("PHC", {"phc_name": phc_raw}, "name")
     if phc:
+        frappe.logger().info(f"[resolve_phc] Exact English match found: {phc}")
         return phc
 
-    # Try case-insensitive
+    # Try by Marathi name if input is Devanagari
+    if is_devanagari(phc_raw):
+        phc = frappe.db.get_value(
+            "PHC", {"phc_name_marathi": phc_raw}, "name"
+        )
+        if phc:
+            frappe.logger().info(f"[resolve_phc] Exact Marathi match found: {phc}")
+            return phc
+
+    # Try case-insensitive on English name
     phc = frappe.db.sql("""
         SELECT name FROM `tabPHC`
         WHERE LOWER(phc_name) = LOWER(%(name)s)
         LIMIT 1
     """, {"name": phc_raw}, as_dict=True)
     if phc:
+        frappe.logger().info(f"[resolve_phc] Case-insensitive English match found: {phc[0].name}")
         return phc[0].name
 
     # Try transliterated version
     if is_devanagari(phc_raw):
         transliterated = transliterate_to_roman(phc_raw)
-        phc = frappe.db.get_value("PHC", {"phc_name": transliterated}, "name")
-        if phc:
-            return phc
+        frappe.logger().info(f"[resolve_phc] Transliterated to: '{transliterated}'")
+        if transliterated:
+            phc = frappe.db.get_value("PHC", {"phc_name": transliterated}, "name")
+            if phc:
+                frappe.logger().info(f"[resolve_phc] Transliterated exact match found: {phc}")
+                return phc
 
-        phc = frappe.db.sql("""
-            SELECT name FROM `tabPHC`
-            WHERE LOWER(phc_name) = LOWER(%(name)s)
-            LIMIT 1
-        """, {"name": transliterated}, as_dict=True)
-        if phc:
-            return phc[0].name
+            phc = frappe.db.sql("""
+                SELECT name FROM `tabPHC`
+                WHERE LOWER(phc_name) = LOWER(%(name)s)
+                LIMIT 1
+            """, {"name": transliterated}, as_dict=True)
+            if phc:
+                frappe.logger().info(f"[resolve_phc] Transliterated case-insensitive match found: {phc[0].name}")
+                return phc[0].name
 
-        # Fuzzy match for schwa deletion (e.g. "Dhanor" matches "Dhanora")
-        phc = frappe.db.sql("""
-            SELECT name FROM `tabPHC`
-            WHERE LOWER(phc_name) LIKE CONCAT(LOWER(%(name)s), '%%')
-            LIMIT 1
-        """, {"name": transliterated}, as_dict=True)
-        if phc:
-            return phc[0].name
+            # Bidirectional fuzzy match
+            if len(transliterated) >= 3:
+                phc = frappe.db.sql("""
+                    SELECT name FROM `tabPHC`
+                    WHERE LOWER(phc_name) LIKE CONCAT(LOWER(%(name)s), '%%')
+                       OR LOWER(%(name)s) LIKE CONCAT(LOWER(phc_name), '%%')
+                    ORDER BY
+                        ABS(CHAR_LENGTH(phc_name) - CHAR_LENGTH(%(name)s)) ASC
+                    LIMIT 1
+                """, {"name": transliterated}, as_dict=True)
+                if phc:
+                    frappe.logger().info(
+                        f"[resolve_phc] Fuzzy match: '{phc_raw}' → '{transliterated}' → '{phc[0].phc_name}'"
+                    )
+                    return phc[0].name
 
-    return frappe.db.get_value("PHC", {}, "name")
+    # No match found — log available PHCs and return None
+    all_phcs = frappe.db.get_list("PHC", fields=["name", "phc_name"])
+    phc_names = [p.get("phc_name", p.get("name")) for p in all_phcs]
+    frappe.logger().warning(
+        f"No PHC match found for '{phc_raw}' (transliterated: '{transliterate_to_roman(phc_raw) if is_devanagari(phc_raw) else 'N/A'}') — leaving unset for manual correction. Available PHCs: {phc_names}"
+    )
+    return None
 
 
 def resolve_department(dept_raw: str) -> str:
@@ -348,9 +477,28 @@ def create_referral(
         # Resolve patient village — handles Devanagari input
         patient_village = resolve_village(village_raw)
 
-        # Normalize gender
-        gender_map = {"male": "Male", "female": "Female", "other": "Other"}
-        patient_gender = gender_map.get(gender_raw.lower().strip(), "Other")
+        # Normalize gender — supports English, Marathi, Hindi
+        gender_map = {
+            # English
+            "male": "Male", "female": "Female", "other": "Other",
+            "m": "Male", "f": "Female",
+            # Marathi / Hindi
+            "पुरुष": "Male", "पु": "Male",
+            "स्त्री": "Female", "महिला": "Female",
+            "इतर": "Other", "अन्य": "Other",
+        }
+        gender_clean = gender_raw.strip()
+        patient_gender = gender_map.get(gender_clean.lower(), None)
+        if not patient_gender:
+            # Try the raw string as-is (may be Devanagari not lowerable meaningfully)
+            patient_gender = gender_map.get(gender_clean, None)
+        if not patient_gender:
+            # Try transliterating Devanagari to English and re-matching
+            if is_devanagari(gender_clean):
+                gender_transliterated = transliterate_to_roman(gender_clean).lower()
+                patient_gender = gender_map.get(gender_transliterated, "Other")
+            else:
+                patient_gender = "Other"
 
         # Parse age
         try:
@@ -377,12 +525,12 @@ def create_referral(
             "referrer_phone": contact_phone,
             "referrer_latitude": actual_lat,
             "referrer_longitude": actual_lon,
-            "phc": phc,
+            "phc": phc or "",
             "patient_name": patient_name,
             "patient_father_name": father_name,
             "patient_gender": patient_gender,
             "patient_age": patient_age,
-            "patient_village": patient_village,
+            "patient_village": patient_village or "",
             "patient_phone": patient_phone_raw,
             "additional_notes": additional_notes,
             "opd_departments": opd_dept,
@@ -485,6 +633,215 @@ def update_registration(
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "update_registration API Error")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@frappe.whitelist()
+def translate_villages_to_marathi():
+    """
+    Translate all Village Profile names from English to Marathi using Google Translate.
+    Requires System Manager role.
+    """
+    frappe.only_for("System Manager")
+    
+    print("\n" + "="*70)
+    print("TRANSLATING VILLAGES TO MARATHI")
+    print("="*70 + "\n")
+    
+    try:
+        # Get all villages
+        villages = frappe.db.get_list("Village Profile", fields=["name", "village_name"])
+        total = len(villages)
+        
+        if total == 0:
+            print("No villages found in the database.")
+            return {"success": True, "message": "No villages found"}
+        
+        print(f"Found {total} villages to translate.\n")
+        
+        translated = 0
+        failed = 0
+        skipped = 0
+        results = []
+        
+        for idx, v in enumerate(villages, 1):
+            try:
+                village_name = v.get("village_name")
+                existing_marathi = frappe.db.get_value(
+                    "Village Profile", 
+                    v.get("name"), 
+                    "village_name_marathi"
+                )
+                
+                # Skip if already has Marathi translation
+                if existing_marathi:
+                    msg = f"[{idx}/{total}] {village_name}: SKIPPED (already has Marathi)"
+                    print(msg)
+                    results.append(msg)
+                    skipped += 1
+                    continue
+                
+                # Translate to Marathi
+                try:
+                    marathi = GoogleTranslator(source="en", target="mr").translate(village_name)
+                except Exception as trans_err:
+                    msg = f"[{idx}/{total}] {village_name}: TRANSLATION ERROR - {str(trans_err)}"
+                    print(msg)
+                    results.append(msg)
+                    failed += 1
+                    continue
+                
+                if marathi and marathi != village_name:
+                    # Update the village
+                    frappe.db.set_value(
+                        "Village Profile", 
+                        v.get("name"), 
+                        "village_name_marathi", 
+                        marathi
+                    )
+                    msg = f"[{idx}/{total}] {village_name:30} → {marathi}"
+                    print(msg)
+                    results.append(msg)
+                    translated += 1
+                else:
+                    msg = f"[{idx}/{total}] {village_name}: FAILED (translation same as input)"
+                    print(msg)
+                    results.append(msg)
+                    failed += 1
+                    
+            except Exception as e:
+                msg = f"[{idx}/{total}] {village_name}: ERROR - {str(e)}"
+                print(msg)
+                results.append(msg)
+                failed += 1
+        
+        # Commit all changes
+        frappe.db.commit()
+        
+        summary = f"\n{'='*70}\nTRANSLATION COMPLETE\n{'='*70}\n  Translated: {translated}\n  Skipped: {skipped}\n  Failed: {failed}\n  Total: {total}\n"
+        print(summary)
+        results.append(summary)
+        
+        return {
+            "success": True,
+            "translated": translated,
+            "skipped": skipped,
+            "failed": failed,
+            "total": total,
+            "results": results
+        }
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Village Translation Error")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@frappe.whitelist()
+def add_phcs_with_marathi():
+    """
+    Add new PHCs (Murumgaon, Rangi, Karwafa, Pendhri, Godalwahi, Other) with Marathi names.
+    Requires System Manager role.
+    """
+    frappe.only_for("System Manager")
+    
+    print("\n" + "="*70)
+    print("ADDING NEW PHCs")
+    print("="*70 + "\n")
+    
+    phcs_data = [
+        {
+            "phc_name": "Murumgaon",
+            "phc_name_marathi": "मुरुमगाव",
+            "code": "PHC_001"
+        },
+        {
+            "phc_name": "Rangi",
+            "phc_name_marathi": "रंगी",
+            "code": "PHC_002"
+        },
+        {
+            "phc_name": "Karwafa",
+            "phc_name_marathi": "करवाफा",
+            "code": "PHC_003"
+        },
+        {
+            "phc_name": "Pendhri",
+            "phc_name_marathi": "पेंढरी",
+            "code": "PHC_004"
+        },
+        {
+            "phc_name": "Godalwahi",
+            "phc_name_marathi": "गोदलवाही",
+            "code": "PHC_005"
+        },
+        {
+            "phc_name": "Other",
+            "phc_name_marathi": "इतर",
+            "code": "PHC_006"
+        }
+    ]
+    
+    results = []
+    added = 0
+    skipped = 0
+    failed = 0
+    
+    try:
+        for idx, phc_data in enumerate(phcs_data, 1):
+            try:
+                # Check if PHC already exists
+                existing = frappe.db.get_value("PHC", {"phc_name": phc_data["phc_name"]})
+                if existing:
+                    msg = f"[{idx}/{len(phcs_data)}] {phc_data['phc_name']}: SKIPPED (already exists)"
+                    print(msg)
+                    results.append(msg)
+                    skipped += 1
+                    continue
+                
+                # Create new PHC  
+                phc_doc = frappe.get_doc({
+                    "doctype": "PHC",
+                    "phc_name": phc_data["phc_name"],
+                    "phc_name_marathi": phc_data["phc_name_marathi"],
+                    "code": phc_data["code"],
+                    "state": "Maharashtra",
+                    "district": "Gadchiroli"
+                })
+                phc_doc.insert(ignore_permissions=True)
+                msg = f"[{idx}/{len(phcs_data)}] {phc_data['phc_name']:20} → {phc_data['phc_name_marathi']:15} ✓"
+                print(msg)
+                results.append(msg)
+                added += 1
+                
+            except Exception as e:
+                msg = f"[{idx}/{len(phcs_data)}] {phc_data['phc_name']}: ERROR - {str(e)}"
+                print(msg)
+                results.append(msg)
+                failed += 1
+        
+        frappe.db.commit()
+        
+        summary = f"\n{'='*70}\nPHCS ADDED SUCCESSFULLY\n{'='*70}\n  Added: {added}\n  Skipped: {skipped}\n  Failed: {failed}\n  Total: {len(phcs_data)}\n"
+        print(summary)
+        results.append(summary)
+        
+        return {
+            "success": True,
+            "added": added,
+            "skipped": skipped,
+            "failed": failed,
+            "total": len(phcs_data),
+            "results": results
+        }
+        
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "Add PHCs Error")
         return {
             "success": False,
             "error": str(e)

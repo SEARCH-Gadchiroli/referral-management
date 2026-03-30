@@ -97,8 +97,7 @@
    "fieldname": "phc",
    "fieldtype": "Link",
    "label": "PHC",
-   "options": "PHC",
-   "reqd": 1
+   "options": "PHC"
   },
   {
    "fieldname": "patient_section",
@@ -135,8 +134,7 @@
    "fieldname": "patient_village",
    "fieldtype": "Link",
    "label": "Patient Village",
-   "options": "Village Profile",
-   "reqd": 1
+   "options": "Village Profile"
   },
   {
    "fieldname": "patient_phone",
@@ -193,7 +191,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "Orthopedics\nSpine\nGynaecology\nCardiology\nMental Health\nGeneral Surgeon\nCataract Surgery\nOthers",
+   "options": "Orthopedics\nSpine\nSurgery\nMedicine\nGynaecology\nOncology\nSickle Cell\nDiabetology\nCardiology\nENT\nHead & Neck\nGastrology\nDermatology\nPsychiatry\nMental Health Clinic\nDental\nCataract Surgery\nOphthalmology\nRheumatology\nEpilepsy\nNeurology\nUrology\nPlastic Surgery\nPulmonology\nOthers",
    "reqd": 1
   },
   {

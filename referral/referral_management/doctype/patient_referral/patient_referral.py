@@ -19,7 +19,7 @@ class PatientReferral(Document):
         match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
-        opd_departments: DF.Literal["Orthopedics", "Spine", "Gynaecology", "Cardiology", "Mental Health", "General Surgeon", "Cataract Surgery", "Others"]
+        opd_departments: DF.Literal["Orthopedics", "Spine", "Surgery", "Medicine", "Gynaecology", "Oncology", "Sickle Cell", "Diabetology", "Cardiology", "ENT", "Head & Neck", "Gastrology", "Dermatology", "Psychiatry", "Mental Health Clinic", "Dental", "Cataract Surgery", "Ophthalmology", "Rheumatology", "Epilepsy", "Neurology", "Urology", "Plastic Surgery", "Pulmonology", "Others"]
         patient_age: DF.Int
         patient_father_name: DF.Data
         patient_gender: DF.Literal["Male", "Female", "Other"]
@@ -39,38 +39,6 @@ class PatientReferral(Document):
         visit_date: DF.Date | None
     # end: auto-generated types
 
-    from typing import TYPE_CHECKING
-
-    if TYPE_CHECKING:
-        from frappe.types import DF
-
-        additional_notes: DF.TextEditor | None
-        census_match: DF.Link | None
-        matched_member_name: DF.Data | None
-        matched_member_age: DF.Int
-        hospital_registration_number: DF.Data | None
-        match_confidence: DF.Float
-        match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
-        opd_departments: DF.Literal["Orthopedics", "Spine", "Gynaecology", "Cardiology", "Mental Health", "General Surgeon", "Cataract Surgery", "Others"]
-        patient_age: DF.Int
-        patient_father_name: DF.Data
-        patient_gender: DF.Literal["Male", "Female", "Other"]
-        patient_name: DF.Data
-        patient_phone: DF.Data | None
-        patient_village: DF.Link
-        phc: DF.Link
-        raw_patient_data: DF.Link | None
-        reference_number: DF.Data
-        referral_date: DF.Date
-        referrer: DF.Link
-        referrer_phone: DF.Data
-        referrer_latitude: DF.Data | None
-        referrer_longitude: DF.Data | None
-        status: DF.Literal["Pending", "Visited", "No-Show", "Cancelled"]
-        tribal_classification: DF.Literal["", "Tribal", "Non-Tribal"]
-        village_of_reference: DF.Link
-        visit_date: DF.Date | None
-
     def before_insert(self):
         if not self.reference_number:
             self.reference_number = self.generate_reference_number()
@@ -78,6 +46,8 @@ class PatientReferral(Document):
             self.referral_date = today()
 
     def after_insert(self):
+        """Preliminary auto-match on creation — exact matches get auto-saved,
+        multiple matches are flagged for admin review."""
         self.match_with_census()
 
     def generate_reference_number(self):
@@ -105,18 +75,14 @@ class PatientReferral(Document):
         )
         return count + 1
 
-    def match_with_census(self):
+    def _get_census_matches(self):
         """
-        Match patient against Census Family Member child table records.
-        Steps:
-        1. Find Census Households linked to patient_village
-        2. Search Census Family Members by first name + gender
-        3. Refine by father name (middle name of member_name)
-        4. Save matched household + member details + tribal classification
+        Core matching logic: find Census Family Member records matching patient.
+        Returns a list of match dicts with confidence scores.
+        Does NOT save anything — caller decides what to do with results.
         """
         if not self.patient_village or not self.patient_name:
-            self._set_unmatched()
-            return
+            return []
 
         # Parse patient first name and father name
         name_parts = self.patient_name.strip().split()
@@ -127,8 +93,7 @@ class PatientReferral(Document):
         )
         patient_father_first = father_name.split()[0].lower() if father_name else ""
 
-        # Normalize gender for Census Family Member
-        # Census uses Link to Gender Master
+        # Normalize gender for Census Family Member (Census uses Link to Gender Master)
         gender_name = frappe.db.get_value(
             "Gender Master", {"gender_name": self.patient_gender}, "name"
         )
@@ -141,8 +106,7 @@ class PatientReferral(Document):
         )
 
         if not households:
-            self._set_unmatched()
-            return
+            return []
 
         household_names = [h.name for h in households]
         household_caste_map = {h.name: h.caste_of_head for h in households}
@@ -172,79 +136,153 @@ class PatientReferral(Document):
         matched_members = frappe.db.sql(query, params, as_dict=True)
 
         if not matched_members:
+            return []
+
+        # Compute confidence for each match
+        results = []
+        for m in matched_members:
+            m_parts = m.member_name.split() if m.member_name else []
+            m_first = m_parts[0].lower() if m_parts else ""
+            m_father = m_parts[1].lower() if len(m_parts) > 1 else ""
+
+            # Get gender display name
+            gender_display = ""
+            if m.gender:
+                gender_display = frappe.db.get_value("Gender Master", m.gender, "gender_name") or ""
+
+            # Get caste info
+            caste = household_caste_map.get(m.household, "")
+
+            # Compute confidence
+            first_match = (m_first == patient_first.lower())
+            father_match = (patient_father_first and m_father == patient_father_first)
+            age_match = (m.age == self.patient_age)
+
+            if first_match and father_match and age_match:
+                confidence = 100.0
+            elif first_match and father_match:
+                confidence = 95.0
+            elif first_match and age_match:
+                confidence = 80.0
+            elif first_match:
+                confidence = 70.0
+            else:
+                confidence = 50.0
+
+            results.append({
+                "household": m.household,
+                "member_name": m.member_name,
+                "member_first_name": m_first.title(),
+                "member_father_name": m_father.title(),
+                "age": m.age or 0,
+                "gender": gender_display,
+                "confidence": confidence,
+                "caste": caste,
+            })
+
+        # Sort by confidence descending
+        results.sort(key=lambda x: x["confidence"], reverse=True)
+        return results
+
+    def match_with_census(self):
+        """
+        Preliminary auto-match on insert.
+        - Exact match (100% confidence) → auto-save as Auto-Matched
+        - Multiple matches → flag as Multiple Matches for admin review
+        - No matches → Unmatched
+        """
+        matches = self._get_census_matches()
+
+        if not matches:
             self._set_unmatched()
             return
 
-        # Refine by father name (middle name of member_name)
-        if patient_father_first:
-            refined = [
-                m for m in matched_members
-                if len(m.member_name.split()) > 1 and
-                m.member_name.split()[1].lower() == patient_father_first
-            ]
-            # If refined matches found use them, otherwise use broader matches
-            final_matches = refined if refined else matched_members
-        else:
-            final_matches = matched_members
+        # Check for exact match (100% confidence)
+        exact_matches = [m for m in matches if m["confidence"] == 100.0]
 
-        # Exact match logic (First name, father name, age)
-        # Note: Gender is already filtered in the SQL query
-        exact_match = None
-        for match in final_matches:
-            m_first_name = match.member_name.split()[0].lower() if match.member_name else ""
-            m_father_name = match.member_name.split()[1].lower() if len(match.member_name.split()) > 1 else ""
-            
-            if (
-                m_first_name == patient_first.lower() and
-                m_father_name == patient_father_first and
-                match.age == self.patient_age
-            ):
-                exact_match = match
-                break
-        
-        if exact_match:
-            final_matches = [exact_match]
-
-        if len(final_matches) == 1:
-            match = final_matches[0]
-            m_first_name = match.member_name.split()[0].lower() if match.member_name else ""
-            m_father_name = match.member_name.split()[1].lower() if len(match.member_name.split()) > 1 else ""
-            
-            is_exact = (
-                m_first_name == patient_first.lower() and
-                m_father_name == father_name.lower() and
-                match.age == self.patient_age
-            )
-
-            if is_exact:
-                confidence = 100.0
-                frappe.msgprint("Patient is a citizen already (Exact Census match found).", alert=True)
-            else:
-                confidence = 95.0 if (patient_father_first and len(
-                    match.member_name.split()) > 1 and
-                    match.member_name.split()[1].lower() == patient_father_first) else 70.0
-
-            self.census_match = match.household
-            self.matched_member_name = match.member_name
-            self.matched_member_age = match.age or 0
-            self.match_confidence = confidence
+        if len(exact_matches) == 1:
+            match = exact_matches[0]
+            self.census_match = match["household"]
+            self.matched_member_name = match["member_name"]
+            self.matched_member_age = match["age"]
+            self.match_confidence = match["confidence"]
             self.match_status = "Auto-Matched"
-
-            # Get tribal classification from caste
-            caste = household_caste_map.get(match.household)
-            if caste:
-                is_tribal = frappe.db.get_value("Caste Master", caste, "is_tribal")
-                self.tribal_classification = "Tribal" if is_tribal else "Non-Tribal"
-
+            frappe.msgprint("Patient is a citizen already (Exact Census match found).", alert=True)
             self.save()
 
-        elif len(final_matches) > 1:
+        elif len(matches) == 1:
+            # Single non-exact match — auto-save but with lower confidence
+            match = matches[0]
+            self.census_match = match["household"]
+            self.matched_member_name = match["member_name"]
+            self.matched_member_age = match["age"]
+            self.match_confidence = match["confidence"]
+            self.match_status = "Auto-Matched"
+            self.save()
+
+        else:
+            # Multiple matches — flag for admin review
             self.match_status = "Multiple Matches"
             self.save()
-
-        else:
-            self._set_unmatched()
 
     def _set_unmatched(self):
         self.match_status = "Unmatched"
         self.save()
+
+
+@frappe.whitelist()
+def search_census_matches(referral_name: str) -> dict:
+    """
+    Whitelisted API for admin to search census matches for a referral.
+    Returns all potential matches for the user to choose from.
+    """
+    try:
+        doc = frappe.get_doc("Patient Referral", referral_name)
+        matches = doc._get_census_matches()
+
+        return {
+            "success": True,
+            "matches": matches,
+            "patient_info": {
+                "name": doc.patient_name,
+                "father_name": doc.patient_father_name,
+                "age": doc.patient_age,
+                "gender": doc.patient_gender,
+                "village": doc.patient_village,
+            }
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "search_census_matches Error")
+        return {"success": False, "error": str(e)}
+
+
+@frappe.whitelist()
+def confirm_census_match(
+    referral_name: str,
+    household: str,
+    member_name: str,
+    member_age: int = 0,
+    confidence: float = 100.0
+) -> dict:
+    """
+    Whitelisted API for admin to confirm a selected census match.
+    Sets match_status to 'Manually Verified'.
+    """
+    try:
+        doc = frappe.get_doc("Patient Referral", referral_name)
+        doc.census_match = household
+        doc.matched_member_name = member_name
+        doc.matched_member_age = int(member_age)
+        doc.match_confidence = float(confidence)
+        doc.match_status = "Manually Verified"
+
+        doc.save()
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "message": f"Census match confirmed for {referral_name}"
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "confirm_census_match Error")
+        return {"success": False, "error": str(e)}

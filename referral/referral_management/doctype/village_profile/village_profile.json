@@ -10,6 +10,7 @@
         "serial_number",
         "village_number",
         "village_name",
+        "village_name_marathi",
         "gram_panchayat",
         "column_break_id",
         "state",
@@ -77,6 +78,14 @@
             "label": "Village Name",
             "reqd": 1,
             "unique": 1
+        },
+        {
+            "fieldname": "village_name_marathi",
+            "fieldtype": "Data",
+            "in_list_view": 0,
+            "label": "Village Name (Marathi)",
+            "reqd": 0,
+            "unique": 0
         },
         {
             "fieldname": "gram_panchayat",
@@ -323,7 +332,7 @@
     ],
     "index_web_pages_for_search": 1,
     "links": [],
-    "modified": "2026-03-11 13:48:58.514822",
+    "modified": "2026-03-30 14:35:00.000000",
     "modified_by": "Administrator",
     "module": "Referral Management",
     "name": "Village Profile",
