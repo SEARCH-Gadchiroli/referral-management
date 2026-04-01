@@ -471,6 +471,20 @@ def create_referral(
         referrer = frappe.db.get_value("Referrer", {"phone": contact_phone}, "name") \
                    or frappe.db.get_value("Referrer", {}, "name")
 
+        # Fetch referrer details for denormalized fields
+        referrer_full_name = ""
+        referrer_department = ""
+        if referrer:
+            referrer_doc = frappe.get_doc("Referrer", referrer)
+            referrer_full_name = referrer_doc.full_name or ""
+            referrer_department = referrer_doc.department or ""
+
+        # Update raw doc with resolved referrer name
+        if referrer_full_name:
+            raw_doc.glific_referrer_name = referrer_full_name
+            raw_doc.save(ignore_permissions=True)
+            frappe.db.commit()
+
         # Resolve PHC — handles Devanagari input
         phc = resolve_phc(selected_phc)
 
@@ -522,7 +536,9 @@ def create_referral(
             "referral_date": frappe.utils.today(),
             "status": "Pending",
             "referrer": referrer,
+            "referrer_name": referrer_full_name,
             "referrer_phone": contact_phone,
+            "referrer_department": referrer_department,
             "referrer_latitude": actual_lat,
             "referrer_longitude": actual_lon,
             "phc": phc or "",

@@ -195,7 +195,7 @@ app_license = "mit"
 # Ignore links to specified DocTypes when deleting documents
 # -----------------------------------------------------------
 
-# ignore_links_on_delete = ["Communication", "ToDo"]
+ignore_links_on_delete = ["Patient Referral", "Raw Patient Referral Data"]
 
 # Request Events
 # ----------------
