@@ -11,7 +11,9 @@
   "status",
   "referrer_section",
   "referrer",
+  "referrer_name",
   "referrer_phone",
+  "referrer_department",
   "referrer_latitude",
   "referrer_longitude",
   "phc",
@@ -78,10 +80,25 @@
    "reqd": 1
   },
   {
+   "fetch_from": "referrer.full_name",
+   "fieldname": "referrer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Referrer Name",
+   "read_only": 1
+  },
+  {
    "fieldname": "referrer_phone",
    "fieldtype": "Data",
    "label": "Referrer Phone",
    "reqd": 1
+  },
+  {
+   "fetch_from": "referrer.department",
+   "fieldname": "referrer_department",
+   "fieldtype": "Data",
+   "label": "Referrer Department",
+   "read_only": 1
   },
   {
    "fieldname": "referrer_latitude",
@@ -223,13 +240,12 @@
    "fieldname": "raw_patient_data",
    "fieldtype": "Link",
    "label": "Raw Patient Referral Data",
-   "options": "Raw Patient Referral Data",
-   "read_only": 1
+   "options": "Raw Patient Referral Data"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-16 16:43:14.461178",
+ "modified": "2026-04-02 01:17:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Patient Referral",

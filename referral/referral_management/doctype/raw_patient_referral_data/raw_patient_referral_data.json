@@ -8,6 +8,7 @@
  "field_order": [
   "glific_section",
   "glific_contact_id",
+  "glific_referrer_name",
   "received_at",
   "raw_data_section",
   "selected_phc",
@@ -34,6 +35,11 @@
     "fieldname": "glific_contact_id",
     "fieldtype": "Data",
     "label": "Glific Referrer Phone"
+  },
+  {
+    "fieldname": "glific_referrer_name",
+    "fieldtype": "Data",
+    "label": "Glific Referrer Name"
   },
   {
     "fieldname": "received_at",
@@ -103,19 +109,19 @@
   {
     "fieldname": "processing_section",
     "fieldtype": "Section Break",
-    "label": "Processing"
+    "label": "Linked Patient Referral"
   },
   {
     "fieldname": "patient_referral",
     "fieldtype": "Link",
+    "in_list_view": 1,
     "label": "Patient Referral",
-    "options": "Patient Referral",
-    "read_only": 1
+    "options": "Patient Referral"
   }
 ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-03-15 23:42:09.668421",
+ "modified": "2026-04-02 01:17:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Raw Patient Referral Data",
