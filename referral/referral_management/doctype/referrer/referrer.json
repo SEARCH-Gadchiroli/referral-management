@@ -1,5 +1,6 @@
 {
   "actions": [],
+  "allow_import": 1,
   "allow_rename": 1,
   "autoname": "field:referrer_id",
   "creation": "2026-03-12 00:00:00",
