@@ -426,6 +426,44 @@ def resolve_department(dept_raw: str) -> str:
     return "Others"
 
 
+def resolve_referrer(phone_raw: str) -> str | None:
+    """
+    Resolve referrer by phone number, handling various formats (with/without prefix).
+    Tries: 
+    1. Exact match.
+    2. Normalize and match last 10 digits.
+    3. Return None if no match found (avoiding random fallback).
+    """
+    if not phone_raw:
+        return None
+
+    # Remove all non-numeric characters
+    phone_clean = "".join(filter(str.isdigit, str(phone_raw)))
+    if not phone_clean:
+        return None
+
+    # 1. Exact match
+    referrer = frappe.db.get_value("Referrer", {"phone": phone_clean}, "name")
+    if referrer:
+        return referrer
+
+    # 2. Normalize to 10 digits (last 10)
+    if len(phone_clean) >= 10:
+        ten_digit = phone_clean[-10:]
+        # Try finding a referrer whose phone is exactly these 10 digits
+        referrer = frappe.db.get_value("Referrer", {"phone": ten_digit}, "name")
+        if referrer:
+            return referrer
+            
+        # Try finding a referrer whose phone ends with these 10 digits 
+        # (covers cases like '91' prefix in DB or '+91' prefix in input)
+        referrer = frappe.db.get_value("Referrer", {"phone": ["like", f"%{ten_digit}"]}, "name")
+        if referrer:
+            return referrer
+
+    return None
+
+
 @frappe.whitelist(allow_guest=False)
 def create_referral(
     contact_phone: str,
@@ -467,9 +505,8 @@ def create_referral(
         raw_doc.insert(ignore_permissions=True)
         frappe.db.commit()
 
-        # Resolve referrer
-        referrer = frappe.db.get_value("Referrer", {"phone": contact_phone}, "name") \
-                   or frappe.db.get_value("Referrer", {}, "name")
+        # Resolve referrer correctly by phone number
+        referrer = resolve_referrer(contact_phone)
 
         # Fetch referrer details for denormalized fields
         referrer_full_name = ""
