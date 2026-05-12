@@ -1,0 +1,477 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div style="padding: 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+    <div style="max-width: 1400px; margin: 0 auto;">
+        
+        <!-- HEADER -->
+        <div style="margin-bottom: 30px;">
+            <h1 style="color: #2c3e50; font-size: 32px; margin: 0 0 10px; font-weight: 700;">{{ title or 'Referral Dashboard' }}</h1>
+            <p style="color: #7f8c8d; margin: 0;">Comprehensive Phase 1 referral data from Patient Referral DocType</p>
+        </div>
+
+        {% if error %}
+        <div style="background: #f8d7da; color: #721c24; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+            <strong>⚠️ Dashboard Error:</strong> {{ error_message }}
+        </div>
+        {% endif %}
+
+        <!-- TAB NAVIGATION -->
+        <div style="background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden;">
+            <div style="display: flex; border-bottom: 1px solid #ecf0f1;">
+                <button onclick="showTab('today')" id="btn-today" style="flex: 1; padding: 15px; background: #3498db; color: white; border: none; cursor: pointer; font-weight: 600; text-align: center;">📅 Today's Summary</button>
+                <button onclick="showTab('overall')" id="btn-overall" style="flex: 1; padding: 15px; background: white; color: #2c3e50; border: none; cursor: pointer; font-weight: 600; text-align: center;">📊 Overall Statistics</button>
+                <button onclick="showTab('details')" id="btn-details" style="flex: 1; padding: 15px; background: white; color: #2c3e50; border: none; cursor: pointer; font-weight: 600; text-align: center;">🔍 Detailed Breakdown</button>
+            </div>
+        </div>
+
+        <!-- TAB 1: TODAY'S SUMMARY -->
+        <div id="tab-today" style="display: block;">
+            
+            <!-- TODAY'S HEADER -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h2 style="margin: 0 0 15px; color: #2c3e50; font-size: 20px; font-weight: 600;">Today's Summary - {{ today }}</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 6px; border-left: 4px solid #3498db;">
+                        <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 8px; text-transform: uppercase;">Referrals Today</p>
+                        <p style="font-size: 28px; font-weight: bold; color: #3498db; margin: 0;">{{ referrals_today }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TODAY'S STATUS BREAKDOWN -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Today's Status Breakdown</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Status</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in today_status_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.status }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">
+                                {% if referrals_today > 0 %}
+                                    {{ ((item.count / referrals_today) * 100) | round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TODAY'S OPD BREAKDOWN -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Today's OPD Department Distribution</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Department</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if today_opd_data %}
+                            {% for item in today_opd_data %}
+                            <tr style="border-bottom: 1px solid #ecf0f1;">
+                                <td style="padding: 10px;">{{ item.opd_departments }}</td>
+                                <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="padding: 20px; text-align: center; color: #7f8c8d;">No OPD data for today</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TODAY'S REFERRER BREAKDOWN BY DEPARTMENT -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Today's Referrals by Department</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Referrer Name</th>
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Department</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Referrals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if today_referrers_dept_stats %}
+                            {% for item in today_referrers_dept_stats %}
+                            <tr style="border-bottom: 1px solid #ecf0f1;">
+                                <td style="padding: 10px;">{{ item.referrer_name or 'N/A' }}</td>
+                                <td style="padding: 10px;">{{ item.department or 'N/A' }}</td>
+                                <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="padding: 20px; text-align: center; color: #7f8c8d;">No referrer data for today</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: OVERALL STATISTICS -->
+        <div id="tab-overall" style="display: none;">
+            
+            <!-- OVERALL METRICS -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h2 style="margin: 0 0 15px; color: #2c3e50; font-size: 18px; font-weight: 600;">Overall Metrics</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 6px; border-left: 4px solid #3498db;">
+                        <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 8px; text-transform: uppercase;">Total Referrals</p>
+                        <p style="font-size: 32px; font-weight: bold; color: #3498db; margin: 0;">{{ total }}</p>
+                    </div>
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 6px; border-left: 4px solid #f39c12;">
+                        <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 8px; text-transform: uppercase;">Pending</p>
+                        <p style="font-size: 32px; font-weight: bold; color: #f39c12; margin: 0;">{{ pending }}</p>
+                    </div>
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 6px; border-left: 4px solid #27ae60;">
+                        <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 8px; text-transform: uppercase;">Visited</p>
+                        <p style="font-size: 32px; font-weight: bold; color: #27ae60; margin: 0;">{{ visited }}</p>
+                    </div>
+                    <div style="background: #ecf0f1; padding: 20px; border-radius: 6px; border-left: 4px solid #9b59b6;">
+                        <p style="color: #7f8c8d; font-size: 12px; margin: 0 0 8px; text-transform: uppercase;">Completion %</p>
+                        <p style="font-size: 32px; font-weight: bold; color: #9b59b6; margin: 0;">{{ completion_rate }}%</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OVERALL STATUS CHART -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Overall Status Distribution</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="status-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- GENDER DISTRIBUTION -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Gender Distribution</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Gender</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in gender_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.patient_gender }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ ((item.count / total) * 100) | round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- AGE DISTRIBUTION -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Age Group Distribution</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Age Group</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in age_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.age_group }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ ((item.count / total) * 100) | round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- TAB 3: DETAILED BREAKDOWN -->
+        <div id="tab-details" style="display: none;">
+
+            <!-- OPD BREAKDOWN -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">OPD Department Distribution (All Time)</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Department</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in opd_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.opd_departments }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ ((item.count / total) * 100) | round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- REFERRER BY DEPARTMENT -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Referrals by Referrer &amp; Department</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Referrer Name</th>
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Department</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Total Referrals</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if referrer_dept_stats %}
+                            {% for item in referrer_dept_stats %}
+                            <tr style="border-bottom: 1px solid #ecf0f1;">
+                                <td style="padding: 10px;">{{ item.referrer_name or 'Unknown' }}</td>
+                                <td style="padding: 10px;">{{ item.department or 'N/A' }}</td>
+                                <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="padding: 20px; text-align: center; color: #7f8c8d;">No referrer data available</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PHC BREAKDOWN -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">PHC Distribution</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">PHC</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Count</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in phc_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.phc }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ ((item.count / total) * 100) | round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- VILLAGE BREAKDOWN -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Village-wise Distribution</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #ecf0f1;">
+                            <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Village</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Referrals</th>
+                            <th style="padding: 10px; text-align: right; font-weight: 600; border-bottom: 1px solid #bdc3c7;">%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in village_data %}
+                        <tr style="border-bottom: 1px solid #ecf0f1;">
+                            <td style="padding: 10px;">{{ item.patient_village }}</td>
+                            <td style="padding: 10px; text-align: right; font-weight: 600; color: #3498db;">{{ item.count }}</td>
+                            <td style="padding: 10px; text-align: right; color: #7f8c8d;">{{ ((item.count / total) * 100) | round(1) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- RECENT REFERRALS WITH ALL DETAILS -->
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                <h3 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Recent Referrals (Last 15)</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="background: #ecf0f1;">
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">ID</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Patient</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Age</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Gender</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Village</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">PHC</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">OPD</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Referrer</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Date</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; border-bottom: 1px solid #bdc3c7;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent %}
+                            <tr style="border-bottom: 1px solid #ecf0f1;">
+                                <td style="padding: 10px;"><a href="/app/patient-referral/{{ item.name }}" style="color: #3498db; text-decoration: none; font-weight: 600;">{{ item.reference_number }}</a></td>
+                                <td style="padding: 10px;">{{ item.patient_name }}</td>
+                                <td style="padding: 10px;">{{ item.patient_age or '-' }}</td>
+                                <td style="padding: 10px;">{{ item.patient_gender or '-' }}</td>
+                                <td style="padding: 10px; font-size: 11px;">{{ item.patient_village or '-' }}</td>
+                                <td style="padding: 10px; font-size: 11px;">{{ item.phc or '-' }}</td>
+                                <td style="padding: 10px; font-size: 11px;">{{ item.opd_departments or '-' }}</td>
+                                <td style="padding: 10px; font-size: 11px;">
+                                    {% set ref_info = referrer_map.get(item.referrer) %}
+                                    {{ ref_info.full_name if ref_info else item.referrer }}
+                                </td>
+                                <td style="padding: 10px;">{{ item.referral_date }}</td>
+                                <td style="padding: 10px;">
+                                    {% if item.status == 'Visited' %}
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 10px;">✓ {{ item.status }}</span>
+                                    {% elif item.status == 'Pending' %}
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 8px; border-radius: 4px; font-size: 10px;">⏳ {{ item.status }}</span>
+                                    {% elif item.status == 'No-Show' %}
+                                        <span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-size: 10px;">❌ {{ item.status }}</span>
+                                    {% else %}
+                                        <span style="background: #e2e3e5; color: #383d41; padding: 4px 8px; border-radius: 4px; font-size: 10px;">{{ item.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- UPCOMING FEATURES BANNER -->
+        {% if upcoming_features %}
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 18px;">
+                <span style="font-size: 22px;">🚀</span>
+                <div>
+                    <h2 style="margin: 0; color: #ffffff; font-size: 18px; font-weight: 700; letter-spacing: 0.3px;">Coming Soon — Phase 2 Features</h2>
+                    <p style="margin: 4px 0 0; color: #a0aec0; font-size: 13px;">These features are currently under development and will be available in the next phase.</p>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px;">
+                {% for feature in upcoming_features %}
+                <div style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 16px; position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: #e2a92b; color: #1a1a2e; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">{{ feature.eta }}</div>
+                    <div style="font-size: 28px; margin-bottom: 8px;">{{ feature.icon }}</div>
+                    <h3 style="margin: 0 0 6px; color: #ffffff; font-size: 14px; font-weight: 600;">{{ feature.title }}</h3>
+                    <p style="margin: 0; color: #8899b0; font-size: 12px; line-height: 1.5;">{{ feature.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ACTION BUTTONS -->
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h2 style="margin: 0 0 15px; color: #2c3e50; font-size: 16px; font-weight: 600;">Quick Actions</h2>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/app/patient-referral" style="display: inline-block; background: #3498db; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">📋 View All Referrals</a>
+                <a href="/app/patient-referral/new" style="display: inline-block; background: #27ae60; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">➕ Create New Referral</a>
+                <a href="/app/raw-patient-referral-data" style="display: inline-block; background: #f39c12; color: white; padding: 12px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">📊 Raw Data</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+<!-- Jinja data injected here — kept outside the JS block to avoid linter errors -->
+<script id="dashboard-data" type="application/json">
+    {{ status_data | default([]) | tojson }}
+</script>
+
+<script>
+    // Tab switching
+    function showTab(tabName) {
+        // Hide all tabs
+        document.getElementById('tab-today').style.display = 'none';
+        document.getElementById('tab-overall').style.display = 'none';
+        document.getElementById('tab-details').style.display = 'none';
+        
+        // Reset button styles
+        var buttons = document.querySelectorAll('#btn-today, #btn-overall, #btn-details');
+        buttons.forEach(function(btn) {
+            btn.style.background = 'white';
+            btn.style.color = '#2c3e50';
+        });
+        
+        // Show selected tab
+        document.getElementById('tab-' + tabName).style.display = 'block';
+        
+        // Highlight selected button
+        document.getElementById('btn-' + tabName).style.background = '#3498db';
+        document.getElementById('btn-' + tabName).style.color = 'white';
+        
+        // Reinitialize charts if showing overall tab
+        if (tabName === 'overall') {
+            setTimeout(initializeCharts, 100);
+        }
+    }
+    
+    function initializeCharts() {
+        var statusData = JSON.parse(document.getElementById('dashboard-data').textContent);
+        var chartCanvas = document.getElementById('status-chart');
+        
+        if (chartCanvas && statusData && statusData.length > 0) {
+            // Destroy existing chart if it exists
+            if (window.statusChart) {
+                window.statusChart.destroy();
+            }
+            
+            var ctx = chartCanvas.getContext('2d');
+            window.statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusData.map(function(d) { return d.status; }),
+                    datasets: [{
+                        data: statusData.map(function(d) { return d.count; }),
+                        backgroundColor: ['#f39c12', '#27ae60', '#e74c3c', '#95a5a6'],
+                        borderColor: 'white',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // Initialize charts on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+</script>
+{% endblock %}
