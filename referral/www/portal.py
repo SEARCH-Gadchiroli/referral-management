@@ -20,8 +20,8 @@ APPS = [
             "MH_External_Reviewer",
         ],
         "links": [
-            {"label": "View Consultations", "url": "/app/mh-chatbot-consultation-glific", "icon": "📋"},
-            {"label": "New Consultation",   "url": "/app/mh-chatbot-consultation-glific/new", "icon": "➕"},
+            {"label": "View Consultations", "url": "/app/mh_chatbot_consultation_glific", "icon": "📋"},
+            {"label": "New Consultation",   "url": "/app/mh_chatbot_consultation_glific/new", "icon": "➕"},
             {"label": "External Reviews",   "url": "/app/mh-external-review", "icon": "🔍"},
             {"label": "MH Settings",        "url": "/app/mh-settings", "icon": "⚙️", "admin_only": True},
         ],
