@@ -19,31 +19,46 @@ class PatientReferral(Document):
         match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
-        opd_departments: DF.Literal["Orthopedics", "Spine", "Surgery", "Medicine", "Gynaecology", "Oncology", "Sickle Cell", "Diabetology", "Cardiology", "ENT", "Head & Neck", "Gastrology", "Dermatology", "Psychiatry", "Mental Health Clinic", "Dental", "Cataract Surgery", "Ophthalmology", "Rheumatology", "Epilepsy", "Neurology", "Urology", "Plastic Surgery", "Pulmonology", "Others"]
+        opd_category: DF.Literal["", "Regular OPD", "Specialist OPD", "Surgical OPD"]
+        opd_departments: DF.Literal["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Psychiatry", "Rheumatology", "Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management"]
         patient_age: DF.Int
         patient_father_name: DF.Data
         patient_gender: DF.Literal["Male", "Female", "Other"]
         patient_name: DF.Data
         patient_phone: DF.Data | None
-        patient_village: DF.Link
-        phc: DF.Link
+        patient_taluka: DF.Link
+        patient_village: DF.Link | None
+        phc: DF.Link | None
         raw_patient_data: DF.Link | None
         reference_number: DF.Data
         referral_date: DF.Date
+        referred_doctor: DF.Data | None
         referrer: DF.Link
         referrer_latitude: DF.Data | None
         referrer_longitude: DF.Data | None
         referrer_phone: DF.Data
-        status: DF.Literal["Pending", "Visited", "No-Show", "Cancelled"]
+        status: DF.Literal["Pending", "Follow-up In Progress", "Visited", "Closed - Not Visited", "No-Show", "Cancelled"]
         tribal_classification: DF.Literal["", "Tribal", "Non-Tribal"]
         visit_date: DF.Date | None
+        service_facility_type: DF.Literal["SEARCH", "Government", "Other"]
+        other_facility_name: DF.Data | None
+        referring_doctor: DF.Data
+        supervisor_visits: DF.Table
+        visit_count: DF.Int
+        facility_visited: DF.Literal["", "SEARCH", "Government", "Other"]
     # end: auto-generated types
+
+    def validate(self):
+        if self.service_facility_type == "SEARCH" and not self.opd_departments:
+            frappe.throw("OPD Department is required for SEARCH referrals")
 
     def before_insert(self):
         if not self.reference_number:
             self.reference_number = self.generate_reference_number()
         if not self.referral_date:
             self.referral_date = today()
+        if not self.referral_recorded_date:
+            self.referral_recorded_date = today()
 
     def after_insert(self):
         """Preliminary auto-match on creation — exact matches get auto-saved,

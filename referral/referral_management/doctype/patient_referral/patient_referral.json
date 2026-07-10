@@ -8,6 +8,7 @@
  "field_order": [
   "reference_number",
   "referral_date",
+  "referral_recorded_date",
   "status",
   "referrer_section",
   "referrer",
@@ -16,14 +17,19 @@
   "referrer_department",
   "referrer_latitude",
   "referrer_longitude",
-  "phc",
   "patient_section",
   "patient_name",
   "patient_father_name",
   "patient_gender",
   "patient_age",
   "patient_village",
+  "patient_taluka",
+  "service_facility_type",
+  "opd_category",
+  "other_facility_name",
+  "referring_doctor",
   "patient_phone",
+  "phc",
   "census_section",
   "census_match",
   "matched_member_name",
@@ -33,10 +39,15 @@
   "tribal_classification",
   "opd_section",
   "opd_departments",
+  "referred_doctor",
   "additional_notes",
   "visit_section",
   "hospital_registration_number",
   "visit_date",
+  "follow_up_section",
+  "supervisor_visits",
+  "visit_count",
+  "facility_visited",
   "raw_data_section",
   "raw_patient_data"
  ],
@@ -59,12 +70,20 @@
    "reqd": 1
   },
   {
+   "default": "Today",
+   "fieldname": "referral_recorded_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Referral Recorded Date",
+   "read_only": 1
+  },
+  {
    "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Pending\nVisited\nNo-Show\nCancelled",
+   "options": "Pending\nFollow-up In Progress\nVisited\nClosed - Not Visited\nNo-Show\nCancelled",
    "reqd": 1
   },
   {
@@ -111,12 +130,6 @@
    "label": "Referrer Longitude"
   },
   {
-   "fieldname": "phc",
-   "fieldtype": "Link",
-   "label": "PHC",
-   "options": "PHC"
-  },
-  {
    "fieldname": "patient_section",
    "fieldtype": "Section Break",
    "label": "Patient Info"
@@ -154,9 +167,53 @@
    "options": "Village Profile"
   },
   {
+   "fieldname": "patient_taluka",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Patient Taluka",
+   "options": "Taluka",
+   "reqd": 1
+  },
+  {
+   "fieldname": "service_facility_type",
+   "fieldtype": "Select",
+   "label": "Service Facility Type",
+   "options": "\nSEARCH\nGovernment\nOther",
+   "reqd": 1,
+   "description": "Where the patient is being referred: SEARCH hospital, Government facility, or Other"
+  },
+  {
+   "fieldname": "opd_category",
+   "fieldtype": "Select",
+   "label": "OPD Category",
+   "options": "\nRegular OPD\nSpecialist OPD\nSurgical OPD",
+   "depends_on": "eval:doc.service_facility_type==\"SEARCH\"",
+   "description": "Tier-1 OPD category. Only applicable for SEARCH referrals."
+  },
+  {
+   "fieldname": "other_facility_name",
+   "fieldtype": "Data",
+   "label": "Other Facility Name",
+   "depends_on": "eval:doc.service_facility_type==\"Other\"",
+   "description": "Free-text name of non-SEARCH, non-Government facility. Max 200 chars."
+  },
+  {
+   "fieldname": "referring_doctor",
+   "fieldtype": "Data",
+   "label": "Referring Doctor",
+   "reqd": 1,
+   "description": "Name of the doctor making the referral. Currently free-text from Glific; future: Link to Referrer doctype."
+  },
+  {
    "fieldname": "patient_phone",
    "fieldtype": "Data",
    "label": "Patient Phone"
+  },
+  {
+   "fieldname": "phc",
+   "fieldtype": "Link",
+   "label": "PHC",
+   "options": "PHC"
   },
   {
    "fieldname": "census_section",
@@ -208,8 +265,14 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "Orthopedics\nSpine\nSurgery\nMedicine\nGynaecology\nOncology\nSickle Cell\nDiabetology\nCardiology\nENT\nHead & Neck\nGastrology\nDermatology\nPsychiatry\nMental Health Clinic\nDental\nCataract Surgery\nOphthalmology\nRheumatology\nEpilepsy\nNeurology\nUrology\nPlastic Surgery\nPulmonology\nOthers",
-   "reqd": 1
+   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nPsychiatry\nRheumatology\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management",
+   "reqd": 0
+  },
+  {
+   "fieldname": "referred_doctor",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Referred Doctor"
   },
   {
    "fieldname": "additional_notes",
@@ -232,6 +295,33 @@
    "label": "Visit Date"
   },
   {
+   "fieldname": "follow_up_section",
+   "fieldtype": "Section Break",
+   "label": "Follow-up Tracking"
+  },
+  {
+   "fieldname": "supervisor_visits",
+   "fieldtype": "Table",
+   "label": "Supervisor Visits",
+   "options": "Supervisor Visit",
+   "description": "Child table storing up to 3 supervisor follow-up visit records."
+  },
+  {
+   "default": "0",
+   "fieldname": "visit_count",
+   "fieldtype": "Int",
+   "label": "Visit Count",
+   "read_only": 1,
+   "description": "Number of supervisor visits recorded (0-3). Auto-incremented by record_supervisor_visit() API."
+  },
+  {
+   "fieldname": "facility_visited",
+   "fieldtype": "Select",
+   "label": "Facility Actually Visited",
+   "options": "\nSEARCH\nGovernment\nOther",
+   "description": "Which hospital the patient actually visited (recorded by supervisor). Populated when patient_visited = Yes."
+  },
+  {
    "fieldname": "raw_data_section",
    "fieldtype": "Section Break",
    "label": "Raw Data"
@@ -245,7 +335,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-02 01:17:00.000000",
+ "modified": "2026-07-01 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Patient Referral",

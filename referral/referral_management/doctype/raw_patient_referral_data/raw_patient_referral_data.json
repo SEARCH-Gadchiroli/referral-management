@@ -10,6 +10,7 @@
   "glific_contact_id",
   "glific_referrer_name",
   "received_at",
+  "referral_date_raw",
   "raw_data_section",
   "selected_phc",
   "referrer_latitude",
@@ -19,109 +20,150 @@
   "gender_raw",
   "age_raw",
   "village_raw",
+  "patient_taluka_raw",
   "patient_phone_raw",
+  "service_facility_type",
+  "opd_category_raw",
   "departments_raw",
+  "other_facility_raw",
+  "referring_doctor_raw",
+  "referred_doctor_raw",
   "additional_notes_raw",
   "processing_section",
   "patient_referral"
-],
-"fields": [
+ ],
+ "fields": [
   {
-    "fieldname": "glific_section",
-    "fieldtype": "Section Break",
-    "label": "Glific Info"
+   "fieldname": "glific_section",
+   "fieldtype": "Section Break",
+   "label": "Glific Info"
   },
   {
-    "fieldname": "glific_contact_id",
-    "fieldtype": "Data",
-    "label": "Glific Referrer Phone"
+   "fieldname": "glific_contact_id",
+   "fieldtype": "Data",
+   "label": "Glific Referrer Phone"
   },
   {
-    "fieldname": "glific_referrer_name",
-    "fieldtype": "Data",
-    "label": "Glific Referrer Name"
+   "fieldname": "glific_referrer_name",
+   "fieldtype": "Data",
+   "label": "Glific Referrer Name"
   },
   {
-    "fieldname": "received_at",
-    "fieldtype": "Datetime",
-    "label": "Received At"
+   "fieldname": "received_at",
+   "fieldtype": "Datetime",
+   "label": "Received At"
   },
   {
-    "fieldname": "raw_data_section",
-    "fieldtype": "Section Break",
-    "label": "Raw Patient Data"
+   "fieldname": "referral_date_raw",
+   "fieldtype": "Data",
+   "label": "Referral Date (Raw)"
   },
   {
-    "fieldname": "selected_phc",
-    "fieldtype": "Data",
-    "label": "Selected PHC"
+   "fieldname": "raw_data_section",
+   "fieldtype": "Section Break",
+   "label": "Raw Patient Data"
   },
   {
-    "fieldname": "referrer_latitude",
-    "fieldtype": "Data",
-    "label": "Referrer Latitude"
+   "fieldname": "selected_phc",
+   "fieldtype": "Data",
+   "label": "Selected PHC"
   },
   {
-    "fieldname": "referrer_longitude",
-    "fieldtype": "Data",
-    "label": "Referrer Longitude"
+   "fieldname": "referrer_latitude",
+   "fieldtype": "Data",
+   "label": "Referrer Latitude"
   },
   {
-    "fieldname": "patient_name_raw",
-    "fieldtype": "Data",
-    "label": "Patient Name (Raw)"
+   "fieldname": "referrer_longitude",
+   "fieldtype": "Data",
+   "label": "Referrer Longitude"
   },
   {
-    "fieldname": "father_name_raw",
-    "fieldtype": "Data",
-    "label": "Father Name (Raw)"
+   "fieldname": "patient_name_raw",
+   "fieldtype": "Data",
+   "label": "Patient Name (Raw)"
   },
   {
-    "fieldname": "gender_raw",
-    "fieldtype": "Data",
-    "label": "Gender (Raw)"
+   "fieldname": "father_name_raw",
+   "fieldtype": "Data",
+   "label": "Father Name (Raw)"
   },
   {
-    "fieldname": "age_raw",
-    "fieldtype": "Data",
-    "label": "Age (Raw)"
+   "fieldname": "gender_raw",
+   "fieldtype": "Data",
+   "label": "Gender (Raw)"
   },
   {
-    "fieldname": "village_raw",
-    "fieldtype": "Data",
-    "label": "Village (Raw)"
+   "fieldname": "age_raw",
+   "fieldtype": "Data",
+   "label": "Age (Raw)"
   },
   {
-    "fieldname": "patient_phone_raw",
-    "fieldtype": "Data",
-    "label": "Patient Phone (Raw)"
+   "fieldname": "village_raw",
+   "fieldtype": "Data",
+   "label": "Village (Raw)"
   },
   {
-    "fieldname": "departments_raw",
-    "fieldtype": "Data",
-    "label": "Departments (Raw)"
+   "fieldname": "patient_taluka_raw",
+   "fieldtype": "Data",
+   "label": "Patient Taluka (Raw)"
   },
   {
-    "fieldname": "additional_notes_raw",
-    "fieldtype": "Long Text",
-    "label": "Additional Notes (Raw)"
+   "fieldname": "patient_phone_raw",
+   "fieldtype": "Data",
+   "label": "Patient Phone (Raw)"
   },
   {
-    "fieldname": "processing_section",
-    "fieldtype": "Section Break",
-    "label": "Linked Patient Referral"
+   "fieldname": "service_facility_type",
+   "fieldtype": "Data",
+   "label": "Service Facility Type (Raw)"
   },
   {
-    "fieldname": "patient_referral",
-    "fieldtype": "Link",
-    "in_list_view": 1,
-    "label": "Patient Referral",
-    "options": "Patient Referral"
+   "fieldname": "opd_category_raw",
+   "fieldtype": "Data",
+   "label": "OPD Category (Raw)"
+  },
+  {
+   "fieldname": "departments_raw",
+   "fieldtype": "Data",
+   "label": "Departments (Raw)"
+  },
+  {
+   "fieldname": "other_facility_raw",
+   "fieldtype": "Data",
+   "label": "Other Facility (Raw)"
+  },
+  {
+   "fieldname": "referring_doctor_raw",
+   "fieldtype": "Data",
+   "label": "Referring Doctor (Raw)"
+  },
+  {
+   "fieldname": "referred_doctor_raw",
+   "fieldtype": "Data",
+   "label": "Referred Doctor (Raw)"
+  },
+  {
+   "fieldname": "additional_notes_raw",
+   "fieldtype": "Long Text",
+   "label": "Additional Notes (Raw)"
+  },
+  {
+   "fieldname": "processing_section",
+   "fieldtype": "Section Break",
+   "label": "Linked Patient Referral"
+  },
+  {
+   "fieldname": "patient_referral",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Patient Referral",
+   "options": "Patient Referral"
   }
-],
+ ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-02 01:17:00.000000",
+ "modified": "2026-07-01 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Referral Management",
  "name": "Raw Patient Referral Data",

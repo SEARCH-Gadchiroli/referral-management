@@ -1,20 +1,31 @@
 import frappe
+from collections import defaultdict
 from deep_translator import GoogleTranslator
 from indic_transliteration import sanscript
 from indic_transliteration.sanscript import transliterate
+from frappe.utils import getdate, today
 
 VALID_DEPARTMENTS = [
-    "Orthopedics", "Spine", "Surgery", "Medicine",
-    "Gynaecology", "Oncology", "Sickle Cell", "Diabetology",
-    "Cardiology", "ENT", "Head & Neck", "Gastrology",
-    "Dermatology", "Psychiatry", "Mental Health Clinic", "Dental",
-    "Cataract Surgery", "Ophthalmology", "Rheumatology", "Epilepsy",
-    "Neurology", "Urology", "Plastic Surgery", "Pulmonology",
-    "Others"
+    "Medicine", "Gynaecology", "Orthopedics", "Spine",
+    "Surgery", "Dental", "Psychiatry", "Rheumatology",
+    "Cardiology", "Dermatology", "Diabetology", "ENT",
+    "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology",
+    "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology",
+    "Plastic Surgery", "Urology", "Pain Management"
 ]
+
+REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Psychiatry", "Rheumatology"]
+SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell"]
+SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management"]
 
 # Hindi/Marathi keywords → English OPD department mapping
 DEPARTMENT_KEYWORDS = {
+    # Backward-compatible English aliases
+    "Epilepsy": "Neurology + Epilepsy",
+    "Neurology": "Neurology + Epilepsy",
+    "Mental Health Clinic": "Psychiatry",
+    "Pain Clinic": "Pain Management",
+    "Pain Management": "Pain Management",
     # Gynaecology
     "स्त्रीरोग": "Gynaecology",
     "स्त्री रोग": "Gynaecology",
@@ -36,10 +47,10 @@ DEPARTMENT_KEYWORDS = {
     "कार्डिओलॉजी": "Cardiology",
     "हृदय": "Cardiology",
     "दिल": "Cardiology",
-    # Mental Health Clinic
-    "मानसिक आरोग्य": "Mental Health Clinic",
-    "मानसिक": "Mental Health Clinic",
-    "मनोविकार": "Mental Health Clinic",
+    # Psychiatry
+    "मानसिक आरोग्य": "Psychiatry",
+    "मानसिक": "Psychiatry",
+    "मनोविकार": "Psychiatry",
     # Surgery
     "सर्जन": "Surgery",
     "शल्यचिकित्सक": "Surgery",
@@ -87,24 +98,25 @@ DEPARTMENT_KEYWORDS = {
     # Rheumatology
     "संधिवात": "Rheumatology",
     "सांधेदुखी": "Rheumatology",
-    # Epilepsy
-    "अपस्मार": "Epilepsy",
-    "मिरगी": "Epilepsy",
-    "फेफरे": "Epilepsy",
-    # Neurology
-    "मज्जातंतू": "Neurology",
-    "न्यूरोलॉजी": "Neurology",
+    # Neurology + Epilepsy
+    "अपस्मार": "Neurology + Epilepsy",
+    "मिरगी": "Neurology + Epilepsy",
+    "फेफरे": "Neurology + Epilepsy",
+    "मज्जातंतू": "Neurology + Epilepsy",
+    "न्यूरोलॉजी": "Neurology + Epilepsy",
     # Urology
     "मूत्ररोग": "Urology",
     "यूरोलॉजी": "Urology",
     # Plastic Surgery
     "प्लास्टिक सर्जरी": "Plastic Surgery",
+    # Pain Management
+    "वेदना": "Pain Management",
+    "दुखणे": "Pain Management",
+    "दर्द": "Pain Management",
+    "पेन": "Pain Management",
     # Medicine
     "औषध": "Medicine",
     "मेडिसिन": "Medicine",
-    # Others
-    "इतर": "Others",
-    "अन्य": "Others",
 }
 
 
@@ -380,50 +392,203 @@ def resolve_phc(phc_raw: str) -> str | None:
     return None
 
 
-def resolve_department(dept_raw: str) -> str:
+def resolve_department(dept_raw: str, opd_category: str = None) -> str | None:
     """
     Resolve OPD department from any script to valid English option.
     Tries direct match first, then transliteration.
     """
     if not dept_raw:
-        return "Others"
+        return None
 
     cleaned = dept_raw.strip()
 
+    resolved = None
     # Direct match
     if cleaned in VALID_DEPARTMENTS:
+        resolved = cleaned
+
+    if not resolved:
+        # Case-insensitive match
+        for dept in VALID_DEPARTMENTS:
+            if dept.lower() == cleaned.lower():
+                resolved = dept
+                break
+
+    if not resolved:
+        # Check Hindi/Marathi keyword mapping
+        if cleaned in DEPARTMENT_KEYWORDS:
+            resolved = DEPARTMENT_KEYWORDS[cleaned]
+
+    if not resolved:
+        # Case-insensitive keyword match
+        cleaned_lower = cleaned.lower()
+        for keyword, dept in DEPARTMENT_KEYWORDS.items():
+            if keyword.lower() == cleaned_lower:
+                resolved = dept
+                break
+
+    if not resolved:
+        # Partial keyword match (input contains a known keyword)
+        for keyword, dept in DEPARTMENT_KEYWORDS.items():
+            if keyword in cleaned or cleaned in keyword:
+                resolved = dept
+                break
+
+    if not resolved:
+        # Transliterate and try again
+        if is_devanagari(cleaned):
+            transliterated = transliterate_to_roman(cleaned)
+            if transliterated in VALID_DEPARTMENTS:
+                resolved = transliterated
+            else:
+                for dept in VALID_DEPARTMENTS:
+                    if dept.lower() == transliterated.lower():
+                        resolved = dept
+                        break
+
+    # Validate against OPD category if provided
+    if resolved and opd_category:
+        valid_depts = []
+        if opd_category == "Regular OPD":
+            valid_depts = REGULAR_OPD_DEPTS
+        elif opd_category == "Specialist OPD":
+            valid_depts = SPECIALIST_OPD_DEPTS
+        elif opd_category == "Surgical OPD":
+            valid_depts = SURGICAL_OPD_DEPTS
+        
+        if resolved not in valid_depts:
+            frappe.logger().warning(f"Resolved department '{resolved}' does not match category '{opd_category}'")
+            return None
+
+    return resolved
+
+
+def resolve_opd_category(category_raw: str) -> str:
+    if not category_raw:
+        return ""
+
+    cleaned = category_raw.strip()
+    category_map = {
+        "regular": "Regular OPD",
+        "regular opd": "Regular OPD",
+        "specialist": "Specialist OPD",
+        "specialist opd": "Specialist OPD",
+        "surgical": "Surgical OPD",
+        "surgical opd": "Surgical OPD",
+    }
+    return category_map.get(cleaned.lower(), cleaned)
+
+
+def resolve_taluka(taluka_raw: str) -> str | None:
+    """
+    Resolve a Glific taluka value to the Taluka doctype.
+    Accepts taluka name, taluka code, or an existing document name.
+    """
+    if not taluka_raw:
+        return None
+
+    cleaned = taluka_raw.strip()
+    if not cleaned:
+        return None
+
+    if frappe.db.exists("Taluka", cleaned):
         return cleaned
 
-    # Case-insensitive match
-    for dept in VALID_DEPARTMENTS:
-        if dept.lower() == cleaned.lower():
-            return dept
+    taluka = frappe.db.get_value("Taluka", {"taluka_name": cleaned}, "name")
+    if taluka:
+        return taluka
 
-    # Check Hindi/Marathi keyword mapping
-    if cleaned in DEPARTMENT_KEYWORDS:
-        return DEPARTMENT_KEYWORDS[cleaned]
+    taluka = frappe.db.get_value("Taluka", {"taluka_code": cleaned}, "name")
+    if taluka:
+        return taluka
 
-    # Case-insensitive keyword match
-    cleaned_lower = cleaned.lower()
-    for keyword, dept in DEPARTMENT_KEYWORDS.items():
-        if keyword.lower() == cleaned_lower:
-            return dept
+    taluka = frappe.db.sql("""
+        SELECT name FROM `tabTaluka`
+        WHERE LOWER(taluka_name) = LOWER(%(taluka)s)
+           OR LOWER(taluka_code) = LOWER(%(taluka)s)
+        LIMIT 1
+    """, {"taluka": cleaned}, as_dict=True)
+    return taluka[0].name if taluka else None
 
-    # Partial keyword match (input contains a known keyword)
-    for keyword, dept in DEPARTMENT_KEYWORDS.items():
-        if keyword in cleaned or cleaned in keyword:
-            return dept
 
-    # Transliterate and try again
-    if is_devanagari(cleaned):
-        transliterated = transliterate_to_roman(cleaned)
-        if transliterated in VALID_DEPARTMENTS:
-            return transliterated
-        for dept in VALID_DEPARTMENTS:
-            if dept.lower() == transliterated.lower():
-                return dept
+def clean_glific_value(val):
+    if not val:
+        return None
+    val_str = str(val).strip()
+    if val_str.startswith("@contact.") or val_str.startswith("@results."):
+        return None
+    return val_str
 
-    return "Others"
+
+def parse_date(date_str):
+    """Handle DD/MM/YYYY from Glific and YYYY-MM-DD from Frappe"""
+    cleaned = clean_glific_value(date_str)
+    if not cleaned:
+        return None
+        
+    # DD/MM/YYYY format from Glific
+    if "/" in cleaned:
+        from datetime import datetime
+        try:
+            return datetime.strptime(cleaned, "%d/%m/%Y").date()
+        except ValueError:
+            pass
+            
+    # DD-MM-YYYY format from Glific
+    if "-" in cleaned and len(cleaned.split("-")[0]) == 2:
+        from datetime import datetime
+        try:
+            return datetime.strptime(cleaned, "%d-%m-%Y").date()
+        except ValueError:
+            pass
+            
+    # Standard YYYY-MM-DD
+    try:
+        return getdate(cleaned)
+    except Exception:
+        return None
+
+
+def parse_referral_date(date_str):
+    """
+    Parses the referral date received from Glific.
+
+    Accepts:
+      - 'आज' / 'aaj' / 'today' (defensive — Glific normally already
+        converts the today-shortcut to an ISO date before sending)
+      - ISO format (YYYY-MM-DD) — sent when Glific's "Today" branch
+        computes today's date itself
+      - DD/MM/YYYY — sent when the referrer typed an explicit date
+
+    Any past date is accepted (no lower bound). Future dates are rejected.
+
+    Raises frappe.ValidationError on invalid input. The caller must catch
+    this and return it as a normal {"success": False, "error": ...} response
+    rather than letting it propagate as an uncaught exception — this is what
+    lets the Glific flow show the specific error text and loop back to the
+    date retry node instead of landing on a generic webhook-failure message.
+    """
+    from datetime import datetime
+
+    if not date_str or date_str.strip().lower() in ("आज", "aaj", "today"):
+        return getdate(today())
+
+    date_str = date_str.strip()
+
+    # ISO format (from Glific's "Today" branch, which computes and sends
+    # the date itself rather than the literal word)
+    if "-" in date_str:
+        try:
+            return getdate(date_str)
+        except Exception:
+            frappe.throw("तारीख अवैध आहे. कृपया DD/MM/YYYY या स्वरूपात टाका.")
+
+    try:
+        parsed = datetime.strptime(date_str, "%d/%m/%Y").date()
+    except ValueError:
+        frappe.throw("तारीख अवैध आहे. कृपया DD/MM/YYYY या स्वरूपात टाका.")
+
+    return parsed
 
 
 def resolve_referrer(phone_raw: str) -> str | None:
@@ -437,12 +602,17 @@ def resolve_referrer(phone_raw: str) -> str | None:
     if not phone_raw:
         return None
 
+    # 1. Exact match on raw input (preserves underscores, suffixes, etc.)
+    referrer = frappe.db.get_value("Referrer", {"phone": phone_raw}, "name")
+    if referrer:
+        return referrer
+
     # Remove all non-numeric characters
     phone_clean = "".join(filter(str.isdigit, str(phone_raw)))
     if not phone_clean:
         return None
 
-    # 1. Exact match
+    # 2. Exact match on cleaned digits
     referrer = frappe.db.get_value("Referrer", {"phone": phone_clean}, "name")
     if referrer:
         return referrer
@@ -464,16 +634,191 @@ def resolve_referrer(phone_raw: str) -> str | None:
     return None
 
 
-@frappe.whitelist(allow_guest=False)
+def resolve_non_visit_reason(reason_input: str) -> str | None:
+    if not reason_input:
+        return None
+    
+    reason_clean = reason_input.strip()
+    
+    # Mapping dictionary from code/text to the standard select option
+    mapping = {
+        "NV-01": "Financial Constraints",
+        "Financial Constraints": "Financial Constraints",
+        
+        "NV-02": "Transport Unavailable",
+        "Transport Unavailable": "Transport Unavailable",
+        
+        "NV-03": "Fear or Anxiety",
+        "Fear or Anxiety": "Fear or Anxiety",
+        
+        "NV-04": "Feeling Better",
+        "Feeling Better": "Feeling Better",
+        
+        "NV-05": "Unaware of Appointment",
+        "Unaware of Appointment": "Unaware of Appointment",
+        
+        "NV-06": "Family Objection",
+        "Family Objection": "Family Objection",
+        
+        "NV-07": "Distance Too Far",
+        "Distance Too Far": "Distance Too Far",
+        
+        "NV-08": "Other",
+        "Other": "Other",
+        "Other (Specify)": "Other"
+    }
+    
+    # Try direct mapping
+    if reason_clean in mapping:
+        return mapping[reason_clean]
+        
+    # Try mapping by splitting by colon (e.g. "NV-01: Financial Constraints")
+    if ":" in reason_clean:
+        parts = [p.strip() for p in reason_clean.split(":")]
+        for part in parts:
+            if part in mapping:
+                return mapping[part]
+                
+    # If no mapping found, search case-insensitively or check substring
+    for key, val in mapping.items():
+        if key.lower() in reason_clean.lower():
+            return val
+            
+    return None
+
+
+transliterate_if_devanagari = transliterate_to_roman
+
+
+def send_patient_notification(patient_phone: str, patient_name: str, reference_number: str, opd_department: str) -> None:
+    """
+    Sends referral ID notification to the patient's WhatsApp number via Glific HSM template.
+    Called internally by create_referral() after successful save.
+    Fails silently — patient notification failure should NOT block referral creation.
+    """
+    try:
+        import requests
+        
+        glific_api_url = frappe.conf.get("glific_api_url", "https://search.glific.com/api")
+        glific_api_token = frappe.conf.get("glific_api_token")
+        hsm_template_id = frappe.conf.get("patient_notification_hsm_id")
+        
+        if not glific_api_token or not hsm_template_id:
+            frappe.logger().warning("Glific API token or HSM template ID not configured. Skipping patient notification.")
+            return
+        
+        # Ensure phone number has country code
+        phone = patient_phone.strip()
+        if not phone.startswith("+") and not phone.startswith("91"):
+            phone = "91" + phone
+        
+        headers = {
+            "Authorization": glific_api_token,
+            "Content-Type": "application/json",
+        }
+        
+        # Step 1: Create or find contact in Glific by phone
+        create_contact_query = """
+        mutation createContact($input: ContactInput!) {
+          createContact(input: $input) {
+            contact { id }
+          }
+        }
+        """
+        
+        # Step 2: Send HSM template message to the contact
+        send_hsm_query = """
+        mutation sendHsmMessage($templateId: ID!, $receiverId: ID!, $parameters: [String]!) {
+          sendHsmMessage(templateId: $templateId, receiverId: $receiverId, parameters: $parameters) {
+            message { id }
+          }
+        }
+        """
+        
+        # Parameters for the HSM template
+        parameters = [patient_name, reference_number, opd_department or "SEARCH Hospital"]
+        
+        # Execute create contact first
+        contact_res = requests.post(
+            glific_api_url,
+            json={"query": create_contact_query, "variables": {"input": {"phone": phone}}},
+            headers=headers,
+            timeout=10
+        )
+        contact_res.raise_for_status()
+        contact_data = contact_res.json()
+        
+        contact_id = None
+        try:
+            contact_id = contact_data["data"]["createContact"]["contact"]["id"]
+        except (KeyError, TypeError):
+            # If create contact failed because it exists, query contact by phone
+            search_query = """
+            query contact($phone: String!) {
+              contact(phone: $phone) { id }
+            }
+            """
+            search_res = requests.post(
+                glific_api_url,
+                json={"query": search_query, "variables": {"phone": phone}},
+                headers=headers,
+                timeout=10
+            )
+            search_res.raise_for_status()
+            search_data = search_res.json()
+            try:
+                contact_id = search_data["data"]["contact"]["id"]
+            except (KeyError, TypeError):
+                frappe.logger().error(f"Could not find or create Glific contact for phone {phone}")
+                return
+                
+        if contact_id:
+            hsm_res = requests.post(
+                glific_api_url,
+                json={
+                    "query": send_hsm_query,
+                    "variables": {
+                        "templateId": hsm_template_id,
+                        "receiverId": contact_id,
+                        "parameters": parameters
+                    }
+                },
+                headers=headers,
+                timeout=10
+            )
+            hsm_res.raise_for_status()
+            frappe.logger().info(f"Patient notification sent to {phone} for referral {reference_number}")
+        
+    except Exception as e:
+        frappe.logger().error(f"Failed to send patient notification: {str(e)}")
+
+
+@frappe.whitelist(allow_guest=True)
 def create_referral(
-    contact_phone: str,
+    contact_phone: str = "",
+    referral_date_raw: str = "",
+    referral_date: str = "",
+    date_of_referral_raw: str = "",
+    date_of_referral: str = "",
     selected_phc: str = "",
     patient_name_raw: str = "",
     father_name_raw: str = "",
     gender_raw: str = "",
     age_raw: str = "",
     village_raw: str = "",
+    patient_taluka_raw: str = "",
+    patient_taluka: str = "",
+    taluka_raw: str = "",
+    service_facility_type: str = "",
+    opd_category_raw: str = "",
+    opd_category: str = "",
     departments_raw: str = "",
+    opd_department_raw: str = "",
+    opd_department: str = "",
+    other_facility_raw: str = "",
+    referring_doctor_raw: str = "",
+    referred_doctor_raw: str = "",
+    referred_doctor: str = "",
     additional_notes_raw: str = "",
     referrer_latitude: str = "",
     referrer_longitude: str = "",
@@ -482,28 +827,104 @@ def create_referral(
     patient_phone_raw: str = ""
 ) -> dict:
     try:
+        # Fallback JSON body parsing if client does not send application/json Content-Type
+        if not contact_phone and frappe.request:
+            try:
+                import json
+                raw_data = frappe.request.get_data(as_text=True)
+                if raw_data:
+                    data = json.loads(raw_data)
+                    if isinstance(data, dict):
+                        contact_phone = data.get("contact_phone") or ""
+                        referral_date_raw = data.get("referral_date_raw") or referral_date_raw or ""
+                        referral_date = data.get("referral_date") or referral_date or ""
+                        date_of_referral_raw = data.get("date_of_referral_raw") or date_of_referral_raw or ""
+                        date_of_referral = data.get("date_of_referral") or date_of_referral or ""
+                        selected_phc = data.get("selected_phc") or selected_phc or ""
+                        patient_name_raw = data.get("patient_name_raw") or patient_name_raw or ""
+                        father_name_raw = data.get("father_name_raw") or father_name_raw or ""
+                        gender_raw = data.get("gender_raw") or gender_raw or ""
+                        age_raw = data.get("age_raw") or age_raw or ""
+                        village_raw = data.get("village_raw") or village_raw or ""
+                        patient_taluka_raw = data.get("patient_taluka_raw") or patient_taluka_raw or ""
+                        patient_taluka = data.get("patient_taluka") or patient_taluka or ""
+                        taluka_raw = data.get("taluka_raw") or taluka_raw or ""
+                        service_facility_type = data.get("service_facility_type") or service_facility_type or ""
+                        opd_category_raw = data.get("opd_category_raw") or opd_category_raw or ""
+                        opd_category = data.get("opd_category") or opd_category or ""
+                        departments_raw = data.get("departments_raw") or departments_raw or ""
+                        opd_department_raw = data.get("opd_department_raw") or opd_department_raw or ""
+                        opd_department = data.get("opd_department") or opd_department or ""
+                        other_facility_raw = data.get("other_facility_raw") or other_facility_raw or ""
+                        referring_doctor_raw = data.get("referring_doctor_raw") or referring_doctor_raw or ""
+                        referred_doctor_raw = data.get("referred_doctor_raw") or referred_doctor_raw or ""
+                        referred_doctor = data.get("referred_doctor") or referred_doctor or ""
+                        additional_notes_raw = data.get("additional_notes_raw") or additional_notes_raw or ""
+                        referrer_latitude = data.get("referrer_latitude") or referrer_latitude or ""
+                        referrer_longitude = data.get("referrer_longitude") or referrer_longitude or ""
+                        latitude = data.get("latitude") or latitude or ""
+                        longitude = data.get("longitude") or longitude or ""
+                        patient_phone_raw = data.get("patient_phone_raw") or patient_phone_raw or ""
+            except Exception as e:
+                frappe.log_error(f"Fallback JSON parsing failed: {str(e)}", "create_referral JSON Fallback Error")
+
+        if not contact_phone:
+            frappe.throw("contact_phone is required")
+
+        # Clean all parameters first
+        contact_phone = clean_glific_value(contact_phone)
+        selected_phc = clean_glific_value(selected_phc)
+        patient_name_raw = clean_glific_value(patient_name_raw)
+        father_name_raw = clean_glific_value(father_name_raw)
+        gender_raw = clean_glific_value(gender_raw) or ""
+        age_raw = clean_glific_value(age_raw)
+        village_raw = clean_glific_value(village_raw)
+        patient_taluka_raw = clean_glific_value(patient_taluka_raw)
+        patient_taluka = clean_glific_value(patient_taluka)
+        taluka_raw = clean_glific_value(taluka_raw)
+        service_facility_type = clean_glific_value(service_facility_type)
+        opd_category_raw = clean_glific_value(opd_category_raw)
+        opd_category = clean_glific_value(opd_category)
+        departments_raw = clean_glific_value(departments_raw)
+        opd_department_raw = clean_glific_value(opd_department_raw)
+        opd_department = clean_glific_value(opd_department)
+        other_facility_raw = clean_glific_value(other_facility_raw)
+        referring_doctor_raw = clean_glific_value(referring_doctor_raw)
+        referred_doctor_raw = clean_glific_value(referred_doctor_raw)
+        referred_doctor = clean_glific_value(referred_doctor)
+        additional_notes_raw = clean_glific_value(additional_notes_raw)
+        patient_phone_raw = clean_glific_value(patient_phone_raw)
+        referrer_latitude = clean_glific_value(referrer_latitude)
+        referrer_longitude = clean_glific_value(referrer_longitude)
+        latitude = clean_glific_value(latitude)
+        longitude = clean_glific_value(longitude)
+
+        # Defaults to SEARCH hospital if not specified for backward compatibility
+        facility_type = service_facility_type or "SEARCH"
+        
+        valid_facilities = ["SEARCH", "Government", "Other"]
+        if facility_type not in valid_facilities:
+            frappe.throw(f"Invalid service facility type: {facility_type}")
+
         actual_lat = referrer_latitude or latitude
         actual_lon = referrer_longitude or longitude
-
-        # Save raw data exactly as received (original script preserved)
-        raw_doc = frappe.get_doc({
-            "doctype": "Raw Patient Referral Data",
-            "glific_contact_id": contact_phone,
-            "received_at": frappe.utils.now(),
-            "selected_phc": selected_phc,
-            "referrer_latitude": actual_lat,
-            "referrer_longitude": actual_lon,
-            "patient_name_raw": patient_name_raw,
-            "father_name_raw": father_name_raw,
-            "gender_raw": gender_raw,
-            "age_raw": age_raw,
-            "village_raw": village_raw,
-            "patient_phone_raw": patient_phone_raw,
-            "departments_raw": departments_raw,
-            "additional_notes_raw": additional_notes_raw,
-        })
-        raw_doc.insert(ignore_permissions=True)
-        frappe.db.commit()
+        referral_date_input = (
+            referral_date_raw or referral_date or date_of_referral_raw or date_of_referral
+        )
+        try:
+            referral_date_value = parse_referral_date(referral_date_input)
+        except frappe.ValidationError as e:
+            # Keep HTTP status 200 so Glific's webhook routes to Success
+            return {"success": False, "error": str(e)}
+        patient_taluka_input = patient_taluka_raw or patient_taluka or taluka_raw
+        
+        # Only resolve category if facility is SEARCH
+        opd_category_input = ""
+        if facility_type == "SEARCH":
+            opd_category_input = resolve_opd_category(opd_category_raw or opd_category)
+            
+        department_input = opd_department_raw or opd_department or departments_raw
+        doctor_input = referring_doctor_raw or referred_doctor_raw or referred_doctor
 
         # Resolve referrer correctly by phone number
         referrer = resolve_referrer(contact_phone)
@@ -516,17 +937,16 @@ def create_referral(
             referrer_full_name = referrer_doc.full_name or ""
             referrer_department = referrer_doc.department or ""
 
-        # Update raw doc with resolved referrer name
-        if referrer_full_name:
-            raw_doc.glific_referrer_name = referrer_full_name
-            raw_doc.save(ignore_permissions=True)
-            frappe.db.commit()
-
         # Resolve PHC — handles Devanagari input
         phc = resolve_phc(selected_phc)
 
         # Resolve patient village — handles Devanagari input
         patient_village = resolve_village(village_raw)
+        patient_taluka_resolved = resolve_taluka(patient_taluka_input)
+        if not patient_taluka_resolved and patient_village:
+            patient_taluka_resolved = frappe.db.get_value(
+                "Village Profile", patient_village, "taluka"
+            )
 
         # Normalize gender — supports English, Marathi, Hindi
         gender_map = {
@@ -557,8 +977,10 @@ def create_referral(
         except Exception:
             patient_age = 0
 
-        # Resolve OPD department — handles Devanagari input
-        opd_dept = resolve_department(departments_raw)
+        # Resolve OPD department (SEARCH only)
+        opd_dept = None
+        if facility_type == "SEARCH":
+            opd_dept = resolve_department(department_input, opd_category_input)
 
         # Transliterate names to Roman English
         patient_name = transliterate_to_roman(patient_name_raw)
@@ -566,11 +988,43 @@ def create_referral(
 
         # Translate additional notes to English (meaning, not transliteration)
         additional_notes = translate_to_english(additional_notes_raw)
+        
+        # Referring Doctor resolution
+        referring_doctor = transliterate_to_roman(doctor_input)
+
+        # Save raw data exactly as received
+        raw_doc = frappe.get_doc({
+            "doctype": "Raw Patient Referral Data",
+            "glific_contact_id": contact_phone,
+            "received_at": frappe.utils.now(),
+            "referral_date_raw": referral_date_raw or referral_date_input or "",
+            "selected_phc": selected_phc,
+            "referrer_latitude": actual_lat,
+            "referrer_longitude": actual_lon,
+            "patient_name_raw": patient_name_raw,
+            "father_name_raw": father_name_raw,
+            "gender_raw": gender_raw,
+            "age_raw": age_raw,
+            "village_raw": village_raw,
+            "patient_taluka_raw": patient_taluka_input,
+            "patient_phone_raw": patient_phone_raw,
+            "service_facility_type": facility_type,
+            "opd_category_raw": opd_category_raw or opd_category,
+            "departments_raw": department_input,
+            "other_facility_raw": other_facility_raw or "",
+            "referring_doctor_raw": doctor_input,
+            "referred_doctor_raw": doctor_input,
+            "additional_notes_raw": additional_notes_raw,
+            "glific_referrer_name": referrer_full_name,
+        })
+        raw_doc.insert(ignore_permissions=True)
+        frappe.db.commit()
 
         # Create Patient Referral
         referral_doc = frappe.get_doc({
             "doctype": "Patient Referral",
-            "referral_date": frappe.utils.today(),
+            "referral_date": referral_date_value,
+            "referral_recorded_date": today(),
             "status": "Pending",
             "referrer": referrer,
             "referrer_name": referrer_full_name,
@@ -584,9 +1038,15 @@ def create_referral(
             "patient_gender": patient_gender,
             "patient_age": patient_age,
             "patient_village": patient_village or "",
+            "patient_taluka": patient_taluka_resolved or "",
             "patient_phone": patient_phone_raw,
             "additional_notes": additional_notes,
-            "opd_departments": opd_dept,
+            "service_facility_type": facility_type,
+            "opd_category": opd_category_input or "",
+            "opd_departments": opd_dept or "",
+            "other_facility_name": other_facility_raw or "",
+            "referring_doctor": referring_doctor,
+            "referred_doctor": referring_doctor,
             "raw_patient_data": raw_doc.name,
         })
         referral_doc.insert(ignore_permissions=True)
@@ -597,11 +1057,18 @@ def create_referral(
         raw_doc.save(ignore_permissions=True)
         frappe.db.commit()
 
+        # Send patient notification (fails silently)
+        if referral_doc.patient_phone:
+            facility_desc = referral_doc.opd_departments or referral_doc.other_facility_name or referral_doc.service_facility_type
+            send_patient_notification(referral_doc.patient_phone, referral_doc.patient_name, referral_doc.reference_number, facility_desc)
+
         return {
             "success": True,
             "reference_number": referral_doc.reference_number
         }
 
+    except frappe.ValidationError:
+        raise
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "create_referral API Error")
         return {
@@ -610,46 +1077,89 @@ def create_referral(
         }
 
 
-@frappe.whitelist(allow_guest=False)
-def get_referral(reference_number: str) -> dict:
+@frappe.whitelist(allow_guest=True)
+def get_referral(referral_id: str = None, reference_number: str = None, supervisor_phone: str = None) -> dict:
+    """
+    Look up a Patient Referral by reference_number or patient_name.
+    Supports guest access and returns flat and nested referral details.
+    """
     try:
-        if not frappe.db.exists("Patient Referral", reference_number):
+        ref_id = referral_id or reference_number
+        if not ref_id:
             return {
                 "success": False,
-                "error": f"Referral {reference_number} not found"
+                "error": "Missing referral ID or reference number"
             }
 
-        doc = frappe.get_doc("Patient Referral", reference_number)
+        ref_id = ref_id.strip()
+        referral = None
+        # Try exact match on name (name in Frappe is the reference_number due to autonaming)
+        # or direct search by reference_number field
+        if frappe.db.exists("Patient Referral", ref_id):
+            referral = frappe.get_doc("Patient Referral", ref_id)
+        elif frappe.db.exists("Patient Referral", {"reference_number": ref_id}):
+            referral = frappe.get_doc("Patient Referral", {"reference_number": ref_id})
+        else:
+            # Fuzzy match on patient_name
+            name_search = transliterate_to_roman(ref_id)
+            results = frappe.get_all("Patient Referral",
+                filters={"patient_name": ["like", f"%{name_search}%"]},
+                fields=["name"],
+                order_by="referral_date desc",
+                limit=1
+            )
+            if results:
+                referral = frappe.get_doc("Patient Referral", results[0].name)
 
-        phc_name = frappe.db.get_value("PHC", doc.phc, "phc_name") if doc.phc else ""
+        if not referral:
+            return {
+                "success": False,
+                "error": f"Referral {ref_id} not found"
+            }
+
+        phc_name = frappe.db.get_value("PHC", referral.phc, "phc_name") if referral.phc else ""
         patient_village_name = frappe.db.get_value(
-            "Village Profile", doc.patient_village, "village_name"
-        ) if doc.patient_village else ""
+            "Village Profile", referral.patient_village, "village_name"
+        ) if referral.patient_village else ""
         referrer_name = frappe.db.get_value(
-            "Referrer", doc.referrer, "full_name"
-        ) if doc.referrer else ""
+            "Referrer", referral.referrer, "full_name"
+        ) if referral.referrer else ""
 
-        return {
-            "success": True,
-            "referral": {
-                "reference_number": doc.reference_number,
-                "referral_date": str(doc.referral_date),
-                "status": doc.status,
-                "referrer_name": referrer_name,
-                "referrer_phone": doc.referrer_phone,
-                "phc": phc_name,
-                "patient_name": doc.patient_name,
-                "patient_father_name": doc.patient_father_name,
-                "patient_gender": doc.patient_gender,
-                "patient_age": doc.patient_age,
-                "patient_village": patient_village_name,
-                "patient_phone": doc.patient_phone or "",
-                "opd_department": doc.opd_departments,
-                "additional_notes": doc.additional_notes or "",
-                "match_status": doc.match_status,
-                "tribal_classification": doc.tribal_classification or "",
-            }
+        # Flat structure for Glific
+        res = {
+            "patient_name": referral.patient_name,
+            "referral_date": str(referral.referral_date),
+            "opd_department": referral.opd_departments or referral.service_facility_type,
+            "reference_number": referral.reference_number,
+            "visit_count": referral.visit_count or 0,
+            "status": referral.status,
         }
+
+        # Nested structure for backward compatibility
+        res["success"] = True
+        res["referral"] = {
+            "reference_number": referral.reference_number,
+            "referral_date": str(referral.referral_date),
+            "status": referral.status,
+            "referrer_name": referrer_name,
+            "referrer_phone": referral.referrer_phone,
+            "phc": phc_name,
+            "patient_name": referral.patient_name,
+            "patient_father_name": referral.patient_father_name,
+            "patient_gender": referral.patient_gender,
+            "patient_age": referral.patient_age,
+            "patient_village": patient_village_name,
+            "patient_taluka": referral.patient_taluka or "",
+            "patient_phone": referral.patient_phone or "",
+            "opd_category": referral.opd_category or "",
+            "opd_department": referral.opd_departments or "",
+            "referred_doctor": referral.referred_doctor or "",
+            "additional_notes": referral.additional_notes or "",
+            "match_status": referral.match_status,
+            "tribal_classification": referral.tribal_classification or "",
+        }
+
+        return res
 
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "get_referral API Error")
@@ -657,6 +1167,280 @@ def get_referral(reference_number: str) -> dict:
             "success": False,
             "error": str(e)
         }
+
+
+@frappe.whitelist(allow_guest=True)
+def record_supervisor_visit(
+    referral_id: str,
+    supervisor_phone: str,
+    visit_date: str,
+    patient_visited: str,
+    facility_visited: str = None,
+    confirmation_date: str = None,
+    patient_health_status: str = None,
+    supervisor_name: str = None,
+    non_visit_reason: str = None,
+) -> dict:
+    """
+    Records a supervisor follow-up visit and updates the Patient Referral status.
+    """
+    try:
+        # Clean all input variables first (to handle unresolved Glific variables)
+        referral_id = clean_glific_value(referral_id)
+        supervisor_phone = clean_glific_value(supervisor_phone)
+        visit_date = clean_glific_value(visit_date)
+        patient_visited = clean_glific_value(patient_visited)
+        facility_visited = clean_glific_value(facility_visited)
+        confirmation_date = clean_glific_value(confirmation_date)
+        patient_health_status = clean_glific_value(patient_health_status)
+        supervisor_name = clean_glific_value(supervisor_name)
+        non_visit_reason = clean_glific_value(non_visit_reason)
+
+        if not referral_id:
+            return {
+                "success": False,
+                "error": "Missing referral_id"
+            }
+
+        # 1. Look up referral
+        referral = None
+        if frappe.db.exists("Patient Referral", referral_id):
+            referral = frappe.get_doc("Patient Referral", referral_id)
+        elif frappe.db.exists("Patient Referral", {"reference_number": referral_id}):
+            referral = frappe.get_doc("Patient Referral", {"reference_number": referral_id})
+
+        if not referral:
+            return {
+                "success": False,
+                "error": f"Referral {referral_id} not found"
+            }
+
+        # 2. Validate status allows new visits
+        if referral.status not in ("Pending", "Follow-up In Progress"):
+            return {
+                "success": False,
+                "error": f"Referral {referral_id} has status '{referral.status}' and cannot accept new visits"
+            }
+
+        # 3. Validate visit count
+        current_count = referral.visit_count or 0
+        if current_count >= 3:
+            return {
+                "success": False,
+                "error": f"Referral {referral_id} already has 3 visits recorded. No further visits allowed."
+            }
+
+        # 4. Parse and validate dates
+        from frappe.utils import getdate, today
+        visit_date_parsed = parse_date(visit_date)
+        if not visit_date_parsed:
+            return {
+                "success": False,
+                "error": f"Invalid visit date: {visit_date}"
+            }
+            
+        if visit_date_parsed > getdate(today()):
+            return {
+                "success": False,
+                "error": "Visit date cannot be in the future"
+            }
+        if visit_date_parsed < getdate(referral.referral_date):
+            return {
+                "success": False,
+                "error": "Visit date cannot be before referral date"
+            }
+
+        # 5. Create Supervisor Visit child record
+        new_visit_number = current_count + 1
+        is_visited = patient_visited and patient_visited.lower() in ("yes", "1", "true")
+
+        # Handle fields based on visited state
+        if is_visited:
+            confirmation_date_parsed = parse_date(confirmation_date)
+            # If confirmation_date parsing failed, fallback to visit_date
+            if not confirmation_date_parsed:
+                confirmation_date_parsed = visit_date_parsed
+                
+            reason_code = None
+        else:
+            confirmation_date_parsed = None
+            facility_visited = None
+            
+            reason_code = resolve_non_visit_reason(non_visit_reason)
+
+        referral.append("supervisor_visits", {
+            "visit_number": new_visit_number,
+            "visit_date": visit_date_parsed,
+            "patient_visited": 1 if is_visited else 0,
+            "facility_visited": facility_visited if is_visited else None,
+            "confirmation_date": confirmation_date_parsed,
+            "patient_health_status": patient_health_status if is_visited else None,
+            "non_visit_reason_code": reason_code if not is_visited else None,
+            "supervisor_name": supervisor_name,
+            "supervisor_phone": supervisor_phone,
+        })
+
+        # 6. Update referral status (state machine)
+        if is_visited:
+            referral.status = "Visited"
+            referral.facility_visited = facility_visited
+            referral.visit_date = confirmation_date_parsed
+        elif new_visit_number >= 3:
+            referral.status = "Closed - Not Visited"
+        else:
+            referral.status = "Follow-up In Progress"
+
+        # 7. Update visit count
+        referral.visit_count = new_visit_number
+
+        # 8. Save
+        referral.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "status": referral.status,
+            "visit_number": new_visit_number,
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "record_supervisor_visit API Error")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
+@frappe.whitelist(allow_guest=True)
+def get_pending_followups(supervisor_phone: str = None, **kwargs) -> dict:
+    """
+    Returns all pending follow-up referrals formatted as a ready-to-send
+    Marathi WhatsApp message, grouped by referral date then village.
+
+    Called by Glific 'Follow-up List' flow when supervisor sends the
+    list keyword.
+
+    Args:
+        supervisor_phone: supervisor's WhatsApp number (from Glific contact).
+            Currently unused (all supervisors get full list). Reserved for
+            future area-based filtering once supervisor-taluka mapping exists.
+
+    Returns:
+        {
+            "formatted_text": "<complete Marathi message>",
+            "count": <number of pending referrals>
+        }
+    """
+    referrals = frappe.get_all(
+        "Patient Referral",
+        filters={"status": ["in", ["Pending", "Follow-up In Progress"]]},
+        fields=[
+            "reference_number",
+            "patient_name",
+            "patient_age",
+            "patient_gender",
+            "patient_village",
+            "patient_taluka",
+            "referral_date",
+            "service_facility_type",
+            "opd_departments",
+            "opd_category",
+            "other_facility_name",
+            "visit_count",
+        ],
+        order_by="referral_date asc, patient_village asc",
+    )
+
+    if not referrals:
+        return {
+            "formatted_text": "सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅",
+            "count": 0,
+        }
+
+    # Resolve village links to display names (patient_village is a Link field)
+    village_names = {}
+    village_ids = list({r.patient_village for r in referrals if r.patient_village})
+    if village_ids:
+        for v in frappe.get_all(
+            "Village Profile",
+            filters={"name": ["in", village_ids]},
+            fields=["name", "village_name", "village_name_marathi"],
+        ):
+            village_names[v.name] = v.village_name_marathi or v.village_name
+
+    # Group by referral date, then village (mirrors the manual message format)
+    grouped = defaultdict(lambda: defaultdict(list))
+    for r in referrals:
+        date_str = r.referral_date.strftime("%d/%m/%y")
+        village_display = village_names.get(r.patient_village, r.patient_village or "गाव नोंद नाही")
+        grouped[date_str][village_display].append(r)
+
+    gender_mr = {"Male": "पुरुष", "Female": "स्त्री", "Other": "इतर"}
+
+    lines = ["*रेफर सर्च — फॉलो-अप यादी* 📋", ""]
+
+    for date_str in sorted(
+        grouped.keys(),
+        key=lambda d: frappe.utils.getdate("20" + d.split("/")[2] + "-" + d.split("/")[1] + "-" + d.split("/")[0]),
+    ):
+        villages = grouped[date_str]
+        for village, patients in villages.items():
+            lines.append(f"*{date_str}* ({village})")
+            for i, p in enumerate(patients, 1):
+                # Facility display: SEARCH / Government / free-text Other
+                if p.service_facility_type == "Other" and p.other_facility_name:
+                    hospital = p.other_facility_name
+                else:
+                    hospital = p.service_facility_type or "SEARCH"
+
+                dept = p.opd_departments or p.opd_category or "-"
+                
+                dept_map_mr = {
+                    "Medicine": "औषध",
+                    "Gynaecology": "स्त्रीरोग",
+                    "Orthopedics": "अस्थिरोग",
+                    "Spine": "मणका",
+                    "Surgery": "शस्त्रक्रिया",
+                    "Dental": "दंत",
+                    "Psychiatry": "मानसोपचार",
+                    "Rheumatology": "संधिवात",
+                    "Cardiology": "हृदयरोग",
+                    "Dermatology": "त्वचारोग",
+                    "Diabetology": "मधुमेह",
+                    "ENT": "कान नाक घसा",
+                    "Gastrology": "पोटरोग",
+                    "Head & Neck": "डोके आणि मान",
+                    "Neurology + Epilepsy": "अपस्मार/मज्जातंतू",
+                    "Oncology": "कर्करोग",
+                    "Pulmonology": "श्वसन/फुफ्फुस",
+                    "Sickle Cell": "सिकल सेल",
+                    "Cataract Surgery": "मोतीबिंदू शस्त्रक्रिया",
+                    "Ophthalmology": "नेत्र",
+                    "Plastic Surgery": "प्लास्टिक सर्जरी",
+                    "Urology": "मूत्ररोग",
+                    "Pain Management": "वेदना व्यवस्थापन",
+                    "Others": "इतर",
+                    "Regular OPD": "नियमित ओपीडी",
+                    "Specialist OPD": "तज्ञ ओपीडी",
+                    "Surgical OPD": "शस्त्रक्रिया ओपीडी"
+                }
+                dept_mr = dept_map_mr.get(dept, dept)
+                gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
+
+                lines.append(f"{i}) {p.patient_name}")
+                lines.append(f"वय-{p.patient_age}/{gender}")
+                lines.append(f"🏥 {hospital} | विभाग: {dept_mr}")
+                lines.append(f"🔖 {p.reference_number}")
+                if p.visit_count and p.visit_count > 0:
+                    lines.append(f"पुढील भेट क्र. {p.visit_count + 1}")
+            lines.append("")
+
+    formatted = "\n".join(lines).strip()
+
+    # WhatsApp message hard limit is 4096 chars. Truncate safely if huge.
+    if len(formatted) > 3900:
+        formatted = formatted[:3900] + "\n\n... यादी खूप मोठी आहे. कृपया प्रशासकाशी संपर्क साधा."
+
+    return {"formatted_text": formatted, "count": len(referrals)}
 
 
 @frappe.whitelist(allow_guest=False)
@@ -899,3 +1683,112 @@ def add_phcs_with_marathi():
             "success": False,
             "error": str(e)
         }
+
+
+@frappe.whitelist()
+def insert_samples():
+    print("Clearing existing referrals...")
+    frappe.db.delete("Patient Referral")
+    
+    samples = [
+        # Referral 1: Oldest date
+        {
+            "contact_phone": "9876543210",
+            "patient_name_raw": "Ramesh Madavi",
+            "father_name_raw": "Laxman",
+            "gender_raw": "Male",
+            "age_raw": "48",
+            "village_raw": "Alaknar",
+            "patient_taluka_raw": "Dhanora",
+            "service_facility_type": "SEARCH",
+            "opd_category_raw": "Regular OPD",
+            "departments_raw": "Medicine",
+            "referral_date_raw": "01/07/2026",
+            "patient_phone_raw": "9100000001",
+            "referring_doctor_raw": "Dr. Patil"
+        },
+        # Referral 2: Government facility
+        {
+            "contact_phone": "9876543210",
+            "patient_name_raw": "Sunita Pudo",
+            "father_name_raw": "Raju",
+            "gender_raw": "Female",
+            "age_raw": "35",
+            "village_raw": "Ambezari",
+            "patient_taluka_raw": "Dhanora",
+            "service_facility_type": "Government",
+            "referral_date_raw": "02/07/2026",
+            "patient_phone_raw": "9100000002",
+            "referring_doctor_raw": "Dr. Patil"
+        },
+        # Referral 3: Same date, village Arjuni (Patient A)
+        {
+            "contact_phone": "9876543210",
+            "patient_name_raw": "Vilas Atram",
+            "father_name_raw": "Sukhdeo",
+            "gender_raw": "Male",
+            "age_raw": "50",
+            "village_raw": "Arjuni",
+            "patient_taluka_raw": "Dhanora",
+            "service_facility_type": "Other",
+            "other_facility_raw": "Civil Hospital Nagpur",
+            "referral_date_raw": "05/07/2026",
+            "patient_phone_raw": "9100000003",
+            "referring_doctor_raw": "Dr. Patil"
+        },
+        # Referral 4: Same date, village Arjuni (Patient B)
+        {
+            "contact_phone": "9876543210",
+            "patient_name_raw": "Kamla Halami",
+            "father_name_raw": "Devaji",
+            "gender_raw": "Female",
+            "age_raw": "60",
+            "village_raw": "Arjuni",
+            "patient_taluka_raw": "Dhanora",
+            "service_facility_type": "SEARCH",
+            "opd_category_raw": "Surgical OPD",
+            "departments_raw": "Ophthalmology",
+            "referral_date_raw": "05/07/2026",
+            "patient_phone_raw": "9100000004",
+            "referring_doctor_raw": "Dr. Patil"
+        },
+        # Referral 5: Follow-up In Progress
+        {
+            "contact_phone": "9876543210",
+            "patient_name_raw": "Devidas Usendi",
+            "father_name_raw": "Kavdu",
+            "gender_raw": "Male",
+            "age_raw": "28",
+            "village_raw": "Aswalpar",
+            "patient_taluka_raw": "Dhanora",
+            "service_facility_type": "SEARCH",
+            "opd_category_raw": "Specialist OPD",
+            "departments_raw": "Diabetology",
+            "referral_date_raw": "07/07/2026",
+            "patient_phone_raw": "9100000005",
+            "referring_doctor_raw": "Dr. Patil"
+        }
+    ]
+    
+    for i, s in enumerate(samples, 1):
+        res = create_referral(**s)
+        if res.get("success"):
+            ref_num = res.get("reference_number")
+            print(f"Created referral {i}: {ref_num} for {s['patient_name_raw']}")
+            
+            # Record a visit for the last patient to set it to Follow-up In Progress
+            if s["patient_name_raw"] == "Devidas Usendi":
+                visit_res = record_supervisor_visit(
+                    referral_id=ref_num,
+                    supervisor_phone="9999999999",
+                    visit_date="08-07-2026",
+                    patient_visited="No",
+                    non_visit_reason="NV-01: Financial Constraints"
+                )
+                if visit_res.get("success"):
+                    print(f"Recorded follow-up visit for Devidas Usendi. Status: {visit_res.get('status')}")
+        else:
+            print(f"Failed to create referral {i}: {res.get('error')}")
+            
+    frappe.db.commit()
+    return {"success": True}

@@ -20,15 +20,22 @@ class RawPatientReferralData(Document):
 		father_name_raw: DF.Data | None
 		gender_raw: DF.Data | None
 		glific_contact_id: DF.Data | None
+		opd_category_raw: DF.Data | None
 		patient_name_raw: DF.Data | None
 		patient_phone_raw: DF.Data | None
 		patient_referral: DF.Link | None
+		patient_taluka_raw: DF.Data | None
 		received_at: DF.Datetime | None
+		referral_date_raw: DF.Data | None
+		referred_doctor_raw: DF.Data | None
 		referrer_latitude: DF.Float
 		referrer_longitude: DF.Float
 		referrer_village: DF.Data | None
 		selected_phc: DF.Data | None
 		village_raw: DF.Data | None
+		service_facility_type: DF.Data | None
+		other_facility_raw: DF.Data | None
+		referring_doctor_raw: DF.Data | None
 	# end: auto-generated types
 
 	pass
