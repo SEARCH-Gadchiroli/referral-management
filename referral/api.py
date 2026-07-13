@@ -132,6 +132,7 @@ def _iast_to_english(iast_text: str) -> str:
     Key: schwa deletion runs BEFORE vowel normalization so only
     implicit 'a' (schwa) is removed, not explicit 'ā' (long a).
     """
+    import re
     import unicodedata
 
     # Step 1: Hindi/Marathi schwa deletion on IAST text
@@ -145,6 +146,10 @@ def _iast_to_english(iast_text: str) -> str:
         cleaned.append(w)
     result = ' '.join(cleaned)
 
+    # Convert anusvara 'ṃ' to 'm' before labials (p, b, ph, bh, v, m), otherwise 'n'
+    result = re.sub(r"ṃ(?=[pbvm]|ph|bh)", "m", result)
+    result = result.replace("ṃ", "n")
+
     # Step 2: Apply multi-char IAST → English mappings
     replacements = [
         ("kṣ", "ksh"), ("ṣ", "sh"), ("ś", "sh"),
@@ -152,7 +157,7 @@ def _iast_to_english(iast_text: str) -> str:
         ("jñ", "gya"),
         ("ṭ", "t"), ("ḍ", "d"), ("ṇ", "n"), ("ṅ", "ng"),
         ("ñ", "n"),
-        ("ṃ", "m"), ("ḥ", "h"),
+        ("ḥ", "h"),
         ("ā", "a"), ("ī", "i"), ("ū", "u"),
         ("ṛ", "ri"),
         ("ai", "ai"), ("au", "au"),
