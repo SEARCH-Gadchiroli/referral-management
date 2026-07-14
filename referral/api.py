@@ -530,7 +530,12 @@ def parse_date(date_str):
     cleaned = clean_glific_value(date_str)
     if not cleaned:
         return None
-        
+
+    # Handle "today" / "aaj" / "आज" sent literally by Glific
+    if cleaned.lower().strip() in ("today", "aaj", "आज"):
+        from frappe.utils import today as frappe_today
+        return getdate(frappe_today())
+
     # DD/MM/YYYY format from Glific
     if "/" in cleaned:
         from datetime import datetime
