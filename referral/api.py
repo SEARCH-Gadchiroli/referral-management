@@ -906,7 +906,18 @@ def create_referral(
 
         # Defaults to SEARCH hospital if not specified for backward compatibility
         facility_type = service_facility_type or "SEARCH"
-        
+
+        # Normalize Marathi facility type values to English
+        facility_type_map = {
+            "सर्च": "SEARCH",
+            "शासकीय": "Government",
+            "शासकीय रुग्णालय": "Government",
+            "सरकार": "Government",
+            "इतर": "Other",
+            "अन्य": "Other",
+        }
+        facility_type = facility_type_map.get(facility_type, facility_type)
+
         valid_facilities = ["SEARCH", "Government", "Other"]
         if facility_type not in valid_facilities:
             frappe.throw(f"Invalid service facility type: {facility_type}")
