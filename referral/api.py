@@ -1255,10 +1255,11 @@ def record_supervisor_visit(
         from frappe.utils import getdate, today
         visit_date_parsed = parse_date(visit_date)
         if not visit_date_parsed:
-            return {
-                "success": False,
-                "error": f"Invalid visit date: {visit_date}"
-            }
+            # Default to today if visit_date is missing/unresolved — supervisor records in real time
+            frappe.logger().warning(
+                f"[record_supervisor_visit] visit_date '{visit_date}' could not be parsed, defaulting to today"
+            )
+            visit_date_parsed = getdate(today())
             
         if visit_date_parsed > getdate(today()):
             return {
