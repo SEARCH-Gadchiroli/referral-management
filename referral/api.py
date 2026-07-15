@@ -1274,7 +1274,9 @@ def record_supervisor_visit(
 
         # 5. Create Supervisor Visit child record
         new_visit_number = current_count + 1
-        is_visited = patient_visited and patient_visited.lower() in ("yes", "1", "true")
+        # Support English, Marathi (होय/हो), Hindi (हाँ) affirmatives
+        YES_VALUES = ("yes", "1", "true", "होय", "हो", "हाँ", "han", "hoy")
+        is_visited = bool(patient_visited and patient_visited.strip().lower() in YES_VALUES)
 
         # Handle fields based on visited state
         if is_visited:
