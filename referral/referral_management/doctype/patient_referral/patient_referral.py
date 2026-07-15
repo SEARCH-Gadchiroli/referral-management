@@ -42,7 +42,6 @@ class PatientReferral(Document):
         visit_date: DF.Date | None
         service_facility_type: DF.Literal["SEARCH", "Government", "Other"]
         other_facility_name: DF.Data | None
-        referring_doctor: DF.Data
         supervisor_visits: DF.Table
         visit_count: DF.Int
         facility_visited: DF.Literal["", "SEARCH", "Government", "Other"]

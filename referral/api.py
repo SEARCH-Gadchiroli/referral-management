@@ -1066,7 +1066,6 @@ def create_referral(
             "opd_category": opd_category_input or "",
             "opd_departments": opd_dept or "",
             "other_facility_name": other_facility_raw or "",
-            "referring_doctor": referring_doctor,
             "referred_doctor": referring_doctor,
             "raw_patient_data": raw_doc.name,
         })

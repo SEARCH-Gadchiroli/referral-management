@@ -27,7 +27,6 @@
   "service_facility_type",
   "opd_category",
   "other_facility_name",
-  "referring_doctor",
   "patient_phone",
   "phc",
   "census_section",
@@ -196,13 +195,6 @@
    "label": "Other Facility Name",
    "depends_on": "eval:doc.service_facility_type==\"Other\"",
    "description": "Free-text name of non-SEARCH, non-Government facility. Max 200 chars."
-  },
-  {
-   "fieldname": "referring_doctor",
-   "fieldtype": "Data",
-   "label": "Referring Doctor",
-   "reqd": 1,
-   "description": "Name of the doctor making the referral. Currently free-text from Glific; future: Link to Referrer doctype."
   },
   {
    "fieldname": "patient_phone",
