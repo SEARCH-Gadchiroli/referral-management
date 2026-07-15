@@ -654,28 +654,76 @@ def resolve_non_visit_reason(reason_input: str) -> str | None:
     mapping = {
         "NV-01": "Financial Constraints",
         "Financial Constraints": "Financial Constraints",
+        "पैशांची अडचण": "Financial Constraints",
+        "पैसे नाही": "Financial Constraints",
+        "आर्थिक अडचण": "Financial Constraints",
+        "आर्थिक कारण": "Financial Constraints",
+        "पैसे नसणे": "Financial Constraints",
+        "आर्थिक मर्यादा": "Financial Constraints",
+        "वित्तीय बाधाएं": "Financial Constraints",
         
         "NV-02": "Transport Unavailable",
         "Transport Unavailable": "Transport Unavailable",
+        "वाहतूक उपलब्ध नाही": "Transport Unavailable",
+        "गाडी नाही": "Transport Unavailable",
+        "गाडीची सोय नाही": "Transport Unavailable",
+        "वाहतूक नाही": "Transport Unavailable",
+        "प्रवासाची अडचण": "Transport Unavailable",
+        "परिवहन अनुपलब्ध": "Transport Unavailable",
         
         "NV-03": "Fear or Anxiety",
         "Fear or Anxiety": "Fear or Anxiety",
+        "भीती वाटणे": "Fear or Anxiety",
+        "भीती": "Fear or Anxiety",
+        "घाबरणे": "Fear or Anxiety",
+        "घाबरत आहे": "Fear or Anxiety",
+        "भीती किंवा चिंता": "Fear or Anxiety",
+        "डर या चिंता": "Fear or Anxiety",
         
         "NV-04": "Feeling Better",
         "Feeling Better": "Feeling Better",
+        "बरे वाटत आहे": "Feeling Better",
+        "बरे वाटणे": "Feeling Better",
+        "तब्बेत सुधारली": "Feeling Better",
+        "तब्येत सुधारली": "Feeling Better",
+        "आता बरे वाटत आहे": "Feeling Better",
+        "सुधारणा झाली": "Feeling Better",
+        "अच्छा लगना": "Feeling Better",
         
         "NV-05": "Unaware of Appointment",
         "Unaware of Appointment": "Unaware of Appointment",
+        "अपॉइंटमेंट माहित नव्हती": "Unaware of Appointment",
+        "माहित नव्हते": "Unaware of Appointment",
+        "माहिती नव्हती": "Unaware of Appointment",
+        "तारीख माहित नव्हती": "Unaware of Appointment",
+        "भेटीची माहिती नाही": "Unaware of Appointment",
+        "नियुक्ति से अनभिज्ञ": "Unaware of Appointment",
         
         "NV-06": "Family Objection",
         "Family Objection": "Family Objection",
+        "कुटुंबाचा विरोध": "Family Objection",
+        "घरी विरोध": "Family Objection",
+        "घरच्यांचा विरोध": "Family Objection",
+        "घरचे नाही म्हणतात": "Family Objection",
+        "कौटुंबिक आक्षेप": "Family Objection",
+        "पारिवारिक आपत्ति": "Family Objection",
         
         "NV-07": "Distance Too Far",
         "Distance Too Far": "Distance Too Far",
+        "खूप लांब आहे": "Distance Too Far",
+        "अंतर जास्त आहे": "Distance Too Far",
+        "खूप लांब": "Distance Too Far",
+        "जास्त अंतर": "Distance Too Far",
+        "अंतर खूप जास्त आहे": "Distance Too Far",
+        "दूरी बहुत अधिक है": "Distance Too Far",
         
         "NV-08": "Other",
         "Other": "Other",
-        "Other (Specify)": "Other"
+        "Other (Specify)": "Other",
+        "इतर": "Other",
+        "अन्य": "Other",
+        "इतर (नमूद करा)": "Other",
+        "अन्य (निर्दिष्ट करें)": "Other"
     }
     
     # Try direct mapping
@@ -695,6 +743,90 @@ def resolve_non_visit_reason(reason_input: str) -> str | None:
             return val
             
     return None
+
+
+def resolve_patient_health_status(status_input: str) -> str | None:
+    if not status_input:
+        return None
+        
+    clean_val = status_input.strip()
+    
+    mapping = {
+        "Fully Recovered/Cured": "Fully Recovered/Cured",
+        "Fully Recovered": "Fully Recovered/Cured",
+        "Cured": "Fully Recovered/Cured",
+        "पूर्ण बरे झाले": "Fully Recovered/Cured",
+        "बरे झाले": "Fully Recovered/Cured",
+        "पूर्णपणे बरे झाले": "Fully Recovered/Cured",
+        "पूर्ण बरे": "Fully Recovered/Cured",
+        "बरे": "Fully Recovered/Cured",
+        "पूरी तरह से ठीक हो गया": "Fully Recovered/Cured",
+        
+        "Under Treatment (Ongoing)": "Under Treatment (Ongoing)",
+        "Under Treatment(Ongoing)": "Under Treatment (Ongoing)",
+        "Under Treatment": "Under Treatment (Ongoing)",
+        "Ongoing Treatment": "Under Treatment (Ongoing)",
+        "उपचार सुरू आहेत": "Under Treatment (Ongoing)",
+        "उपचार चालू आहेत": "Under Treatment (Ongoing)",
+        "उपचार सुरू": "Under Treatment (Ongoing)",
+        "चालू उपचार": "Under Treatment (Ongoing)",
+        "उपचार चालू": "Under Treatment (Ongoing)",
+        "उपचार सुरू आहे": "Under Treatment (Ongoing)",
+        "इलाज जारी है (जारी)": "Under Treatment (Ongoing)",
+        
+        "Needs Further Treatment": "Needs Further Treatment",
+        "Further Treatment": "Needs Further Treatment",
+        "पुढील उपचारांची गरज आहे": "Needs Further Treatment",
+        "पुढील उपचार": "Needs Further Treatment",
+        "आणखी उपचारांची गरज": "Needs Further Treatment",
+        "पुढील गरज": "Needs Further Treatment",
+        "आगे के उपचार की आवश्यकता": "Needs Further Treatment",
+        
+        "Condition Worsened": "Condition Worsened",
+        "Worsened": "Condition Worsened",
+        "तब्बेत बिघडली": "Condition Worsened",
+        "तब्येत बिघडली": "Condition Worsened",
+        "अवस्था बिघडली": "Condition Worsened",
+        "प्रकृती बिघडली": "Condition Worsened",
+        "परिस्थिति अधिकच बिघडली": "Condition Worsened",
+        "स्थिति और बिगड़ गई": "Condition Worsened"
+    }
+    
+    # Try case-insensitive matching
+    for key, val in mapping.items():
+        if key.lower().replace(" ", "") == clean_val.lower().replace(" ", ""):
+            return val
+            
+    # Substring check
+    for key, val in mapping.items():
+        if key.lower() in clean_val.lower() or clean_val.lower() in key.lower():
+            return val
+            
+    return mapping.get(clean_val, None)
+
+
+def resolve_facility_type(facility_input: str) -> str | None:
+    if not facility_input:
+        return None
+    facility_clean = facility_input.strip()
+    facility_type_map = {
+        "सर्च": "SEARCH",
+        "search": "SEARCH",
+        "शासकीय": "Government",
+        "शासकीय रुग्णालय": "Government",
+        "सरकारी": "Government",
+        "सरकारी रुग्णालय": "Government",
+        "सरकार": "Government",
+        "government": "Government",
+        "इतर": "Other",
+        "अन्य": "Other",
+        "other": "Other",
+    }
+    # Check case-insensitive mapping
+    for key, val in facility_type_map.items():
+        if key.lower() == facility_clean.lower():
+            return val
+    return facility_type_map.get(facility_clean, None)
 
 
 transliterate_if_devanagari = transliterate_to_roman
@@ -910,18 +1042,7 @@ def create_referral(
         longitude = clean_glific_value(longitude)
 
         # Defaults to SEARCH hospital if not specified for backward compatibility
-        facility_type = service_facility_type or "SEARCH"
-
-        # Normalize Marathi facility type values to English
-        facility_type_map = {
-            "सर्च": "SEARCH",
-            "शासकीय": "Government",
-            "शासकीय रुग्णालय": "Government",
-            "सरकार": "Government",
-            "इतर": "Other",
-            "अन्य": "Other",
-        }
-        facility_type = facility_type_map.get(facility_type, facility_type)
+        facility_type = resolve_facility_type(service_facility_type) or "SEARCH"
 
         valid_facilities = ["SEARCH", "Government", "Other"]
         if facility_type not in valid_facilities:
@@ -1284,10 +1405,11 @@ def record_supervisor_visit(
             if not confirmation_date_parsed:
                 confirmation_date_parsed = visit_date_parsed
                 
+            resolved_facility = resolve_facility_type(facility_visited)
             reason_code = None
         else:
             confirmation_date_parsed = None
-            facility_visited = None
+            resolved_facility = None
             
             reason_code = resolve_non_visit_reason(non_visit_reason)
 
@@ -1295,9 +1417,9 @@ def record_supervisor_visit(
             "visit_number": new_visit_number,
             "visit_date": visit_date_parsed,
             "patient_visited": 1 if is_visited else 0,
-            "facility_visited": facility_visited if is_visited else None,
+            "facility_visited": resolved_facility,
             "confirmation_date": confirmation_date_parsed,
-            "patient_health_status": patient_health_status if is_visited else None,
+            "patient_health_status": resolve_patient_health_status(patient_health_status) if is_visited else None,
             "non_visit_reason_code": reason_code if not is_visited else None,
             "supervisor_name": supervisor_name,
             "supervisor_phone": supervisor_phone,
@@ -1306,7 +1428,7 @@ def record_supervisor_visit(
         # 6. Update referral status (state machine)
         if is_visited:
             referral.status = "Visited"
-            referral.facility_visited = facility_visited
+            referral.facility_visited = resolved_facility
             referral.visit_date = confirmation_date_parsed
         elif new_visit_number >= 3:
             referral.status = "Closed - Not Visited"
