@@ -8,9 +8,9 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/referrals"
 		raise frappe.Redirect
 
-	# Only allow System Managers as requested
-	if "System Manager" not in frappe.get_roles():
-		frappe.throw(_("You do not have permission to view this page. Access is restricted to System Managers."), frappe.PermissionError)
+	# Only allow System Managers or users with Patient Referral read permission
+	if "System Manager" not in frappe.get_roles() and not frappe.has_permission("Patient Referral", "read"):
+		frappe.throw(_("You do not have permission to view this page. Access is restricted to authorized users."), frappe.PermissionError)
 
 	# Fetch query args
 	form_dict = frappe.form_dict

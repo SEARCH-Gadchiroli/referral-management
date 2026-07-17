@@ -32,7 +32,7 @@ APPS = [
         "icon": "📋",
         "color": "#059669",
         "bg": "#d1fae5",
-        "roles": ["System Manager"], # Restricted to System Manager
+        "roles": ["System Manager"], # System Manager (others get access via Patient Referral permission)
         "url": "/referrals",
         "links": [],
     },
@@ -85,6 +85,10 @@ def get_context(context):
 
     for app in APPS:
         has_access = is_admin or any(role in user_roles for role in app["roles"])
+        if not has_access and app["id"] == "referral":
+            if frappe.has_permission("Patient Referral", "read"):
+                has_access = True
+
         if not has_access:
             continue
 
