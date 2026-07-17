@@ -87,15 +87,13 @@
     }
 
     .p-org-logo {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: #ffffff;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+        background: #ffffff;
     }
 
     .p-page-title {
@@ -326,7 +324,7 @@
             {% else %}
             <a href="/portal" class="btn-back-portal" title="Back to Portal">←</a>
             {% endif %}
-            <div class="p-org-logo">📊</div>
+            <img class="p-org-logo" src="/assets/referral/images/search-logo.jpg" alt="SEARCH Logo" />
             <h1 class="p-page-title">Metabase Dashboards</h1>
         </div>
         <div class="p-topbar-right">

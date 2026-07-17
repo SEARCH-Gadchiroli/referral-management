@@ -94,16 +94,13 @@
     }
 
     .p-org-logo {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #059669, #10b981);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: #ffffff;
-        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.2);
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+        background: #ffffff;
     }
 
     .p-page-title {
@@ -690,7 +687,7 @@
     <div class="p-topbar">
         <div class="p-topbar-left">
             <a href="/portal" class="btn-back-portal" title="Back to Portal">←</a>
-            <div class="p-org-logo">🏥</div>
+            <img class="p-org-logo" src="/assets/referral/images/search-logo.jpg" alt="SEARCH Logo" />
             <h1 class="p-page-title">Referral Management</h1>
         </div>
         <div class="p-topbar-right">
