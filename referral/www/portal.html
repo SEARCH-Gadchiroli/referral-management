@@ -7,10 +7,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
     /* ── Base overrides ───────────────────────────────────────── */
+    :root {
+        --bg-primary: #f8fafc;
+        --bg-card: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --topbar-bg: #ffffff;
+        --user-pill-bg: #f1f5f9;
+        --panel-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+        --bg-primary: #0f172a;
+        --bg-card: #1e293b;
+        --border-color: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #64748b;
+        --topbar-bg: #1e293b;
+        --user-pill-bg: #334155;
+        --panel-bg: #1e293b;
+    }
+
     body {
-        background: #f4f5f7 !important;
+        background: var(--bg-primary) !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        color: #1a1a2e;
+        color: var(--text-primary);
+        margin: 0;
+        padding: 0;
+        transition: background 0.3s, color 0.3s;
     }
 
     .page-header, .breadcrumb, .navbar { display: none !important; }
@@ -20,168 +47,231 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        background: #f4f5f7;
     }
 
     /* ── Top bar ──────────────────────────────────────────────── */
     .p-topbar {
-        background: #fff;
-        border-bottom: 1px solid #e2e6ea;
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 32px;
-        height: 56px;
+        height: 70px;
         flex-shrink: 0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: background 0.3s, border-color 0.3s;
     }
 
     .p-topbar-left {
-        display: flex; align-items: center; gap: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .p-org-logo {
-        width: 32px; height: 32px; border-radius: 8px;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 17px; flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        color: #ffffff;
     }
 
     .p-org-name {
-        font-size: 14px; font-weight: 600; color: #1a1a2e;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
     }
 
     .p-topbar-right {
-        display: flex; align-items: center; gap: 14px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
     }
 
     .p-user-pill {
-        display: flex; align-items: center; gap: 8px;
-        padding: 5px 12px 5px 5px;
-        background: #f4f5f7; border-radius: 24px;
-        border: 1px solid #e2e6ea;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px 6px 6px;
+        background: var(--user-pill-bg);
+        border-radius: 24px;
+        border: 1px solid var(--border-color);
+        transition: background 0.3s, border-color 0.3s;
     }
 
     .p-avatar {
-        width: 28px; height: 28px; border-radius: 50%;
-        background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 11px; font-weight: 700; color: #fff;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffffff;
     }
 
     .p-user-name {
-        font-size: 13px; font-weight: 500; color: #374151;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
     }
 
     .p-logout {
-        font-size: 12px; font-weight: 500; color: #6b7280;
-        text-decoration: none; padding: 6px 14px;
-        border: 1px solid #d1d5db; border-radius: 6px;
-        transition: background 0.15s, color 0.15s;
-        background: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 8px 18px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-card);
+        transition: all 0.2s;
     }
-    .p-logout:hover { background: #f3f4f6; color: #374151; }
+    .p-logout:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+        border-color: var(--text-muted);
+    }
+
+    .btn-theme-toggle {
+        background: var(--user-pill-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    .btn-theme-toggle:hover {
+        background: var(--border-color);
+        transform: scale(1.05);
+    }
 
     /* ── Main content area ────────────────────────────────────── */
     .p-main {
         flex: 1;
-        padding: 40px 40px 60px;
-        max-width: 1100px;
+        padding: 48px 32px 64px;
+        max-width: 1000px;
         margin: 0 auto;
         width: 100%;
+        box-sizing: border-box;
     }
 
     /* ── Section heading ──────────────────────────────────────── */
     .p-section-head {
-        margin-bottom: 28px;
+        margin-bottom: 40px;
+        text-align: center;
     }
 
     .p-section-title {
-        font-size: 20px; font-weight: 700; color: #111827;
-        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin: 0 0 8px;
+        letter-spacing: -0.025em;
     }
 
     .p-section-sub {
-        font-size: 13px; color: #6b7280; margin: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
     }
 
-    /* ── App icon grid (Frappe desk style) ────────────────────── */
+    /* ── App Grid (Premium Design) ────────────────────────────── */
     .p-app-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 20px;
+        justify-content: center;
     }
 
-    /* Each app is a compact icon tile */
+    /* Elegant App Cards */
     .p-app-tile {
-        width: 88px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
-        padding: 16px 8px 12px;
-        border-radius: 12px;
+        gap: 16px;
+        padding: 24px 16px;
         cursor: pointer;
-        transition: background 0.15s;
-        border: 1.5px solid transparent;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, border-color 0.2s, background-color 0.3s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         position: relative;
         text-decoration: none;
-        background: transparent;
     }
 
     .p-app-tile:hover {
-        background: #fff;
-        border-color: #e2e6ea;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        border-color: var(--text-muted);
     }
 
     .p-app-tile.active {
-        background: #fff;
-        border-color: #c7d2fe;
-        box-shadow: 0 2px 8px rgba(79,70,229,0.12);
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
     }
 
     .p-app-icon {
-        width: 52px; height: 52px;
-        border-radius: 14px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 26px;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
         flex-shrink: 0;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
     }
 
     .p-app-label {
-        font-size: 11px; font-weight: 600;
-        color: #374151;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-primary);
         text-align: center;
-        line-height: 1.3;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 80px;
+        letter-spacing: -0.01em;
     }
 
     /* ── Sub-panel (links drawer) ─────────────────────────────── */
     .p-panel-backdrop {
         display: none;
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,0.08);
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.2);
+        backdrop-filter: blur(4px);
         z-index: 40;
     }
 
     .p-panel {
         display: none;
         position: fixed;
-        top: 56px; left: 0; right: 0;
-        background: #fff;
-        border-bottom: 1px solid #e2e6ea;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: var(--panel-bg);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
         z-index: 50;
-        animation: panelIn 0.18s ease;
+        animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: background 0.3s, border-color 0.3s;
     }
 
     @keyframes panelIn {
-        from { opacity: 0; transform: translateY(-8px); }
+        from { opacity: 0; transform: translateY(-12px); }
         to   { opacity: 1; transform: translateY(0); }
     }
 
@@ -189,94 +279,123 @@
     .p-panel-backdrop.open { display: block; }
 
     .p-panel-inner {
-        max-width: 1100px; margin: 0 auto;
-        padding: 20px 40px 24px;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px 32px;
     }
 
     .p-panel-header {
-        display: flex; align-items: center; gap: 12px;
-        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
     }
 
     .p-panel-icon {
-        width: 40px; height: 40px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 20px;
     }
 
     .p-panel-title {
-        font-size: 16px; font-weight: 700; color: #111827;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
     }
 
     .p-panel-close {
         margin-left: auto;
-        background: none; border: none;
-        font-size: 18px; color: #9ca3af; cursor: pointer;
-        padding: 4px 8px; border-radius: 6px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
         line-height: 1;
-        transition: background 0.15s;
+        transition: background 0.2s, color 0.2s;
     }
-    .p-panel-close:hover { background: #f3f4f6; color: #374151; }
+    .p-panel-close:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+    }
 
     /* Link items in panel */
     .p-panel-links {
-        display: flex; flex-wrap: wrap; gap: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
     }
 
     .p-panel-link {
-        display: flex; align-items: center; gap: 8px;
-        padding: 9px 16px;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 20px;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
         text-decoration: none;
-        transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
-        min-width: 160px;
+        transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        min-width: 180px;
     }
 
     .p-panel-link:hover {
-        background: #fff;
-        border-color: #c7d2fe;
-        box-shadow: 0 1px 6px rgba(79,70,229,0.10);
+        background: var(--bg-card);
+        border-color: var(--text-muted);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
 
-    /* Per-app icon background colours */
-    .bg-mental_health  { background: #ede9fe; }
-    .bg-referral       { background: #d1fae5; }
-    .bg-mmu            { background: #fee2e2; }
-    .bg-tribal_health  { background: #fef3c7; }
+    /* Per-app backgrounds */
+    .bg-mental_health  { background: #f5f3ff; color: #7c3aed; }
+    .bg-referral       { background: #ecfdf5; color: #059669; }
+    .bg-mmu            { background: #fef2f2; color: #dc2626; }
+    .bg-tribal_health  { background: #fffbeb; color: #d97706; }
+    .bg-dashboards      { background: #eff6ff; color: #2563eb; }
 
     .p-panel-link-icon {
-        font-size: 16px; flex-shrink: 0;
+        font-size: 18px;
+        flex-shrink: 0;
     }
 
     .p-panel-link-label {
-        font-size: 13px; font-weight: 500; color: #374151;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
     }
 
-    /* ── No apps ──────────────────────────────────────────────── */
+    /* ── Empty state ──────────────────────────────────────────── */
     .p-empty {
-        text-align: center; padding: 80px 20px;
-        color: #9ca3af;
+        text-align: center;
+        padding: 80px 20px;
+        color: #94a3b8;
     }
     .p-empty-icon { font-size: 48px; margin-bottom: 12px; }
-    .p-empty-title { font-size: 18px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .p-empty-title { font-size: 18px; font-weight: 700; color: #475569; margin-bottom: 6px; }
     .p-empty-text  { font-size: 14px; }
 
     /* ── Footer ───────────────────────────────────────────────── */
     .p-footer {
         text-align: center;
-        padding: 16px;
-        font-size: 11px; color: #d1d5db;
-        border-top: 1px solid #e5e7eb;
-        background: #fff;
+        padding: 24px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-card);
+        margin-top: auto;
+        transition: background 0.3s, border-color 0.3s;
     }
 
     /* ── Responsive ───────────────────────────────────────────── */
     @media (max-width: 600px) {
-        .p-topbar, .p-main, .p-panel-inner { padding-left: 16px; padding-right: 16px; }
-        .p-app-tile { width: 76px; }
-        .p-app-icon { width: 44px; height: 44px; font-size: 22px; }
+        .p-topbar, .p-main, .p-panel-inner { padding-left: 20px; padding-right: 20px; }
+        .p-app-grid { gap: 14px; }
+        .p-app-tile { padding: 16px 8px; }
+        .p-app-icon { width: 52px; height: 52px; font-size: 26px; }
     }
 </style>
 {% endblock %}
@@ -291,11 +410,12 @@
             <span class="p-org-name">SEARCH Gadchiroli</span>
         </div>
         <div class="p-topbar-right">
+            <button id="theme-toggle" class="btn-theme-toggle" title="Toggle dark/light mode">🌙</button>
             <div class="p-user-pill">
                 <div class="p-avatar">{{ user_fullname[0] | upper }}</div>
                 <span class="p-user-name">{{ user_fullname }}</span>
             </div>
-            <a href="/api/method/logout" class="p-logout">Sign out</a>
+            <a href="#" onclick="handleLogout(event)" class="p-logout">Sign out</a>
         </div>
     </div>
 
@@ -312,7 +432,7 @@
         {% else %}
         <div class="p-section-head">
             <h1 class="p-section-title">Applications</h1>
-            <p class="p-section-sub">Click an app to see available actions.</p>
+            <p class="p-section-sub">Select an application to begin.</p>
         </div>
 
         <!-- App icon grid -->
@@ -320,7 +440,11 @@
             {% for app in apps %}
             <div class="p-app-tile"
                  id="tile-{{ app.id }}"
+                 {% if app.url %}
+                 onclick="window.location.href='{{ app.url }}'"
+                 {% else %}
                  onclick="openPanel('{{ app.id }}')"
+                 {% endif %}
                  role="button"
                  tabindex="0"
                  aria-label="{{ app.title }}">
@@ -338,8 +462,9 @@
     <!-- Sub-panel backdrop -->
     <div class="p-panel-backdrop" id="panel-backdrop" onclick="closePanel()"></div>
 
-    <!-- Sub-panels (one per app, hidden by default) -->
+    <!-- Sub-panels (only for apps without direct URL redirect, hidden by default) -->
     {% for app in apps %}
+    {% if not app.url %}
     <div class="p-panel" id="panel-{{ app.id }}" role="dialog" aria-label="{{ app.title }} menu">
         <div class="p-panel-inner">
             <div class="p-panel-header">
@@ -357,6 +482,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     {% endfor %}
 
     <!-- Footer -->
@@ -364,6 +490,24 @@
 </div>
 
 <script>
+    function handleLogout(e) {
+        if (e) e.preventDefault();
+        fetch("/api/method/logout", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Frappe-CSRF-Token": "{{ csrf_token }}"
+            }
+        })
+        .then(function() {
+            window.location.href = "/login";
+        })
+        .catch(function() {
+            window.location.href = "/login";
+        });
+    }
+
     let activeAppId = null;
 
     function openPanel(appId) {
@@ -409,6 +553,32 @@
                 tile.click();
             }
         });
+    });
+
+    // Theme Toggle Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggleBtn.textContent = '☀️';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        toggleBtn.textContent = '🌙';
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            toggleBtn.textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            toggleBtn.textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
     });
 </script>
 {% endblock %}

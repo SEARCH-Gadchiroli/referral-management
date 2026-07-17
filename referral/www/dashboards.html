@@ -1,0 +1,443 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ current_dashboard.title if current_dashboard else 'Dashboards' }} — SEARCH{% endblock %}
+
+{% block head_include %}
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+    /* ── Base style overrides ─────────────────────────────────── */
+    :root {
+        --bg-primary: #f8fafc;
+        --bg-card: #ffffff;
+        --border-color: #e2e8f0;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --topbar-bg: #ffffff;
+        --user-pill-bg: #f1f5f9;
+        --iframe-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+        --bg-primary: #0f172a;
+        --bg-card: #1e293b;
+        --border-color: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #64748b;
+        --topbar-bg: #1e293b;
+        --user-pill-bg: #334155;
+        --iframe-bg: #1e293b;
+    }
+
+    body {
+        background: var(--bg-primary) !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        color: var(--text-primary);
+        transition: background 0.3s, color 0.3s;
+    }
+
+    .page-header, .breadcrumb, .navbar { display: none !important; }
+
+    #dashboards-root {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ── Topbar ──────────────────────────────────────────────── */
+    .p-topbar {
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        height: 70px;
+        flex-shrink: 0;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: background 0.3s, border-color 0.3s;
+    }
+
+    .p-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .btn-back-portal {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 18px;
+    }
+
+    .btn-back-portal:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+    }
+
+    .p-org-logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #ffffff;
+    }
+
+    .p-page-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .p-topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .p-user-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px 6px 6px;
+        background: var(--user-pill-bg);
+        border-radius: 24px;
+        border: 1px solid var(--border-color);
+        transition: background 0.3s, border-color 0.3s;
+    }
+
+    .p-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    .p-user-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .p-logout {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 8px 18px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-card);
+        transition: all 0.2s;
+    }
+
+    .p-logout:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+        border-color: var(--text-muted);
+    }
+
+    .btn-theme-toggle {
+        background: var(--user-pill-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+    .btn-theme-toggle:hover {
+        background: var(--border-color);
+        transform: scale(1.05);
+    }
+
+    /* ── Main Layout ──────────────────────────────────────────── */
+    .p-main {
+        flex: 1;
+        padding: 32px;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* ── Header styling ────────────────────────────────────────── */
+    .p-header {
+        margin-bottom: 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .p-title-area h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 6px;
+        letter-spacing: -0.025em;
+    }
+
+    .p-title-area p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    /* ── Cards Grid ───────────────────────────────────────────── */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .dashboard-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 24px;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background-color 0.3s;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 160px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+        border-color: var(--text-muted);
+    }
+
+    .card-top {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .card-icon {
+        font-size: 28px;
+        margin-bottom: 4px;
+    }
+
+    .card-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .card-desc {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .card-action {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 16px;
+    }
+
+    /* ── Single Embed View ────────────────────────────────────── */
+    .embed-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    .embed-iframe {
+        border: none;
+        width: 100%;
+        display: block;
+        background: var(--iframe-bg);
+    }
+
+    /* ── Empty State ──────────────────────────────────────────── */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .empty-title { font-size: 18px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; }
+    .empty-text { font-size: 14px; margin: 0; }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div id="dashboards-root">
+    <!-- Topbar -->
+    <div class="p-topbar">
+        <div class="p-topbar-left">
+            {% if current_dashboard %}
+            <a href="/dashboards" class="btn-back-portal" title="Back to Dashboards">←</a>
+            {% else %}
+            <a href="/portal" class="btn-back-portal" title="Back to Portal">←</a>
+            {% endif %}
+            <div class="p-org-logo">📊</div>
+            <h1 class="p-page-title">Metabase Dashboards</h1>
+        </div>
+        <div class="p-topbar-right">
+            <button id="theme-toggle" class="btn-theme-toggle" title="Toggle dark/light mode">🌙</button>
+            <div class="p-user-pill">
+                <div class="p-avatar">{{ user_fullname[0] | upper }}</div>
+                <span class="p-user-name">{{ user_fullname }}</span>
+            </div>
+            <a href="#" onclick="handleLogout(event)" class="p-logout">Sign out</a>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div class="p-main">
+        {% if current_dashboard %}
+            <!-- Header for Single Dashboard -->
+            <div class="p-header">
+                <div class="p-title-area">
+                    <h2>{{ current_dashboard.title }}</h2>
+                    {% if current_dashboard.description %}
+                    <p>{{ current_dashboard.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Embed Iframe container -->
+            <div class="embed-container">
+                <iframe class="embed-iframe"
+                        src="{{ embed_url }}"
+                        height="{{ current_dashboard.iframe_height or 800 }}"
+                        allowtransparency>
+                </iframe>
+            </div>
+
+        {% else %}
+            <!-- Header for Dashboard Gallery -->
+            <div class="p-header">
+                <div class="p-title-area">
+                    <h2>Analytics &amp; Intelligence</h2>
+                    <p>Select a dashboard below to explore key metrics and analytics insights.</p>
+                </div>
+            </div>
+
+            <!-- Dashboards Gallery -->
+            {% if dashboards %}
+            <div class="dashboard-grid">
+                {% for dash in dashboards %}
+                <a class="dashboard-card" href="/dashboards?name={{ dash.name | urlencode }}">
+                    <div class="card-top">
+                        <span class="card-icon">📈</span>
+                        <h3 class="card-title">{{ dash.title }}</h3>
+                        <p class="card-desc">{{ dash.description or 'Explore metrics and analytical indicators.' }}</p>
+                    </div>
+                    <span class="card-action">View Dashboard →</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔒</div>
+                <h3 class="empty-title">No dashboards available</h3>
+                <p class="empty-text">No active Metabase dashboards were found matching your current role profile.</p>
+            </div>
+            {% endif %}
+
+        {% endif %}
+    </div>
+</div>
+<script>
+    function handleLogout(e) {
+        if (e) e.preventDefault();
+        fetch("/api/method/logout", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Frappe-CSRF-Token": "{{ csrf_token }}"
+            }
+        })
+        .then(function() {
+            window.location.href = "/login";
+        })
+        .catch(function() {
+            window.location.href = "/login";
+        });
+    }
+
+    // Theme Toggle Logic
+    const toggleBtn = document.getElementById('theme-toggle');
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        toggleBtn.textContent = '☀️';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        toggleBtn.textContent = '🌙';
+    }
+
+    toggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        if (currentTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            toggleBtn.textContent = '🌙';
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            toggleBtn.textContent = '☀️';
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+</script>
+{% endblock %}

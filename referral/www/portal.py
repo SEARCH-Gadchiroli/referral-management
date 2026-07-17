@@ -32,12 +32,9 @@ APPS = [
         "icon": "📋",
         "color": "#059669",
         "bg": "#d1fae5",
-        "roles": ["Referral Manager", "Referral Viewer", "Healthcare Worker"],
-        "links": [
-            {"label": "Dashboard",       "url": "/dashboard", "icon": "📊"},
-            {"label": "View Referrals",  "url": "/app/patient-referral", "icon": "📋"},
-            {"label": "New Referral",    "url": "/app/patient-referral/new", "icon": "➕"},
-        ],
+        "roles": ["System Manager"], # Restricted to System Manager
+        "url": "/referrals",
+        "links": [],
     },
     {
         "id": "mmu",
@@ -100,6 +97,25 @@ def get_context(context):
         visible_apps.append({
             **app,
             "links": links,
+        })
+
+    # Check dynamic Metabase dashboards access
+    try:
+        from frappe_metabase.api.embed import get_dashboard_list
+        user_dashboards = get_dashboard_list()
+        has_dashboards = len(user_dashboards) > 0
+    except ImportError:
+        has_dashboards = False
+
+    if has_dashboards or is_admin:
+        visible_apps.append({
+            "id": "dashboards",
+            "title": "Dashboards",
+            "icon": "📊",
+            "color": "#3b82f6",
+            "bg": "#dbeafe",
+            "url": "/dashboards",
+            "links": []
         })
 
     context.update({
