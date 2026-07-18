@@ -21,6 +21,8 @@ def get_context(context):
 	opd_department = form_dict.get("opd_department", "").strip()
 	start_date = form_dict.get("start_date", "").strip()
 	end_date = form_dict.get("end_date", "").strip()
+	referred_by_who = form_dict.get("referred_by_who", "").strip()
+	taluka = form_dict.get("taluka", "").strip()
 	
 	page = frappe.utils.cint(form_dict.get("page", 1))
 	if page < 1:
@@ -53,6 +55,12 @@ def get_context(context):
 	if end_date:
 		conditions.append("referral_date <= %(end_date)s")
 		values["end_date"] = end_date
+	if referred_by_who:
+		conditions.append("referred_by_who = %(referred_by_who)s")
+		values["referred_by_who"] = referred_by_who
+	if taluka:
+		conditions.append("patient_taluka = %(taluka)s")
+		values["taluka"] = taluka
 
 	where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -92,11 +100,15 @@ def get_context(context):
 	filter_villages = [r[0] for r in frappe.db.sql("SELECT DISTINCT patient_village FROM `tabPatient Referral` WHERE patient_village IS NOT NULL AND patient_village != ''")]
 	filter_phcs = [r[0] for r in frappe.db.sql("SELECT DISTINCT phc FROM `tabPatient Referral` WHERE phc IS NOT NULL AND phc != ''")]
 	filter_opd_departments = [r[0] for r in frappe.db.sql("SELECT DISTINCT opd_departments FROM `tabPatient Referral` WHERE opd_departments IS NOT NULL AND opd_departments != ''")]
+	filter_referred_by_whos = [r[0] for r in frappe.db.sql("SELECT DISTINCT referred_by_who FROM `tabPatient Referral` WHERE referred_by_who IS NOT NULL AND referred_by_who != ''")]
+	filter_talukas = [r[0] for r in frappe.db.sql("SELECT DISTINCT patient_taluka FROM `tabPatient Referral` WHERE patient_taluka IS NOT NULL AND patient_taluka != ''")]
 
 	filter_statuses.sort()
 	filter_villages.sort()
 	filter_phcs.sort()
 	filter_opd_departments.sort()
+	filter_referred_by_whos.sort()
+	filter_talukas.sort()
 
 	# User greeting
 	user_fullname = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
@@ -118,6 +130,8 @@ def get_context(context):
 		"village": village,
 		"phc": phc,
 		"opd_department": opd_department,
+		"referred_by_who": referred_by_who,
+		"taluka": taluka,
 		"start_date": start_date,
 		"end_date": end_date,
 
@@ -126,6 +140,8 @@ def get_context(context):
 		"filter_villages": filter_villages,
 		"filter_phcs": filter_phcs,
 		"filter_opd_departments": filter_opd_departments,
+		"filter_referred_by_whos": filter_referred_by_whos,
+		"filter_talukas": filter_talukas,
 		"user_fullname": user_fullname
 	})
 

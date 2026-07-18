@@ -759,6 +759,28 @@
                         </select>
                     </div>
 
+                    <!-- Point of Referral / Referred By Who -->
+                    <div class="filter-group">
+                        <label class="filter-label">Point of Referral</label>
+                        <select class="filter-control" name="referred_by_who">
+                            <option value="">All Points of Referral</option>
+                            {% for opt in filter_referred_by_whos %}
+                            <option value="{{ opt }}" {% if referred_by_who==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Taluka -->
+                    <div class="filter-group">
+                        <label class="filter-label">Taluka</label>
+                        <select class="filter-control" name="taluka">
+                            <option value="">All Talukas</option>
+                            {% for opt in filter_talukas %}
+                            <option value="{{ opt }}" {% if taluka==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- Date Range Start -->
                     <div class="filter-group">
                         <label class="filter-label">From Date</label>
