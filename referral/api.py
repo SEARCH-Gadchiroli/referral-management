@@ -472,7 +472,16 @@ def resolve_opd_category(category_raw: str) -> str:
     if not category_raw:
         return ""
 
-    cleaned = category_raw.strip()
+    cleaned = category_raw.strip().lower()
+    
+    # Check for Marathi/English keywords
+    if "नियमित" in cleaned or "regular" in cleaned:
+        return "Regular OPD"
+    if "तज्ञ" in cleaned or "विशेषज्ञ" in cleaned or "specialist" in cleaned:
+        return "Specialist OPD"
+    if "शस्त्रक्रिया" in cleaned or "surgical" in cleaned:
+        return "Surgical OPD"
+
     category_map = {
         "regular": "Regular OPD",
         "regular opd": "Regular OPD",
@@ -481,7 +490,7 @@ def resolve_opd_category(category_raw: str) -> str:
         "surgical": "Surgical OPD",
         "surgical opd": "Surgical OPD",
     }
-    return category_map.get(cleaned.lower(), cleaned)
+    return category_map.get(cleaned, category_raw.strip())
 
 
 def resolve_taluka(taluka_raw: str) -> str | None:
