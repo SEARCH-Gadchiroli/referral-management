@@ -7,14 +7,14 @@ from frappe.utils import getdate, today
 
 VALID_DEPARTMENTS = [
     "Medicine", "Gynaecology", "Orthopedics", "Spine",
-    "Surgery", "Dental", "Psychiatry", "Rheumatology",
+    "Surgery", "Dental", "Mental Health Clinic", "Rheumatology OPD",
     "Cardiology", "Dermatology", "Diabetology", "ENT",
     "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology",
     "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology",
-    "Plastic Surgery", "Urology", "Pain Management"
+    "Plastic Surgery", "Urology", "Pain Management OPD"
 ]
 
-REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Psychiatry", "Rheumatology"]
+REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic","Pain Management OPD" "Rheumatology OPD"]
 SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell"]
 SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management"]
 
