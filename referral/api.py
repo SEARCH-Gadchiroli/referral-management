@@ -1314,6 +1314,7 @@ def create_referral(
             "opd_category": opd_category_input or "",
             "opd_departments": opd_dept or "",
             "other_facility_name": other_facility_raw or "",
+            "referring_doctor": referring_doctor,
             "referred_doctor": referring_doctor,
             "raw_patient_data": raw_doc.name,
         })
@@ -1570,7 +1571,8 @@ def record_supervisor_visit(
             referral.patient_taluka = frappe.db.get_value("Village Profile", referral.patient_village, "taluka")
 
         # 8. Save
-        referral.save(ignore_permissions=True, ignore_mandatory=True)
+        referral.flags.ignore_mandatory = True
+        referral.save(ignore_permissions=True)
         frappe.db.commit()
 
         return {
@@ -1586,29 +1588,89 @@ def record_supervisor_visit(
         }
 
 
-@frappe.whitelist(allow_guest=True)
-def get_pending_followups(supervisor_phone: str = None, **kwargs) -> dict:
-    """
-    Returns all pending follow-up referrals formatted as a ready-to-send
-    Marathi WhatsApp message, grouped by referral date then village.
-
-    Called by Glific 'Follow-up List' flow when supervisor sends the
-    list keyword.
-
-    Args:
-        supervisor_phone: supervisor's WhatsApp number (from Glific contact).
-            Currently unused (all supervisors get full list). Reserved for
-            future area-based filtering once supervisor-taluka mapping exists.
-
-    Returns:
-        {
-            "formatted_text": "<complete Marathi message>",
-            "count": <number of pending referrals>
+def get_glific_contact_fields(phone: str) -> dict:
+    try:
+        import requests
+        glific_api_url = frappe.conf.get("glific_api_url", "https://search.glific.com/api")
+        glific_token = frappe.conf.get("glific_token")
+        if not glific_token:
+            return {}
+            
+        headers = {
+            "Authorization": glific_token,
+            "Content-Type": "application/json",
         }
+        
+        query = """
+        query contact($phone: String!) {
+          contact(phone: $phone) {
+            id
+            fields
+          }
+        }
+        """
+        res = requests.post(
+            glific_api_url,
+            json={"query": query, "variables": {"phone": phone}},
+            headers=headers,
+            timeout=10
+        )
+        res.raise_for_status()
+        data = res.json()
+        return data.get("data", {}).get("contact", {}).get("fields", {}) or {}
+    except Exception as e:
+        frappe.logger().error(f"Failed to fetch Glific contact fields: {str(e)}")
+        return {}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_pending_followups(supervisor_phone: str = None, village_name: str = None, **kwargs) -> dict:
     """
+    Returns pending follow-up referrals formatted as a ready-to-send
+    Marathi WhatsApp message, optionally filtered by village name,
+    grouped by referral date then village.
+
+    Called by Glific 'Follow-up List' flow.
+    """
+    # Try parsing JSON body if available (Glific uses POST)
+    if frappe.request:
+        try:
+            import json
+            raw_data = frappe.request.get_data(as_text=True)
+            if raw_data:
+                data = json.loads(raw_data)
+                if isinstance(data, dict):
+                    if not supervisor_phone:
+                        supervisor_phone = data.get("supervisor_phone")
+                    if not village_name:
+                        village_name = data.get("village") or data.get("village_name")
+        except Exception:
+            pass
+
+    supervisor_phone = clean_glific_value(supervisor_phone)
+    village_name = clean_glific_value(village_name)
+
+    # If village_name is not provided in body, try querying Glific contact fields
+    if not village_name and supervisor_phone:
+        fields = get_glific_contact_fields(supervisor_phone)
+        village_name = fields.get("followup_list_village_name")
+
+    filters = {"status": ["in", ["Pending", "Follow-up In Progress"]]}
+    
+    resolved_village_name_mr = None
+    if village_name:
+        village_id = resolve_village(village_name)
+        if not village_id:
+            return {
+                "formatted_text": f"❌ गाव '{village_name}' आढळले नाही. कृपया गावाचे नाव तपासा आणि पुन्हा प्रयत्न करा.",
+                "count": 0,
+            }
+        filters["patient_village"] = village_id
+        resolved_village_name_mr = frappe.db.get_value("Village Profile", village_id, "village_name_marathi") or village_name
+
     referrals = frappe.get_all(
         "Patient Referral",
-        filters={"status": ["in", ["Pending", "Follow-up In Progress"]]},
+        filters=filters,
         fields=[
             "reference_number",
             "patient_name",
@@ -1627,6 +1689,11 @@ def get_pending_followups(supervisor_phone: str = None, **kwargs) -> dict:
     )
 
     if not referrals:
+        if village_name:
+            return {
+                "formatted_text": f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅",
+                "count": 0,
+            }
         return {
             "formatted_text": "सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅",
             "count": 0,
@@ -1702,13 +1769,13 @@ def get_pending_followups(supervisor_phone: str = None, **kwargs) -> dict:
                 dept_mr = dept_map_mr.get(dept, dept)
                 gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
 
-                lines.append(f"{i}) {p.patient_name}")
+                lines.append(f"{i}) *{p.patient_name}*")
                 lines.append(f"वय-{p.patient_age}/{gender}")
                 lines.append(f"🏥 {hospital} | विभाग: {dept_mr}")
                 lines.append(f"🔖 {p.reference_number}")
                 if p.visit_count and p.visit_count > 0:
                     lines.append(f"पुढील भेट क्र. {p.visit_count + 1}")
-            lines.append("")
+                lines.append("──────────────────")
 
     formatted = "\n".join(lines).strip()
 

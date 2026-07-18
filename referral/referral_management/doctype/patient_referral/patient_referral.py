@@ -34,6 +34,7 @@ class PatientReferral(Document):
         referral_date: DF.Date
         referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Optometrist"]
         referred_doctor: DF.Data | None
+        referring_doctor: DF.Data | None
         referrer: DF.Link
         referrer_latitude: DF.Data | None
         referrer_longitude: DF.Data | None
