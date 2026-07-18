@@ -319,16 +319,35 @@ def resolve_phc(phc_raw: str) -> str | None:
     """
     Resolve PHC name to PHC record.
     Tries: original text, Marathi name, transliterated, case-insensitive, fuzzy.
-    Returns None if no match found (never falls back to a random PHC).
+    If 'NA' or 'no PHC' variation, returns None.
+    If 'Other' variation or no match is found for other PHC name, returns 'Other'.
     """
     if not phc_raw:
         frappe.logger().warning("PHC name is empty — leaving unset")
         return None
 
     phc_raw = phc_raw.strip()
+    phc_lower = phc_raw.lower()
     frappe.logger().info(f"[resolve_phc] Starting search for: '{phc_raw}'")
 
-    # Try original exact match (English or Marathi)
+    # 1. Handle "NA" / "No PHC" responses
+    na_keywords = {
+        "na", "n/a", "none", "nil", "no", "not applicable", "not available",
+        "नाही", "नाही आहे", "एनए", "एन/ए"
+    }
+    if phc_lower in na_keywords:
+        frappe.logger().info(f"[resolve_phc] Input '{phc_raw}' resolved as NA/None")
+        return None
+
+    # 2. Handle explicit "Other" / "इतर" responses
+    other_keywords = {
+        "other", "other phc", "इतर", "इतर पीएचसी", "इतर पी.एच.सी.", "इतर पी. एच. सी."
+    }
+    if phc_lower in other_keywords:
+        frappe.logger().info(f"[resolve_phc] Input '{phc_raw}' resolved as 'Other'")
+        return "Other"
+
+    # 3. Try original exact match (English or Marathi)
     phc = frappe.db.get_value("PHC", {"phc_name": phc_raw}, "name")
     if phc:
         frappe.logger().info(f"[resolve_phc] Exact English match found: {phc}")
@@ -388,12 +407,13 @@ def resolve_phc(phc_raw: str) -> str | None:
                     )
                     return phc[0].name
 
-    # No match found — log available PHCs and return None
-    all_phcs = frappe.db.get_list("PHC", fields=["name", "phc_name"])
-    phc_names = [p.get("phc_name", p.get("name")) for p in all_phcs]
-    frappe.logger().warning(
-        f"No PHC match found for '{phc_raw}' (transliterated: '{transliterate_to_roman(phc_raw) if is_devanagari(phc_raw) else 'N/A'}') — leaving unset for manual correction. Available PHCs: {phc_names}"
-    )
+    # 4. Fallback: If no match is found, but the input is not NA, it is an "Other PHC"
+    if frappe.db.exists("PHC", "Other"):
+        frappe.logger().info(f"[resolve_phc] No match found for '{phc_raw}'. Falling back to 'Other'")
+        return "Other"
+
+    # If even "Other" is missing from the database
+    frappe.logger().warning(f"[resolve_phc] No match found and 'Other' PHC record does not exist.")
     return None
 
 
