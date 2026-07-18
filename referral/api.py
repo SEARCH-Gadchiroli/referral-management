@@ -617,7 +617,19 @@ def clean_glific_value(val):
     if not val:
         return None
     val_str = str(val).strip()
-    if val_str.startswith("@contact.") or val_str.startswith("@results."):
+    val_lower = val_str.lower()
+    
+    # Check for common Glific/RapidPro unresolved variable patterns
+    if (
+        val_lower.startswith("@contact") or 
+        val_lower.startswith("contact.") or 
+        val_lower.startswith("@results") or 
+        val_lower.startswith("results.") or
+        "contact.fields" in val_lower or
+        "results." in val_lower or
+        "{{" in val_str or
+        "}}" in val_str
+    ):
         return None
     return val_str
 
