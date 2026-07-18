@@ -20,7 +20,7 @@ class PatientReferral(Document):
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
         opd_category: DF.Literal["", "Regular OPD", "Specialist OPD", "Surgical OPD"]
-        opd_departments: DF.Literal["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Psychiatry", "Rheumatology", "Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management"]
+        opd_departments: DF.Literal["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Rheumatology OPD", "Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD"]
         patient_age: DF.Int
         patient_father_name: DF.Data
         patient_gender: DF.Literal["Male", "Female", "Other"]
@@ -32,6 +32,7 @@ class PatientReferral(Document):
         raw_patient_data: DF.Link | None
         reference_number: DF.Data
         referral_date: DF.Date
+        referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Optometrist"]
         referred_doctor: DF.Data | None
         referrer: DF.Link
         referrer_latitude: DF.Data | None

@@ -17,6 +17,7 @@
   "referrer_department",
   "referrer_latitude",
   "referrer_longitude",
+  "referred_by_who",
   "patient_section",
   "patient_name",
   "patient_father_name",
@@ -127,6 +128,12 @@
    "fieldname": "referrer_longitude",
    "fieldtype": "Data",
    "label": "Referrer Longitude"
+  },
+  {
+   "fieldname": "referred_by_who",
+   "fieldtype": "Select",
+   "label": "Referred By Who",
+   "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nCHW\nSupervisor\nOptometrist"
   },
   {
    "fieldname": "patient_section",
@@ -257,7 +264,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nPsychiatry\nRheumatology\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management",
+   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nMental Health Clinic\nRheumatology OPD\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management OPD",
    "reqd": 0
   },
   {

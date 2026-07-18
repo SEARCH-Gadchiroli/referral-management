@@ -24,6 +24,7 @@
   "patient_phone_raw",
   "service_facility_type",
   "opd_category_raw",
+  "referred_by_who",
   "departments_raw",
   "other_facility_raw",
   "referring_doctor_raw",
@@ -122,6 +123,11 @@
    "fieldname": "opd_category_raw",
    "fieldtype": "Data",
    "label": "OPD Category (Raw)"
+  },
+  {
+   "fieldname": "referred_by_who",
+   "fieldtype": "Data",
+   "label": "Referred By Who"
   },
   {
    "fieldname": "departments_raw",

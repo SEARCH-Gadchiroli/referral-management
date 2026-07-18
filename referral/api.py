@@ -14,52 +14,71 @@ VALID_DEPARTMENTS = [
     "Plastic Surgery", "Urology", "Pain Management OPD"
 ]
 
-REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic","Pain Management OPD" "Rheumatology OPD"]
-SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell"]
-SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management"]
+REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD"]
+SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Plastic Surgery", "Urology", "Pain Management OPD", "Rheumatology OPD"]
+SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD"]
 
 # Hindi/Marathi keywords → English OPD department mapping
 DEPARTMENT_KEYWORDS = {
     # Backward-compatible English aliases
     "Epilepsy": "Neurology + Epilepsy",
     "Neurology": "Neurology + Epilepsy",
-    "Mental Health Clinic": "Psychiatry",
-    "Pain Clinic": "Pain Management",
-    "Pain Management": "Pain Management",
+    "Psychiatry": "Mental Health Clinic",
+    "Mental Health Clinic": "Mental Health Clinic",
+    "Pain Clinic": "Pain Management OPD",
+    "Pain Management": "Pain Management OPD",
+    "Pain Management OPD": "Pain Management OPD",
+    "Rheumatology": "Rheumatology OPD",
+    "Rheumatology OPD": "Rheumatology OPD",
+    "Gastroenterology": "Gastrology",
     # Gynaecology
     "स्त्रीरोग": "Gynaecology",
     "स्त्री रोग": "Gynaecology",
     "गायनेकॉलॉजी": "Gynaecology",
     "प्रसूती": "Gynaecology",
     "प्रसूतिशास्त्र": "Gynaecology",
+    "स्त्रीरोगशास्त्र": "Gynaecology",
     # Orthopedics
     "हाडरोग": "Orthopedics",
     "अस्थिरोग": "Orthopedics",
     "ऑर्थोपेडिक्स": "Orthopedics",
     "हड्डी": "Orthopedics",
+    "हड्डी रोग": "Orthopedics",
     # Spine
     "पाठीचा कणा": "Spine",
     "स्पाइन": "Spine",
     "मणका": "Spine",
     "रीढ़": "Spine",
+    "रीढ़ की हड्डी": "Spine",
     # Cardiology
     "हृदयरोग": "Cardiology",
     "कार्डिओलॉजी": "Cardiology",
     "हृदय": "Cardiology",
     "दिल": "Cardiology",
-    # Psychiatry
-    "मानसिक आरोग्य": "Psychiatry",
-    "मानसिक": "Psychiatry",
-    "मनोविकार": "Psychiatry",
+    "हृदयरोगशास्त्र": "Cardiology",
+    "कार्डियलजी": "Cardiology",
+    # Mental Health / Psychiatry
+    "मानसिक आरोग्य": "Mental Health Clinic",
+    "मानसिक": "Mental Health Clinic",
+    "मनोविकार": "Mental Health Clinic",
+    "मानसोपचार": "Mental Health Clinic",
+    "मनोचिकित्सा": "Mental Health Clinic",
+    "मानसिक आरोग्य (२ दिवस)": "Mental Health Clinic",
+    "मानसिक आरोग्य (2 दिवस)": "Mental Health Clinic",
+    "मानसिक स्वास्थ्य (2 दिन)": "Mental Health Clinic",
+    "मानसिक स्वास्थ्य (२ दिन)": "Mental Health Clinic",
     # Surgery
     "सर्जन": "Surgery",
     "शल्यचिकित्सक": "Surgery",
     "सर्जरी": "Surgery",
     "जनरल सर्जन": "Surgery",
     "शस्त्रक्रिया": "Surgery",
+    "शल्य चिकित्सा": "Surgery",
     # Cataract Surgery
     "मोतीबिंदू": "Cataract Surgery",
     "मोतियाबिंद": "Cataract Surgery",
+    "मोतीबिंदू शस्त्रक्रिया": "Cataract Surgery",
+    "मोतियाबिंद सर्जरी": "Cataract Surgery",
     # Ophthalmology
     "नेत्र": "Ophthalmology",
     "डोळा": "Ophthalmology",
@@ -67,56 +86,80 @@ DEPARTMENT_KEYWORDS = {
     # ENT
     "कान नाक घसा": "ENT",
     "कान": "ENT",
+    "ईएनटी": "ENT",
     # Dermatology
     "त्वचा": "Dermatology",
     "त्वचारोग": "Dermatology",
     "चर्मरोग": "Dermatology",
+    "त्वचा विज्ञान": "Dermatology",
     # Dental
     "दंत": "Dental",
     "दात": "Dental",
     "दंतचिकित्सा": "Dental",
-    # Psychiatry
-    "मानसोपचार": "Psychiatry",
-    "मनोचिकित्सा": "Psychiatry",
+    "दंतचिकित्सा (३ दिवस)": "Dental",
+    "दंतचिकित्सा (3 दिवस)": "Dental",
+    "दंत चिकित्सा (3 दिन)": "Dental",
+    "दंत चिकित्सा (३ दिन)": "Dental",
     # Oncology
     "कर्करोग": "Oncology",
     "ऑन्कोलॉजी": "Oncology",
+    "कैंसर विज्ञान": "Oncology",
     # Sickle Cell
     "सिकल सेल": "Sickle Cell",
     "विकृतिरक्तकोशिका": "Sickle Cell",
     # Diabetology
     "मधुमेह": "Diabetology",
+    "डायाबैटोलोजी": "Diabetology",
+    "मधुमेहशास्त्र": "Diabetology",
     # Gastrology
     "पोट": "Gastrology",
     "जठर": "Gastrology",
     "पोटरोग": "Gastrology",
+    "गॅस्ट्रोएन्टेरोलॉजी": "Gastrology",
+    "गैस्ट्रोएंटरोलॉजी": "Gastrology",
     # Pulmonology
     "फुफ्फुस": "Pulmonology",
     "श्वसन": "Pulmonology",
+    "फुफ्फुसशास्त्र": "Pulmonology",
+    "फुफ्फुसविज्ञान": "Pulmonology",
     # Head & Neck
     "डोके आणि मान": "Head & Neck",
+    "सिर और गर्दन": "Head & Neck",
     # Rheumatology
-    "संधिवात": "Rheumatology",
-    "सांधेदुखी": "Rheumatology",
+    "संधिवात": "Rheumatology OPD",
+    "सांधेदुखी": "Rheumatology OPD",
+    "रुमॅटोलॉजी": "Rheumatology OPD",
+    "रुमॅटोलॉजी ओपीडी": "Rheumatology OPD",
+    "संधिवातीयशास्त्र": "Rheumatology OPD",
+    "रुमेटोलॉजी ओपीडी": "Rheumatology OPD",
     # Neurology + Epilepsy
     "अपस्मार": "Neurology + Epilepsy",
     "मिरगी": "Neurology + Epilepsy",
     "फेफरे": "Neurology + Epilepsy",
     "मज्जातंतू": "Neurology + Epilepsy",
     "न्यूरोलॉजी": "Neurology + Epilepsy",
+    "तंत्रिका विज्ञान + मिर्ग": "Neurology + Epilepsy",
+    "न्यूरोलॉजी + एपिलेप्सी": "Neurology + Epilepsy",
     # Urology
     "मूत्ररोग": "Urology",
     "यूरोलॉजी": "Urology",
+    "उरोलोजि": "Urology",
+    "मूत्रविज्ञान": "Urology",
     # Plastic Surgery
     "प्लास्टिक सर्जरी": "Plastic Surgery",
     # Pain Management
-    "वेदना": "Pain Management",
-    "दुखणे": "Pain Management",
-    "दर्द": "Pain Management",
-    "पेन": "Pain Management",
+    "वेदना": "Pain Management OPD",
+    "दुखणे": "Pain Management OPD",
+    "दर्द": "Pain Management OPD",
+    "पेन": "Pain Management OPD",
+    "वेदना व्यवस्थापन": "Pain Management OPD",
+    "वेदना व्यवस्थापन ओपीडी": "Pain Management OPD",
+    "दर्द प्रबंधन": "Pain Management OPD",
+    "दर्द प्रबंधन ओपीडी": "Pain Management OPD",
     # Medicine
     "औषध": "Medicine",
     "मेडिसिन": "Medicine",
+    "दवा": "Medicine",
 }
 
 
@@ -499,7 +542,7 @@ def resolve_opd_category(category_raw: str) -> str:
         return "Regular OPD"
     if "तज्ञ" in cleaned or "विशेषज्ञ" in cleaned or "specialist" in cleaned:
         return "Specialist OPD"
-    if "शस्त्रक्रिया" in cleaned or "surgical" in cleaned:
+    if "शस्त्रक्रिया" in cleaned or "surgical" in cleaned or "मोतीबिंदू" in cleaned or "मोतियाबिंद" in cleaned or "cataract" in cleaned:
         return "Surgical OPD"
 
     category_map = {
@@ -511,6 +554,31 @@ def resolve_opd_category(category_raw: str) -> str:
         "surgical opd": "Surgical OPD",
     }
     return category_map.get(cleaned, category_raw.strip())
+
+
+def resolve_referred_by_who(role_raw: str) -> str:
+    if not role_raw:
+        return ""
+    
+    cleaned = role_raw.strip().lower()
+    
+    # Check for keywords in Marathi/Hindi/English
+    if "mmu" in cleaned:
+        return "MMU Doctor"
+    if "counsellor" in cleaned or "समुपदेशक" in cleaned or "परामर्शदाता" in cleaned or "mhd" in cleaned:
+        return "MHD counsellor"
+    if "muktipath" in cleaned or "मुक्तिपथ" in cleaned:
+        return "Muktipath Karyakarta"
+    if "asha" in cleaned or "आशा" in cleaned:
+        return "ASHA"
+    if "chw" in cleaned:
+        return "CHW"
+    if "supervisor" in cleaned or "सुपरवायझर" in cleaned:
+        return "Supervisor"
+    if "optometrist" in cleaned or "ऑप्टोमेट्रिस्ट" in cleaned:
+        return "Optometrist"
+        
+    return role_raw.strip()
 
 
 def resolve_taluka(taluka_raw: str) -> str | None:
@@ -837,7 +905,16 @@ def resolve_patient_health_status(status_input: str) -> str | None:
 def resolve_facility_type(facility_input: str) -> str | None:
     if not facility_input:
         return None
-    facility_clean = facility_input.strip()
+    facility_clean = facility_input.strip().lower()
+    
+    # Check for keywords in lower-case raw inputs
+    if "सर्च" in facility_clean or "search" in facility_clean:
+        return "SEARCH"
+    if "शासकीय" in facility_clean or "सरकारी" in facility_clean or "government" in facility_clean or "सरकार" in facility_clean:
+        return "Government"
+    if "इतर" in facility_clean or "अन्य" in facility_clean or "other" in facility_clean:
+        return "Other"
+        
     facility_type_map = {
         "सर्च": "SEARCH",
         "search": "SEARCH",
@@ -845,7 +922,8 @@ def resolve_facility_type(facility_input: str) -> str | None:
         "शासकीय रुग्णालय": "Government",
         "सरकारी": "Government",
         "सरकारी रुग्णालय": "Government",
-        "सरकार": "Government",
+        "सरकारी दवाखाना": "Government",
+        "government hospital": "Government",
         "government": "Government",
         "इतर": "Other",
         "अन्य": "Other",
@@ -853,7 +931,7 @@ def resolve_facility_type(facility_input: str) -> str | None:
     }
     # Check case-insensitive mapping
     for key, val in facility_type_map.items():
-        if key.lower() == facility_clean.lower():
+        if key.lower() == facility_clean:
             return val
     return facility_type_map.get(facility_clean, None)
 
@@ -995,7 +1073,8 @@ def create_referral(
     referrer_longitude: str = "",
     latitude: str = "",
     longitude: str = "",
-    patient_phone_raw: str = ""
+    patient_phone_raw: str = "",
+    referred_by_who: str = ""
 ) -> dict:
     try:
         # Fallback JSON body parsing if client does not send application/json Content-Type
@@ -1036,6 +1115,7 @@ def create_referral(
                         latitude = data.get("latitude") or latitude or ""
                         longitude = data.get("longitude") or longitude or ""
                         patient_phone_raw = data.get("patient_phone_raw") or patient_phone_raw or ""
+                        referred_by_who = data.get("referred_by_who") or referred_by_who or ""
             except Exception as e:
                 frappe.log_error(f"Fallback JSON parsing failed: {str(e)}", "create_referral JSON Fallback Error")
 
@@ -1065,6 +1145,7 @@ def create_referral(
         referred_doctor = clean_glific_value(referred_doctor)
         additional_notes_raw = clean_glific_value(additional_notes_raw)
         patient_phone_raw = clean_glific_value(patient_phone_raw)
+        referred_by_who = clean_glific_value(referred_by_who)
         referrer_latitude = clean_glific_value(referrer_latitude)
         referrer_longitude = clean_glific_value(referrer_longitude)
         latitude = clean_glific_value(latitude)
@@ -1162,6 +1243,9 @@ def create_referral(
         
         # Referring Doctor resolution
         referring_doctor = transliterate_to_roman(doctor_input)
+        
+        # Resolve Referred By Who role (e.g. MMU Doctor, ASHA, etc.)
+        referred_by_resolved = resolve_referred_by_who(referred_by_who)
 
         # Save raw data exactly as received
         raw_doc = frappe.get_doc({
@@ -1181,6 +1265,7 @@ def create_referral(
             "patient_phone_raw": patient_phone_raw,
             "service_facility_type": facility_type,
             "opd_category_raw": opd_category_raw or opd_category,
+            "referred_by_who": referred_by_who,
             "departments_raw": department_input,
             "other_facility_raw": other_facility_raw or "",
             "referring_doctor_raw": doctor_input,
@@ -1203,6 +1288,7 @@ def create_referral(
             "referrer_department": referrer_department,
             "referrer_latitude": actual_lat,
             "referrer_longitude": actual_lon,
+            "referred_by_who": referred_by_resolved,
             "phc": phc or "",
             "patient_name": patient_name,
             "patient_father_name": father_name,
@@ -1467,8 +1553,12 @@ def record_supervisor_visit(
         # 7. Update visit count
         referral.visit_count = new_visit_number
 
+        # Auto-heal legacy referrals: populate patient_taluka from village if missing
+        if not referral.patient_taluka and referral.patient_village:
+            referral.patient_taluka = frappe.db.get_value("Village Profile", referral.patient_village, "taluka")
+
         # 8. Save
-        referral.save(ignore_permissions=True)
+        referral.save(ignore_permissions=True, ignore_mandatory=True)
         frappe.db.commit()
 
         return {
