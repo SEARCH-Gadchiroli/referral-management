@@ -68,26 +68,14 @@ class PatientReferral(Document):
 
     def generate_reference_number(self):
         from frappe.utils import now_datetime
-
-        referrer_id = "REF0"
-        if self.referrer:
-            referrer_doc = frappe.get_doc("Referrer", self.referrer)
-            referrer_id = referrer_doc.referrer_id or "REF0"
-
-        village_code = "VLG00"
-        if self.patient_village:
-            village_doc = frappe.get_doc("Village Profile", self.patient_village)
-            if village_doc.village_number:
-                village_code = f"V{str(village_doc.village_number).zfill(4)}"
-
-        date_str = now_datetime().strftime("%y%m%d")
+        date_str = now_datetime().strftime("%d%m%y")
         sequence = self.get_daily_sequence(date_str)
-        return f"{referrer_id}-{village_code}-{date_str}-{sequence:04d}"
+        return f"{date_str}-{sequence}"
 
     def get_daily_sequence(self, date_str):
         count = frappe.db.count(
             "Patient Referral",
-            filters={"reference_number": ["like", f"%{date_str}%"]}
+            filters={"reference_number": ["like", f"{date_str}-%"]}
         )
         return count + 1
 

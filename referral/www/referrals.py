@@ -23,6 +23,7 @@ def get_context(context):
 	end_date = form_dict.get("end_date", "").strip()
 	referred_by_who = form_dict.get("referred_by_who", "").strip()
 	taluka = form_dict.get("taluka", "").strip()
+	referring_doctor = form_dict.get("referring_doctor", "").strip()
 	
 	page = frappe.utils.cint(form_dict.get("page", 1))
 	if page < 1:
@@ -61,6 +62,9 @@ def get_context(context):
 	if taluka:
 		conditions.append("patient_taluka = %(taluka)s")
 		values["taluka"] = taluka
+	if referring_doctor:
+		conditions.append("referred_doctor = %(referring_doctor)s")
+		values["referring_doctor"] = referring_doctor
 
 	where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -77,8 +81,8 @@ def get_context(context):
 			patient_name, patient_father_name, patient_gender, patient_age,
 			patient_village, patient_taluka, service_facility_type, opd_category,
 			other_facility_name, patient_phone, phc, opd_departments, referred_doctor,
-			additional_notes, hospital_registration_number, visit_date, facility_visited,
-			creation
+			referred_by_who, additional_notes, hospital_registration_number, visit_date, 
+			facility_visited, creation
 		FROM `tabPatient Referral`
 		WHERE {where_clause}
 		ORDER BY referral_date DESC, creation DESC
@@ -102,6 +106,7 @@ def get_context(context):
 	filter_opd_departments = [r[0] for r in frappe.db.sql("SELECT DISTINCT opd_departments FROM `tabPatient Referral` WHERE opd_departments IS NOT NULL AND opd_departments != ''")]
 	filter_referred_by_whos = [r[0] for r in frappe.db.sql("SELECT DISTINCT referred_by_who FROM `tabPatient Referral` WHERE referred_by_who IS NOT NULL AND referred_by_who != ''")]
 	filter_talukas = [r[0] for r in frappe.db.sql("SELECT DISTINCT patient_taluka FROM `tabPatient Referral` WHERE patient_taluka IS NOT NULL AND patient_taluka != ''")]
+	filter_referring_doctors = [r[0] for r in frappe.db.sql("SELECT DISTINCT referred_doctor FROM `tabPatient Referral` WHERE referred_doctor IS NOT NULL AND referred_doctor != ''")]
 
 	filter_statuses.sort()
 	filter_villages.sort()
@@ -109,6 +114,7 @@ def get_context(context):
 	filter_opd_departments.sort()
 	filter_referred_by_whos.sort()
 	filter_talukas.sort()
+	filter_referring_doctors.sort()
 
 	# User greeting
 	user_fullname = frappe.db.get_value("User", frappe.session.user, "full_name") or frappe.session.user
@@ -132,6 +138,7 @@ def get_context(context):
 		"opd_department": opd_department,
 		"referred_by_who": referred_by_who,
 		"taluka": taluka,
+		"referring_doctor": referring_doctor,
 		"start_date": start_date,
 		"end_date": end_date,
 
@@ -142,6 +149,7 @@ def get_context(context):
 		"filter_opd_departments": filter_opd_departments,
 		"filter_referred_by_whos": filter_referred_by_whos,
 		"filter_talukas": filter_talukas,
+		"filter_referring_doctors": filter_referring_doctors,
 		"user_fullname": user_fullname
 	})
 
