@@ -602,30 +602,33 @@ def resolve_taluka(taluka_raw: str) -> str | None:
 
     # Strict map of valid Gadchiroli talukas (with English, Hindi, Marathi variants and common typos)
     taluka_map = {
+        # Gadchiroli
+        "gadchiroli": "Gadchiroli", "गडचिरोली": "Gadchiroli", "गड़चिरोली": "Gadchiroli",
         # Dhanora
         "dhanora": "Dhanora", "dhanura": "Dhanora", "धानोरा": "Dhanora",
         # Chamorshi
         "chamorshi": "Chamorshi", "chamorshee": "Chamorshi", "चामोर्शी": "Chamorshi",
-        # Kurkheda
-        "kurkheda": "Kurkheda", "कुरखेडा": "Kurkheda",
+        # Mulchera
+        "mulchera": "Mulchera", "मुलचेरा": "Mulchera", "मूलचेरा": "Mulchera",
+        # Desaiganj / Wadsa
+        "desaiganj (wadsa)": "Desaiganj", "desaiganj(wadsa)": "Desaiganj",
+        "देसाईगंज (वडसा)": "Desaiganj", "देसाईगंज(वडसा)": "Desaiganj",
+        "desaiganj": "Desaiganj", "देसाईगंज": "Desaiganj", "warsa": "Desaiganj", 
+        "wadsa": "Desaiganj", "वडसा": "Desaiganj", "वडसा-देसाईगंज": "Desaiganj",
         # Armori
         "armori": "Armori", "आरमोरी": "Armori",
-        # Gadchiroli
-        "gadchiroli": "Gadchiroli", "गडचिरोली": "Gadchiroli",
+        # Kurkheda
+        "kurkheda": "Kurkheda", "कुरखेडा": "Kurkheda", "कुरखेड़ा": "Kurkheda",
+        # Korchi
+        "korchi": "Korchi", "कोरची": "Korchi",
         # Aheri
         "aheri": "Aheri", "अहेरी": "Aheri",
-        # Mulchera
-        "mulchera": "Mulchera", "मुलचेरा": "Mulchera",
+        # Sironcha
+        "sironcha": "Sironcha", "सिरोंचा": "Sironcha",
         # Etapalli
         "etapalli": "Etapalli", "एटापल्ली": "Etapalli",
         # Bhamragad
-        "bhamragad": "Bhamragad", "भामरागड": "Bhamragad",
-        # Korchi
-        "korchi": "Korchi", "कोरची": "Korchi",
-        # Desaiganj / Warsa
-        "desaiganj": "Desaiganj", "देसाईगंज": "Desaiganj", "warsa": "Desaiganj", "वडसा": "Desaiganj", "वडसा-देसाईगंज": "Desaiganj",
-        # Sironcha
-        "sironcha": "Sironcha", "सिरोंचा": "Sironcha"
+        "bhamragad": "Bhamragad", "भामरागड": "Bhamragad", "भामरागढ़": "Bhamragad"
     }
 
     resolved = taluka_map.get(cleaned)
