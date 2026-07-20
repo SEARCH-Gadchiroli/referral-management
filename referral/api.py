@@ -14,9 +14,9 @@ VALID_DEPARTMENTS = [
     "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"
 ]
 
-REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD"]
-SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Plastic Surgery", "Urology", "Pain Management OPD", "Rheumatology OPD"]
-SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD"]
+REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD", "Others", "Other"]
+SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Plastic Surgery", "Urology", "Pain Management OPD", "Rheumatology OPD", "Others", "Other"]
+SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"]
 
 # Hindi/Marathi keywords → English OPD department mapping
 DEPARTMENT_KEYWORDS = {
@@ -357,7 +357,7 @@ def resolve_village(village_raw: str) -> str | None:
                     return village[0].name
 
     # No match found — log available villages and return None
-    all_villages = frappe.db.get_list("Village Profile", fields=["name", "village_name"])
+    all_villages = frappe.get_all("Village Profile", fields=["name", "village_name"])
     village_names = [v.get("village_name", v.get("name")) for v in all_villages]
     frappe.logger().warning(
         f"No village match found for '{village_raw}' (transliterated: '{transliterate_to_roman(village_raw) if is_devanagari(village_raw) else 'N/A'}') — leaving unset for manual correction. Available villages: {village_names[:10]}"
@@ -639,18 +639,6 @@ def resolve_taluka(taluka_raw: str) -> str | None:
             resolved = taluka_map.get(transliterated)
 
     if resolved:
-        # Ensure it exists in database, or auto-create it safely since it's a known valid taluka
-        if not frappe.db.exists("Taluka", resolved):
-            try:
-                new_tal = frappe.get_doc({
-                    "doctype": "Taluka",
-                    "taluka_name": resolved,
-                    "name": resolved
-                })
-                new_tal.insert(ignore_permissions=True)
-                frappe.db.commit()
-            except Exception:
-                pass
         return resolved
 
     # Fallback to direct DB checks (only for backward compatibility)
@@ -2187,3 +2175,167 @@ def insert_samples():
             
     frappe.db.commit()
     return {"success": True}
+
+
+@frappe.whitelist(allow_guest=True)
+def search_and_resolve_village(village_input: str, taluka: str = None) -> dict:
+    import json
+    village_clean = clean_glific_value(village_input)
+    taluka_clean = clean_glific_value(taluka)
+    
+    if not village_clean:
+        return {
+            "success": False,
+            "resolved": False,
+            "village_name": None,
+            "formatted_text": "गावाचे नाव रिकामे असू शकत नाही. कृपया पुन्हा प्रयत्न करा. (Village name cannot be empty. Please try again.)",
+            "matches": []
+        }
+        
+    # 1. Try resolving exact/transliterated match using resolve_village
+    resolved_village = resolve_village(village_clean)
+    if resolved_village:
+        # Verify taluka matches if taluka is provided
+        v_taluka = frappe.db.get_value("Village Profile", resolved_village, "taluka")
+        resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
+        
+        # If taluka matches or no taluka was specified, resolve immediately!
+        if not resolved_taluka or v_taluka == resolved_taluka:
+            v_name_mr = frappe.db.get_value("Village Profile", resolved_village, "village_name_marathi") or resolved_village
+            return {
+                "success": True,
+                "resolved": True,
+                "village_name": resolved_village,
+                "formatted_text": f"गाव resolved: {v_name_mr}",
+                "matches": []
+            }
+            
+    # 2. If not resolved exactly, find similar villages under the specified taluka
+    resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
+    filters = {}
+    if resolved_taluka:
+        filters["taluka"] = resolved_taluka
+        
+    villages = frappe.get_all(
+        "Village Profile",
+        filters=filters,
+        fields=["name", "village_name", "village_name_marathi"]
+    )
+    
+    query = village_clean.strip().lower()
+    matches = []
+    
+    for v in villages:
+        name_eng = (v.village_name or "").strip().lower()
+        name_mr = (v.village_name_marathi or "").strip().lower()
+        
+        score = 0
+        if query == name_eng or query == name_mr:
+            score = 100
+        elif name_eng.startswith(query) or name_mr.startswith(query):
+            score = 80
+        elif query in name_eng or name_eng in query:
+            score = 50
+        elif query in name_mr or name_mr in query:
+            score = 50
+        else:
+            # Transliteration match
+            if is_devanagari(village_clean):
+                query_roman = transliterate_to_roman(village_clean).strip().lower()
+                if query_roman == name_eng or query_roman.startswith(name_eng) or name_eng.startswith(query_roman):
+                    score = 70
+                elif query_roman in name_eng or name_eng in query_roman:
+                    score = 40
+            else:
+                if v.village_name_marathi:
+                    v_mar_roman = transliterate_to_roman(v.village_name_marathi).strip().lower()
+                    if query == v_mar_roman or query.startswith(v_mar_roman) or v_mar_roman.startswith(query):
+                        score = 70
+                    elif query in v_mar_roman or v_mar_roman in query:
+                        score = 40
+        if score > 0:
+            matches.append((score, v.name))
+            
+    # Sort by score descending
+    matches.sort(key=lambda x: x[0], reverse=True)
+    
+    # Take top 5 unique matches
+    unique_matches = []
+    seen = set()
+    for score, m_name in matches:
+        if m_name not in seen:
+            seen.add(m_name)
+            unique_matches.append(m_name)
+            if len(unique_matches) >= 5:
+                break
+                
+    if not unique_matches:
+        return {
+            "success": True,
+            "resolved": False,
+            "village_name": None,
+            "formatted_text": "तुमच्या तालुक्यात या नावाचे गाव आढळले नाही. कृपया गावाचे नाव पुन्हा एकदा टाईप करा: (No matching village found under this taluka. Please type the village name again:)",
+            "matches": []
+        }
+        
+    # Format list for WhatsApp response
+    lines = ["मला खालीलपैकी एक गाव वाटते का? कृपया योग्य पर्याय क्रमांक निवडून पाठवा: (Do you mean one of these villages? Please reply with the correct option number:)"]
+    for i, m_name in enumerate(unique_matches):
+        m_mr = frappe.db.get_value("Village Profile", m_name, "village_name_marathi")
+        m_disp = f"{m_name} ({m_mr})" if m_mr else m_name
+        lines.append(f"{i + 1}. {m_disp}")
+    lines.append(f"{len(unique_matches) + 1}. यापैकी काहीही नाही (पुन्हा टाईप करा) (None of these - Type again)")
+    
+    return {
+        "success": True,
+        "resolved": False,
+        "village_name": None,
+        "formatted_text": "\n".join(lines),
+        "matches": unique_matches
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def resolve_village_selection(selection_input: str, matches: list | str) -> dict:
+    import json
+    sel_clean = clean_glific_value(selection_input)
+    if not sel_clean:
+        return {"success": False, "resolved": False, "village_name": None}
+        
+    num_map = {
+        "१": 1, "२": 2, "३": 3, "४": 4, "५": 5, "६": 6, "७": 7, "८": 8, "९": 9, "०": 0
+    }
+    sel_str = sel_clean.strip()
+    for dev_digit, eng_digit in num_map.items():
+        sel_str = sel_str.replace(dev_digit, str(eng_digit))
+        
+    try:
+        index = int(sel_str)
+    except ValueError:
+        return {"success": False, "resolved": False, "village_name": None}
+        
+    if isinstance(matches, str):
+        try:
+            matches_list = json.loads(matches)
+        except Exception:
+            matches_list = [x.strip(" '\"[]") for x in matches.split(",") if x.strip()]
+    else:
+        matches_list = matches or []
+        
+    if index == len(matches_list) + 1:
+        return {
+            "success": True,
+            "resolved": False,
+            "village_name": None
+        }
+        
+    if 1 <= index <= len(matches_list):
+        selected_name = matches_list[index - 1]
+        return {
+            "success": True,
+            "resolved": True,
+            "village_name": selected_name
+        }
+        
+    return {"success": False, "resolved": False, "village_name": None}
+
