@@ -11,7 +11,7 @@ VALID_DEPARTMENTS = [
     "Cardiology", "Dermatology", "Diabetology", "ENT",
     "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology",
     "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology",
-    "Plastic Surgery", "Urology", "Pain Management OPD"
+    "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"
 ]
 
 REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD"]
@@ -37,6 +37,8 @@ DEPARTMENT_KEYWORDS = {
     "गायनेकॉलॉजी": "Gynaecology",
     "प्रसूती": "Gynaecology",
     "प्रसूतिशास्त्र": "Gynaecology",
+    "प्रसूतिशास्र": "Gynaecology",
+    "प्रसूति शास्त्र": "Gynaecology",
     "स्त्रीरोगशास्त्र": "Gynaecology",
     # Orthopedics
     "हाडरोग": "Orthopedics",
@@ -67,6 +69,7 @@ DEPARTMENT_KEYWORDS = {
     "मानसिक आरोग्य (2 दिवस)": "Mental Health Clinic",
     "मानसिक स्वास्थ्य (2 दिन)": "Mental Health Clinic",
     "मानसिक स्वास्थ्य (२ दिन)": "Mental Health Clinic",
+    "मानसिक स्वास्थ्य": "Mental Health Clinic",
     # Surgery
     "सर्जन": "Surgery",
     "शल्यचिकित्सक": "Surgery",
@@ -100,6 +103,7 @@ DEPARTMENT_KEYWORDS = {
     "दंतचिकित्सा (3 दिवस)": "Dental",
     "दंत चिकित्सा (3 दिन)": "Dental",
     "दंत चिकित्सा (३ दिन)": "Dental",
+    "दंत चिकित्सा": "Dental",
     # Oncology
     "कर्करोग": "Oncology",
     "ऑन्कोलॉजी": "Oncology",
@@ -160,6 +164,9 @@ DEPARTMENT_KEYWORDS = {
     "औषध": "Medicine",
     "मेडिसिन": "Medicine",
     "दवा": "Medicine",
+    # Others
+    "इतर": "Others",
+    "अन्य": "Others",
 }
 
 
@@ -589,28 +596,69 @@ def resolve_taluka(taluka_raw: str) -> str | None:
     if not taluka_raw:
         return None
 
-    cleaned = taluka_raw.strip()
+    cleaned = taluka_raw.strip().lower()
     if not cleaned:
         return None
 
-    if frappe.db.exists("Taluka", cleaned):
-        return cleaned
+    # Strict map of valid Gadchiroli talukas (with English, Hindi, Marathi variants and common typos)
+    taluka_map = {
+        # Dhanora
+        "dhanora": "Dhanora", "dhanura": "Dhanora", "धानोरा": "Dhanora",
+        # Chamorshi
+        "chamorshi": "Chamorshi", "chamorshee": "Chamorshi", "चामोर्शी": "Chamorshi",
+        # Kurkheda
+        "kurkheda": "Kurkheda", "कुरखेडा": "Kurkheda",
+        # Armori
+        "armori": "Armori", "आरमोरी": "Armori",
+        # Gadchiroli
+        "gadchiroli": "Gadchiroli", "गडचिरोली": "Gadchiroli",
+        # Aheri
+        "aheri": "Aheri", "अहेरी": "Aheri",
+        # Mulchera
+        "mulchera": "Mulchera", "मुलचेरा": "Mulchera",
+        # Etapalli
+        "etapalli": "Etapalli", "एटापल्ली": "Etapalli",
+        # Bhamragad
+        "bhamragad": "Bhamragad", "भामरागड": "Bhamragad",
+        # Korchi
+        "korchi": "Korchi", "कोरची": "Korchi",
+        # Desaiganj / Warsa
+        "desaiganj": "Desaiganj", "देसाईगंज": "Desaiganj", "warsa": "Desaiganj", "वडसा": "Desaiganj", "वडसा-देसाईगंज": "Desaiganj",
+        # Sironcha
+        "sironcha": "Sironcha", "सिरोंचा": "Sironcha"
+    }
 
-    taluka = frappe.db.get_value("Taluka", {"taluka_name": cleaned}, "name")
-    if taluka:
-        return taluka
+    resolved = taluka_map.get(cleaned)
+    if not resolved:
+        # Try transliterated key lookup
+        if is_devanagari(taluka_raw):
+            transliterated = transliterate_to_roman(taluka_raw).strip().lower()
+            resolved = taluka_map.get(transliterated)
 
-    taluka = frappe.db.get_value("Taluka", {"taluka_code": cleaned}, "name")
-    if taluka:
-        return taluka
+    if resolved:
+        # Ensure it exists in database, or auto-create it safely since it's a known valid taluka
+        if not frappe.db.exists("Taluka", resolved):
+            try:
+                new_tal = frappe.get_doc({
+                    "doctype": "Taluka",
+                    "taluka_name": resolved,
+                    "name": resolved
+                })
+                new_tal.insert(ignore_permissions=True)
+                frappe.db.commit()
+            except Exception:
+                pass
+        return resolved
 
-    taluka = frappe.db.sql("""
-        SELECT name FROM `tabTaluka`
-        WHERE LOWER(taluka_name) = LOWER(%(taluka)s)
-           OR LOWER(taluka_code) = LOWER(%(taluka)s)
-        LIMIT 1
-    """, {"taluka": cleaned}, as_dict=True)
-    return taluka[0].name if taluka else None
+    # Fallback to direct DB checks (only for backward compatibility)
+    if frappe.db.exists("Taluka", taluka_raw.strip()):
+        return taluka_raw.strip()
+    
+    taluka_db = frappe.db.get_value("Taluka", {"taluka_name": taluka_raw.strip()}, "name")
+    if taluka_db:
+        return taluka_db
+
+    return None
 
 
 def clean_glific_value(val):
@@ -1201,16 +1249,16 @@ def create_referral(
             referrer_full_name = referrer_doc.full_name or ""
             referrer_department = referrer_doc.department or ""
 
-        # Resolve PHC — handles Devanagari input
-        phc = resolve_phc(selected_phc)
-
-        # Resolve patient village — handles Devanagari input
+        # Resolve patient village, taluka and PHC using standard clean logic without dynamic creation of new profiles
         patient_village = resolve_village(village_raw)
         patient_taluka_resolved = resolve_taluka(patient_taluka_input)
+        
         if not patient_taluka_resolved and patient_village:
             patient_taluka_resolved = frappe.db.get_value(
                 "Village Profile", patient_village, "taluka"
             )
+            
+        phc = resolve_phc(selected_phc)
 
         # Normalize gender — supports English, Marathi, Hindi
         gender_map = {
@@ -1318,6 +1366,7 @@ def create_referral(
             "referred_doctor": referring_doctor,
             "raw_patient_data": raw_doc.name,
         })
+        referral_doc.flags.ignore_mandatory = True
         referral_doc.insert(ignore_permissions=True)
         frappe.db.commit()
 

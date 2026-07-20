@@ -264,7 +264,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nMental Health Clinic\nRheumatology OPD\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management OPD",
+   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nMental Health Clinic\nRheumatology OPD\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management OPD\nOthers\nOther",
    "reqd": 0
   },
   {
