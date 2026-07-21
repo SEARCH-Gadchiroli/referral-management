@@ -962,20 +962,20 @@ def resolve_facility_type(facility_input: str) -> str | None:
     if "सर्च" in facility_clean or "search" in facility_clean:
         return "SEARCH"
     if "शासकीय" in facility_clean or "सरकारी" in facility_clean or "government" in facility_clean or "सरकार" in facility_clean:
-        return "Government"
+        return "Government Hospital"
     if "इतर" in facility_clean or "अन्य" in facility_clean or "other" in facility_clean:
         return "Other"
         
     facility_type_map = {
         "सर्च": "SEARCH",
         "search": "SEARCH",
-        "शासकीय": "Government",
-        "शासकीय रुग्णालय": "Government",
-        "सरकारी": "Government",
-        "सरकारी रुग्णालय": "Government",
-        "सरकारी दवाखाना": "Government",
-        "government hospital": "Government",
-        "government": "Government",
+        "शासकीय": "Government Hospital",
+        "शासकीय रुग्णालय": "Government Hospital",
+        "सरकारी": "Government Hospital",
+        "सरकारी रुग्णालय": "Government Hospital",
+        "सरकारी दवाखाना": "Government Hospital",
+        "government hospital": "Government Hospital",
+        "government": "Government Hospital",
         "इतर": "Other",
         "अन्य": "Other",
         "other": "Other",
@@ -1205,7 +1205,7 @@ def create_referral(
         # Defaults to SEARCH hospital if not specified for backward compatibility
         facility_type = resolve_facility_type(service_facility_type) or "SEARCH"
 
-        valid_facilities = ["SEARCH", "Government", "Other"]
+        valid_facilities = ["SEARCH", "Government Hospital", "Other"]
         if facility_type not in valid_facilities:
             frappe.throw(f"Invalid service facility type: {facility_type}")
 
@@ -1371,9 +1371,34 @@ def create_referral(
             facility_desc = referral_doc.opd_departments or referral_doc.other_facility_name or referral_doc.service_facility_type
             send_patient_notification(referral_doc.patient_phone, referral_doc.patient_name, referral_doc.reference_number, facility_desc)
 
+        # Format date as dd-mm-yyyy
+        from frappe.utils import getdate
+        ref_date_str = ""
+        if referral_doc.referral_date:
+            try:
+                ref_date_str = getdate(referral_doc.referral_date).strftime("%d-%m-%Y")
+            except Exception:
+                ref_date_str = str(referral_doc.referral_date)
+
+        # Get hospital / facility display name
+        facility_display = referral_doc.service_facility_type
+        if referral_doc.service_facility_type == "Other" and referral_doc.other_facility_name:
+            facility_display = referral_doc.other_facility_name
+        elif referral_doc.service_facility_type == "SEARCH":
+            facility_display = "SEARCH Hospital"
+
+        # Get OPD
+        opd_display = referral_doc.opd_departments or referral_doc.opd_category or "-"
+
         return {
             "success": True,
-            "reference_number": referral_doc.reference_number
+            "reference_number": referral_doc.reference_number,
+            "patient_name": referral_doc.patient_name,
+            "patient_age": referral_doc.patient_age,
+            "patient_gender": referral_doc.patient_gender,
+            "referral_date": ref_date_str,
+            "hospital": facility_display,
+            "opd": opd_display
         }
 
     except frappe.ValidationError:
@@ -1767,7 +1792,7 @@ def get_pending_followups(supervisor_phone: str = None, village_name: str = None
     ):
         villages = grouped[date_str]
         for village, patients in villages.items():
-            lines.append(f"*{date_str}* ({village})")
+            lines.append(f"🟦 *{date_str}* ({village})")
             for i, p in enumerate(patients, 1):
                 # Facility display: SEARCH / Government / free-text Other
                 if p.service_facility_type == "Other" and p.other_facility_name:
@@ -2099,7 +2124,7 @@ def insert_samples():
             "age_raw": "35",
             "village_raw": "Ambezari",
             "patient_taluka_raw": "Dhanora",
-            "service_facility_type": "Government",
+            "service_facility_type": "Government Hospital",
             "referral_date_raw": "02/07/2026",
             "patient_phone_raw": "9100000002",
             "referring_doctor_raw": "Dr. Patil"

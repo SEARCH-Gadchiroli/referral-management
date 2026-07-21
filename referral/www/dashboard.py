@@ -1,6 +1,16 @@
 import frappe
 from frappe import _
 from datetime import datetime, timedelta
+from frappe.utils import getdate
+
+def format_to_dd_mm_yyyy(date_val):
+	if not date_val:
+		return ""
+	try:
+		return getdate(date_val).strftime("%d-%m-%Y")
+	except Exception:
+		return str(date_val)
+
 
 def get_context(context):
     """Fetch complete Phase 1 referral data from Patient Referral doctype"""
@@ -163,6 +173,11 @@ def get_context(context):
                     'referrer', 'phc', 'name'],
             order_by='referral_date desc',
             limit_page_length=15)
+        
+        for ref in recent_referrals:
+            if ref.get('referral_date'):
+                ref['referral_date'] = format_to_dd_mm_yyyy(ref['referral_date'])
+
         
         # === REFERRER DEPARTMENT MAPPING ===
         referrer_details = frappe.db.get_list('Referrer',

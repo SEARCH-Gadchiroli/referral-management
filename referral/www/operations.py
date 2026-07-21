@@ -1,5 +1,15 @@
 import frappe
 from frappe import _
+from frappe.utils import getdate
+
+def format_to_dd_mm_yyyy(date_val):
+	if not date_val:
+		return ""
+	try:
+		return getdate(date_val).strftime("%d-%m-%Y")
+	except Exception:
+		return str(date_val)
+
 
 def get_context(context):
     """Context wrapper for operations overview."""
@@ -37,6 +47,11 @@ def get_context(context):
                 order_by='date desc',
                 limit_page_length=10
             )
+
+            for session in recent_sessions:
+                if session.get('date'):
+                    session['date'] = format_to_dd_mm_yyyy(session['date'])
+
 
             area_breakdown = frappe.db.sql("""
                 SELECT area, COUNT(*) as sessions, SUM(total_number_of_participants) as participants

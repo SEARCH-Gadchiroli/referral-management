@@ -40,7 +40,7 @@
    "fieldname": "facility_visited",
    "fieldtype": "Select",
    "label": "Facility Actually Visited",
-   "options": "\nSEARCH\nGovernment\nOther"
+   "options": "\nSEARCH\nGovernment Hospital\nOther"
   },
   {
    "fieldname": "confirmation_date",

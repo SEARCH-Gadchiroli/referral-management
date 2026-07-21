@@ -184,7 +184,7 @@
    "fieldname": "service_facility_type",
    "fieldtype": "Select",
    "label": "Service Facility Type",
-   "options": "\nSEARCH\nGovernment\nOther",
+   "options": "\nSEARCH\nGovernment Hospital\nOther",
    "reqd": 1,
    "description": "Where the patient is being referred: SEARCH hospital, Government facility, or Other"
   },
@@ -317,7 +317,7 @@
    "fieldname": "facility_visited",
    "fieldtype": "Select",
    "label": "Facility Actually Visited",
-   "options": "\nSEARCH\nGovernment\nOther",
+   "options": "\nSEARCH\nGovernment Hospital\nOther",
    "description": "Which hospital the patient actually visited (recorded by supervisor). Populated when patient_visited = Yes."
   },
   {

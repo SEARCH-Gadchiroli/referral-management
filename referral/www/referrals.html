@@ -195,23 +195,206 @@
 
     /* ── Card/Section container ────────────────────────────────── */
     .p-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
         border-radius: 20px;
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 2px 8px -1px rgba(0, 0, 0, 0.02);
         margin-bottom: 28px;
         padding: 28px;
     }
 
-    /* ── Filter Form ──────────────────────────────────────────── */
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
+    /* ── Search & Actions Bar ──────────────────────────────────── */
+    .search-actions-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 16px 24px;
         margin-bottom: 24px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
     }
 
-    .filter-group {
+    .search-input-wrapper {
+        position: relative;
+        flex: 1;
+        max-width: 500px;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        color: var(--text-muted);
+        font-size: 16px;
+        pointer-events: none;
+    }
+
+    .search-control {
+        width: 100%;
+        padding: 12px 16px 12px 44px;
+        font-size: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        outline: none;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-control:focus {
+        border-color: #059669;
+        background: var(--bg-card);
+        box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+    }
+
+    .actions-buttons-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .btn-trigger-drawer {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 20px;
+        height: 44px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-trigger-drawer:hover {
+        background: var(--user-pill-bg);
+        border-color: var(--text-muted);
+        color: var(--text-primary);
+    }
+
+    .filter-count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #059669;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 50%;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 4px;
+        box-sizing: border-box;
+    }
+
+    .btn-reset-filters {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        height: 44px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #ef4444;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-reset-filters:hover {
+        background: #fef2f2;
+        border-color: #fca5a5;
+    }
+
+    /* ── Filter Drawer (Sidebar) ────────────────────────────────── */
+    .filter-drawer-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 300;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .filter-drawer-backdrop.open {
+        display: block;
+        opacity: 1;
+    }
+
+    .filter-drawer {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 400px;
+        max-width: 90vw;
+        height: 100vh;
+        background: var(--bg-card);
+        border-left: 1px solid var(--border-color);
+        box-shadow: -10px 0 25px -5px rgba(15, 23, 42, 0.15);
+        z-index: 310;
+        display: flex;
+        flex-direction: column;
+        transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .filter-drawer.open {
+        right: 0;
+    }
+
+    .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
+    }
+
+    .drawer-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .btn-close-drawer {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-close-drawer:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+    }
+
+    .drawer-body {
+        padding: 24px;
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .drawer-field-group {
         display: flex;
         flex-direction: column;
     }
@@ -219,7 +402,7 @@
     .filter-label {
         font-size: 11px;
         font-weight: 700;
-        color: #64748b;
+        color: var(--text-secondary);
         margin-bottom: 8px;
         text-transform: uppercase;
         letter-spacing: 0.075em;
@@ -228,11 +411,11 @@
     .filter-control {
         padding: 12px 16px;
         font-size: 14px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-color);
         border-radius: 12px;
         outline: none;
-        background: #f8fafc;
-        color: #0f172a;
+        background: var(--bg-primary);
+        color: var(--text-primary);
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         width: 100%;
         box-sizing: border-box;
@@ -240,69 +423,87 @@
 
     .filter-control:focus {
         border-color: #059669;
-        background: #ffffff;
+        background: var(--bg-card);
         box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
     }
 
-    .filter-actions {
+    .age-range-inputs {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         gap: 12px;
     }
 
-    .btn-apply {
-        padding: 0 24px;
+    .age-input {
+        flex: 1;
+    }
+
+    .age-separator {
         font-size: 13px;
-        font-weight: 600;
-        color: #ffffff;
-        background: #059669;
-        border: 1px solid #059669;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .drawer-footer {
+        padding: 20px 24px;
+        border-top: 1px solid var(--border-color);
+        background: var(--modal-footer-bg);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .btn-drawer-clear {
+        flex: 1;
         height: 46px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-drawer-clear:hover {
+        background: var(--user-pill-bg);
+        color: var(--text-primary);
+    }
+
+    .btn-drawer-apply {
+        flex: 1.5;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px solid #059669;
+        background: #059669;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
         box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15);
     }
 
-    .btn-apply:hover {
+    .btn-drawer-apply:hover {
         background: #047857;
         border-color: #047857;
         transform: translateY(-1px);
-    }
-
-    .btn-clear {
-        padding: 0 24px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #475569;
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-        height: 46px;
-        line-height: 44px;
-        display: inline-block;
-        text-align: center;
-        box-sizing: border-box;
-        text-decoration: none;
-    }
-
-    .btn-clear:hover {
-        background: #f1f5f9;
-        color: #0f172a;
-        border-color: #94a3b8;
     }
 
     /* ── Table Layout ─────────────────────────────────────────── */
     .table-container {
         overflow-x: auto;
         border-radius: 16px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
         box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
     }
 
@@ -314,11 +515,11 @@
     }
 
     .referrals-table th {
-        background: #f8fafc;
+        background: var(--bg-primary);
         padding: 16px 20px;
         font-weight: 700;
-        color: #475569;
-        border-bottom: 1px solid #e2e8f0;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-color);
         white-space: nowrap;
         text-transform: uppercase;
         font-size: 11px;
@@ -326,7 +527,7 @@
     }
 
     .referrals-table tr {
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--border-color);
         cursor: pointer;
         transition: all 0.15s;
     }
@@ -336,12 +537,12 @@
     }
 
     .referrals-table tr:hover {
-        background: #f8fafc;
+        background: var(--bg-primary);
     }
 
     .referrals-table td {
         padding: 16px 20px;
-        color: #334155;
+        color: var(--text-secondary);
         white-space: nowrap;
     }
 
@@ -702,21 +903,41 @@
 
     <!-- Main -->
     <div class="p-main">
-        <!-- Filter Card -->
-        <div class="p-card">
-            <form id="filter-form" method="GET" action="/referrals">
-                <input type="hidden" name="page" id="form-page" value="{{ page }}" />
+        <!-- Search and Action Bar + Filter Drawer -->
+        <form id="filter-form" method="GET" action="/referrals">
+            <input type="hidden" name="page" id="form-page" value="{{ page }}" />
 
-                <div class="filter-grid">
-                    <!-- Text Search -->
-                    <div class="filter-group">
-                        <label class="filter-label">Search</label>
-                        <input class="filter-control" type="text" name="search" value="{{ search }}"
-                            placeholder="Name, Phone, Ref Number..." />
-                    </div>
+            <!-- Sleek Top Action Bar -->
+            <div class="search-actions-bar">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input class="search-control" type="text" name="search" value="{{ search }}"
+                        placeholder="Search patient name, phone, ref number, or referrer..." />
+                </div>
+                <div class="actions-buttons-wrapper">
+                    <button type="button" class="btn-trigger-drawer" onclick="openFilterDrawer()">
+                        <span>🎛️</span> Filters
+                        {% if active_filters_count > 0 %}
+                        <span class="filter-count-badge">{{ active_filters_count }}</span>
+                        {% endif %}
+                    </button>
+                    {% if active_filters_count > 0 or search %}
+                    <a href="/referrals" class="btn-reset-filters">Reset All</a>
+                    {% endif %}
+                </div>
+            </div>
 
+            <!-- Slide-Out Filter Drawer (Offcanvas Sidebar) -->
+            <div class="filter-drawer-backdrop" id="filter-drawer-backdrop" onclick="closeFilterDrawer()"></div>
+            <div class="filter-drawer" id="filter-drawer">
+                <div class="drawer-header">
+                    <h3 class="drawer-title">Filters</h3>
+                    <button type="button" class="btn-close-drawer" onclick="closeFilterDrawer()">✕</button>
+                </div>
+                
+                <div class="drawer-body">
                     <!-- Status -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">Status</label>
                         <select class="filter-control" name="status">
                             <option value="">All Statuses</option>
@@ -726,8 +947,29 @@
                         </select>
                     </div>
 
+                    <!-- Gender -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Patient Gender</label>
+                        <select class="filter-control" name="gender">
+                            <option value="">All Genders</option>
+                            {% for opt in filter_genders %}
+                            <option value="{{ opt }}" {% if gender==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Age Range -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Patient Age Range</label>
+                        <div class="age-range-inputs">
+                            <input class="filter-control age-input" type="number" name="min_age" value="{{ min_age }}" placeholder="Min Age" min="0" />
+                            <span class="age-separator">to</span>
+                            <input class="filter-control age-input" type="number" name="max_age" value="{{ max_age }}" placeholder="Max Age" min="0" />
+                        </div>
+                    </div>
+
                     <!-- Patient Village -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">Patient Village</label>
                         <select class="filter-control" name="village">
                             <option value="">All Villages</option>
@@ -738,7 +980,7 @@
                     </div>
 
                     <!-- PHC -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">PHC</label>
                         <select class="filter-control" name="phc">
                             <option value="">All PHCs</option>
@@ -749,7 +991,7 @@
                     </div>
 
                     <!-- OPD Department -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">OPD Department</label>
                         <select class="filter-control" name="opd_department">
                             <option value="">All Departments</option>
@@ -759,8 +1001,8 @@
                         </select>
                     </div>
 
-                    <!-- Point of Referral / Referred By Who -->
-                    <div class="filter-group">
+                    <!-- Point of Referral -->
+                    <div class="drawer-field-group">
                         <label class="filter-label">Point of Referral</label>
                         <select class="filter-control" name="referred_by_who">
                             <option value="">All Points of Referral</option>
@@ -770,8 +1012,19 @@
                         </select>
                     </div>
 
+                    <!-- Referrer Name -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Referrer Name</label>
+                        <select class="filter-control" name="referrer_name">
+                            <option value="">All Referrers</option>
+                            {% for opt in filter_referrer_names %}
+                            <option value="{{ opt }}" {% if referrer_name==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- Taluka -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">Taluka</label>
                         <select class="filter-control" name="taluka">
                             <option value="">All Talukas</option>
@@ -782,7 +1035,7 @@
                     </div>
 
                     <!-- Referring Doctor -->
-                    <div class="filter-group">
+                    <div class="drawer-field-group">
                         <label class="filter-label">Referring Doctor</label>
                         <select class="filter-control" name="referring_doctor">
                             <option value="">All Referring Doctors</option>
@@ -792,26 +1045,25 @@
                         </select>
                     </div>
 
-                    <!-- Date Range Start -->
-                    <div class="filter-group">
+                    <!-- From Date -->
+                    <div class="drawer-field-group">
                         <label class="filter-label">From Date</label>
                         <input class="filter-control" type="date" name="start_date" value="{{ start_date }}" />
                     </div>
 
-                    <!-- Date Range End -->
-                    <div class="filter-group">
+                    <!-- To Date -->
+                    <div class="drawer-field-group">
                         <label class="filter-label">To Date</label>
                         <input class="filter-control" type="date" name="end_date" value="{{ end_date }}" />
                     </div>
-
-                    <!-- Actions -->
-                    <div class="filter-actions">
-                        <button type="submit" class="btn-apply">Filter</button>
-                        <a href="/referrals" class="btn-clear">Reset</a>
-                    </div>
                 </div>
-            </form>
-        </div>
+
+                <div class="drawer-footer">
+                    <a href="/referrals" class="btn-drawer-clear">Clear All</a>
+                    <button type="submit" class="btn-drawer-apply">Apply Filters</button>
+                </div>
+            </div>
+        </form>
 
         <!-- Listing Card -->
         <div class="p-card" style="padding: 12px;">
@@ -821,25 +1073,21 @@
                     <thead>
                         <tr>
                             <th>Ref Number</th>
+                            <th>Status</th>
                             <th>Point of Referral</th>
+                            <th>Referrer Name</th>
                             <th>Patient Name</th>
-                            <th>Age / Gender</th>
+                            <th>Age</th>
+                            <th>Gender</th>
                             <th>Village</th>
                             <th>OPD Department</th>
                             <th>Referral Date</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for ref in referrals %}
                         <tr onclick="viewDetail('{{ ref.name }}')">
-                            <td style="font-weight: 700; color: #0f172a;">{{ ref.reference_number }}</td>
-                            <td>{{ ref.referred_by_who or '-' }}</td>
-                            <td style="font-weight: 600;">{{ ref.patient_name }}</td>
-                            <td>{{ ref.patient_age or '-' }} yrs / {{ ref.patient_gender or '-' }}</td>
-                            <td>{{ ref.patient_village or '-' }}</td>
-                            <td>{{ ref.opd_departments or '-' }}</td>
-                            <td>{{ ref.referral_date }}</td>
+                            <td style="font-weight: 700; color: var(--text-primary);">{{ ref.reference_number }}</td>
                             <td>
                                 {% set status_class = ref.status %}
                                 {% if 'Follow-up' in ref.status %}
@@ -849,13 +1097,20 @@
                                 {% endif %}
                                 <span class="status-pill status-{{ status_class }}">{{ ref.status }}</span>
                             </td>
+                            <td>{{ ref.referred_by_who or '-' }}</td>
+                            <td>{{ ref.referrer_name or '-' }}</td>
+                            <td style="font-weight: 600;">{{ ref.patient_name }}</td>
+                            <td>{{ ref.patient_age or '-' }} yrs</td>
+                            <td>{{ ref.patient_gender or '-' }}</td>
+                            <td>{{ ref.patient_village or '-' }}</td>
+                            <td>{{ ref.opd_departments or '-' }}</td>
+                            <td>{{ ref.referral_date }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <!-- Pagination -->
             {% if total_pages > 1 %}
             <div class="pagination-bar">
                 <div class="pagination-info">
@@ -1153,6 +1408,18 @@
         document.body.classList.remove("ref-modal-open");
     }
 
+    function openFilterDrawer() {
+        document.getElementById("filter-drawer-backdrop").classList.add("open");
+        document.getElementById("filter-drawer").classList.add("open");
+        document.body.classList.add("ref-modal-open");
+    }
+
+    function closeFilterDrawer() {
+        document.getElementById("filter-drawer-backdrop").classList.remove("open");
+        document.getElementById("filter-drawer").classList.remove("open");
+        document.body.classList.remove("ref-modal-open");
+    }
+
     function changePage(pageNo) {
         document.getElementById("form-page").value = pageNo;
         document.getElementById("filter-form").submit();
@@ -1160,7 +1427,10 @@
 
     // Close on ESC
     document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") closeModal();
+        if (e.key === "Escape") {
+            closeModal();
+            closeFilterDrawer();
+        }
     });
 
     // Theme Toggle Logic
