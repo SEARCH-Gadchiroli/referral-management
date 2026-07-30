@@ -1199,7 +1199,9 @@ def create_referral(
     latitude: str = "",
     longitude: str = "",
     patient_phone_raw: str = "",
-    referred_by_who: str = ""
+    referred_by_who: str = "",
+    language: str = None,
+    **kwargs
 ) -> dict:
     try:
         # Fallback JSON body parsing if client does not send application/json Content-Type
@@ -1241,6 +1243,7 @@ def create_referral(
                         longitude = data.get("longitude") or longitude or ""
                         patient_phone_raw = data.get("patient_phone_raw") or patient_phone_raw or ""
                         referred_by_who = data.get("referred_by_who") or referred_by_who or ""
+                        language = data.get("language") or language or ""
             except Exception as e:
                 frappe.log_error(f"Fallback JSON parsing failed: {str(e)}", "create_referral JSON Fallback Error")
 
@@ -1460,12 +1463,24 @@ def create_referral(
             except Exception:
                 ref_date_str = str(referral_doc.referral_date)
 
+        # Clean language parameter
+        lang = (clean_glific_value(language) or "mr").strip().lower()
+        if lang not in ("en", "hi", "mr"):
+            lang = "mr"
+
         # Get hospital / facility display name
         facility_display = referral_doc.service_facility_type
+        patient_instruction = ""
         if referral_doc.service_facility_type == "Other" and referral_doc.other_facility_name:
             facility_display = referral_doc.other_facility_name
         elif referral_doc.service_facility_type == "SEARCH":
             facility_display = "SEARCH Hospital"
+            if lang == "mr":
+                patient_instruction = "कृपया SEARCH रुग्णालयातील नोंदणी खिडकीवर (Registration Desk) आपली रेफरल स्लिप दाखवा."
+            elif lang == "hi":
+                patient_instruction = "कृपया SEARCH अस्पताल के पंजीकरण काउंटर (Registration Desk) पर अपनी रेफरल पर्ची दिखाएं।"
+            else:
+                patient_instruction = "Please show your referral slip at the registration desk in SEARCH Hospital."
 
         # Get OPD
         opd_display = referral_doc.opd_departments or referral_doc.opd_category or "-"
@@ -1478,7 +1493,8 @@ def create_referral(
             "patient_gender": referral_doc.patient_gender,
             "referral_date": ref_date_str,
             "hospital": facility_display,
-            "opd": opd_display
+            "opd": opd_display,
+            "patient_instruction": patient_instruction
         }
 
     except frappe.ValidationError:
