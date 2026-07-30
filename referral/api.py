@@ -1927,11 +1927,18 @@ def get_glific_contact_fields(phone: str) -> dict:
 
 
 @frappe.whitelist(allow_guest=True)
-def get_pending_followups(supervisor_phone: str = None, village_name: str = None, **kwargs) -> dict:
+def get_pending_followups(
+    supervisor_phone: str = None, 
+    village_name: str = None, 
+    taluka_name: str = None, 
+    month: int = None, 
+    year: int = None, 
+    **kwargs
+) -> dict:
     """
     Returns pending follow-up referrals formatted as a ready-to-send
-    Marathi WhatsApp message, optionally filtered by village name,
-    grouped by referral date then village.
+    Marathi WhatsApp message, optionally filtered by village name and taluka name,
+    along with patients who visited SEARCH in the specified month/year.
 
     Called by Glific 'Follow-up List' flow.
     """
@@ -1946,21 +1953,43 @@ def get_pending_followups(supervisor_phone: str = None, village_name: str = None
                     if not supervisor_phone:
                         supervisor_phone = data.get("supervisor_phone")
                     if not village_name:
-                        village_name = data.get("village") or data.get("village_name")
+                        village_name = data.get("village") or data.get("village_name") or data.get("village_input")
+                    if not taluka_name:
+                        taluka_name = data.get("taluka") or data.get("taluka_name") or data.get("taluka_input")
+                    if not month:
+                        month = data.get("month")
+                    if not year:
+                        year = data.get("year")
         except Exception:
             pass
 
+    month = month or kwargs.get("month")
+    year = year or kwargs.get("year")
+
     supervisor_phone = clean_glific_value(supervisor_phone)
     village_name = clean_glific_value(village_name)
+    taluka_name = clean_glific_value(taluka_name)
 
     # If village_name is not provided in body, try querying Glific contact fields
     if not village_name and supervisor_phone:
         fields = get_glific_contact_fields(supervisor_phone)
         village_name = fields.get("followup_list_village_name")
+        if not taluka_name:
+            taluka_name = fields.get("followup_list_taluka_name")
 
     filters = {"status": ["in", ["Pending", "Follow-up In Progress"]]}
-    
+    resolved_taluka = None
+    if taluka_name:
+        resolved_taluka = resolve_taluka(taluka_name)
+        if not resolved_taluka:
+            return {
+                "formatted_text": f"❌ तालुका '{taluka_name}' आढळला नाही. कृपया तालुका तपासा आणि पुन्हा प्रयत्न करा.",
+                "count": 0,
+            }
+        filters["patient_taluka"] = resolved_taluka
+
     resolved_village_name_mr = None
+    village_id = None
     if village_name:
         village_id = resolve_village(village_name)
         if not village_id:
@@ -1971,6 +2000,7 @@ def get_pending_followups(supervisor_phone: str = None, village_name: str = None
         filters["patient_village"] = village_id
         resolved_village_name_mr = frappe.db.get_value("Village Profile", village_id, "village_name_marathi") or village_name
 
+    # 1. Fetch pending referrals
     referrals = frappe.get_all(
         "Patient Referral",
         filters=filters,
@@ -1991,10 +2021,66 @@ def get_pending_followups(supervisor_phone: str = None, village_name: str = None
         order_by="referral_date asc, patient_village asc",
     )
 
-    if not referrals:
+    # 2. Fetch visited SEARCH referrals for the selected/current month and year
+    from frappe.utils import today, getdate
+    import calendar
+
+    now_date = getdate(today())
+    target_year = year or now_date.year
+    target_month = month or now_date.month
+
+    try:
+        target_year = int(target_year)
+    except (ValueError, TypeError):
+        target_year = now_date.year
+
+    try:
+        target_month = int(target_month)
+    except (ValueError, TypeError):
+        target_month = now_date.month
+
+    if not (1 <= target_month <= 12):
+        target_month = now_date.month
+
+    _, last_day = calendar.monthrange(target_year, target_month)
+    start_date = getdate(f"{target_year}-{target_month:02d}-01")
+    end_date = getdate(f"{target_year}-{target_month:02d}-{last_day:02d}")
+
+    # Build visited query conditions dynamically based on filters
+    query_conditions = [
+        "pr.status = 'Visited'",
+        "sv.facility_visited = 'SEARCH'",
+        "sv.patient_visited = 1",
+        "sv.visit_date >= %s",
+        "sv.visit_date <= %s"
+    ]
+    query_args = [start_date, end_date]
+
+    if village_id:
+        query_conditions.append("pr.patient_village = %s")
+        query_args.append(village_id)
+    elif resolved_taluka:
+        query_conditions.append("pr.patient_taluka = %s")
+        query_args.append(resolved_taluka)
+
+    sql_query = f"""
+        SELECT DISTINCT 
+            pr.reference_number, pr.patient_name, pr.patient_age, pr.patient_gender,
+            pr.patient_village, pr.patient_taluka, pr.referral_date, pr.service_facility_type,
+            pr.opd_departments, pr.opd_category, pr.other_facility_name, pr.visit_count, sv.visit_date
+        FROM `tabPatient Referral` pr
+        JOIN `tabSupervisor Visit` sv ON sv.parent = pr.name
+        WHERE {" AND ".join(query_conditions)}
+        ORDER BY sv.visit_date DESC
+    """
+    visited_referrals = []
+    if village_id or resolved_taluka:
+        visited_referrals = frappe.db.sql(sql_query, tuple(query_args), as_dict=True)
+
+    if not referrals and not visited_referrals:
         if village_name:
             return {
-                "formatted_text": f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅",
+                "formatted_text": f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित किंवा भेट दिलेले रुग्ण नाहीत ✅",
                 "count": 0,
             }
         return {
@@ -2002,83 +2088,117 @@ def get_pending_followups(supervisor_phone: str = None, village_name: str = None
             "count": 0,
         }
 
-    # Resolve village links to display names (patient_village is a Link field)
+    # Resolve village links to display names
     village_names = {}
-    village_ids = list({r.patient_village for r in referrals if r.patient_village})
-    if village_ids:
+    all_village_ids = set()
+    for r in referrals:
+        if r.patient_village:
+            all_village_ids.add(r.patient_village)
+    for r in visited_referrals:
+        if r.patient_village:
+            all_village_ids.add(r.patient_village)
+
+    if all_village_ids:
         for v in frappe.get_all(
             "Village Profile",
-            filters={"name": ["in", village_ids]},
+            filters={"name": ["in", list(all_village_ids)]},
             fields=["name", "village_name", "village_name_marathi"],
         ):
             village_names[v.name] = v.village_name_marathi or v.village_name
 
-    # Group by referral date, then village (mirrors the manual message format)
-    grouped = defaultdict(lambda: defaultdict(list))
-    for r in referrals:
-        date_str = r.referral_date.strftime("%d/%m/%y")
-        village_display = village_names.get(r.patient_village, r.patient_village or "गाव नोंद नाही")
-        grouped[date_str][village_display].append(r)
-
     gender_mr = {"Male": "पुरुष", "Female": "स्त्री", "Other": "इतर"}
+    dept_map_mr = {
+        "Medicine": "औषध",
+        "Gynaecology": "स्त्रीरोग",
+        "Orthopedics": "अस्थिरोग",
+        "Spine": "मणका",
+        "Surgery": "शस्त्रक्रिया",
+        "Dental": "दंत",
+        "Psychiatry": "मानसोपचार",
+        "Rheumatology": "संधिवात",
+        "Cardiology": "हृदयरोग",
+        "Dermatology": "त्वचारोग",
+        "Diabetology": "मधुमेह",
+        "ENT": "कान नाक घसा",
+        "Gastrology": "पोटरोग",
+        "Head & Neck": "डोके आणि मान",
+        "Neurology + Epilepsy": "अपस्मार/मज्जातंतू",
+        "Oncology": "कर्करोग",
+        "Pulmonology": "श्वसन/फुफ्फुस",
+        "Sickle Cell": "सिकल सेल",
+        "Cataract Surgery": "मोतीबिंदू शस्त्रक्रिया",
+        "Ophthalmology": "नेत्र",
+        "Plastic Surgery": "प्लास्टिक सर्जरी",
+        "Urology": "मूत्ररोग",
+        "Pain Management": "वेदना व्यवस्थापन",
+        "Others": "इतर",
+        "Regular OPD": "नियमित ओपीडी",
+        "Specialist OPD": "तज्ञ ओपीडी",
+        "Surgical OPD": "शस्त्रक्रिया ओपीडी"
+    }
 
     lines = ["*रेफर सर्च — फॉलो-अप यादी* 📋", ""]
 
-    for date_str in sorted(
-        grouped.keys(),
-        key=lambda d: frappe.utils.getdate("20" + d.split("/")[2] + "-" + d.split("/")[1] + "-" + d.split("/")[0]),
-    ):
-        villages = grouped[date_str]
-        for village, patients in villages.items():
-            lines.append(f"🟦 *{date_str}* ({village})")
-            for i, p in enumerate(patients, 1):
-                # Facility display: SEARCH / Government / free-text Other
-                if p.service_facility_type == "Other" and p.other_facility_name:
-                    hospital = p.other_facility_name
-                else:
-                    hospital = p.service_facility_type or "SEARCH"
+    # Format Pending Section
+    if referrals:
+        # Group by referral date, then village
+        grouped = defaultdict(lambda: defaultdict(list))
+        for r in referrals:
+            date_str = r.referral_date.strftime("%d/%m/%y")
+            village_display = village_names.get(r.patient_village, r.patient_village or "गाव नोंद नाही")
+            grouped[date_str][village_display].append(r)
 
-                dept = p.opd_departments or p.opd_category or "-"
-                
-                dept_map_mr = {
-                    "Medicine": "औषध",
-                    "Gynaecology": "स्त्रीरोग",
-                    "Orthopedics": "अस्थिरोग",
-                    "Spine": "मणका",
-                    "Surgery": "शस्त्रक्रिया",
-                    "Dental": "दंत",
-                    "Psychiatry": "मानसोपचार",
-                    "Rheumatology": "संधिवात",
-                    "Cardiology": "हृदयरोग",
-                    "Dermatology": "त्वचारोग",
-                    "Diabetology": "मधुमेह",
-                    "ENT": "कान नाक घसा",
-                    "Gastrology": "पोटरोग",
-                    "Head & Neck": "डोके आणि मान",
-                    "Neurology + Epilepsy": "अपस्मार/मज्जातंतू",
-                    "Oncology": "कर्करोग",
-                    "Pulmonology": "श्वसन/फुफ्फुस",
-                    "Sickle Cell": "सिकल सेल",
-                    "Cataract Surgery": "मोतीबिंदू शस्त्रक्रिया",
-                    "Ophthalmology": "नेत्र",
-                    "Plastic Surgery": "प्लास्टिक सर्जरी",
-                    "Urology": "मूत्ररोग",
-                    "Pain Management": "वेदना व्यवस्थापन",
-                    "Others": "इतर",
-                    "Regular OPD": "नियमित ओपीडी",
-                    "Specialist OPD": "तज्ञ ओपीडी",
-                    "Surgical OPD": "शस्त्रक्रिया ओपीडी"
-                }
-                dept_mr = dept_map_mr.get(dept, dept)
-                gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
+        for date_str in sorted(
+            grouped.keys(),
+            key=lambda d: frappe.utils.getdate("20" + d.split("/")[2] + "-" + d.split("/")[1] + "-" + d.split("/")[0]),
+        ):
+            villages = grouped[date_str]
+            for village, patients in villages.items():
+                lines.append(f"🟦 *{date_str}* ({village})")
+                for i, p in enumerate(patients, 1):
+                    if p.service_facility_type == "Other" and p.other_facility_name:
+                        hospital = p.other_facility_name
+                    else:
+                        hospital = p.service_facility_type or "SEARCH"
 
-                lines.append(f"{i}) *{p.patient_name}*")
-                lines.append(f"वय-{p.patient_age}/{gender}")
-                lines.append(f"🏥 {hospital} | विभाग: {dept_mr}")
-                lines.append(f"🔖 {p.reference_number}")
-                if p.visit_count and p.visit_count > 0:
-                    lines.append(f"पुढील भेट क्र. {p.visit_count + 1}")
-                lines.append("──────────────────")
+                    dept = p.opd_departments or p.opd_category or "-"
+                    dept_mr = dept_map_mr.get(dept, dept)
+                    gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
+
+                    lines.append(f"{i}) *{p.patient_name}*")
+                    lines.append(f"वय-{p.patient_age}/{gender}")
+                    lines.append(f"🏥 {hospital} | विभाग: {dept_mr}")
+                    lines.append(f"🔖 {p.reference_number}")
+                    if p.visit_count and p.visit_count > 0:
+                        lines.append(f"पुढील भेट क्र. {p.visit_count + 1}")
+                    lines.append("──────────────────")
+    else:
+        if visited_referrals:
+            lines.append("प्रलंबित फॉलो-अप: काहीही नाही ✅")
+            lines.append("──────────────────")
+
+    # Format Visited Section
+    if visited_referrals:
+        # Show translated month name in headers
+        month_names_mr = {
+            1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
+            5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
+            9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
+        }
+        month_label = month_names_mr.get(target_month, f"महिना {target_month}")
+        lines.append(f"✅ *{month_label} {target_year} मध्ये SEARCH ला भेट दिलेले रुग्ण:*")
+        lines.append("")
+
+        for i, p in enumerate(visited_referrals, 1):
+            v_date_str = p.visit_date.strftime("%d/%m/%y") if p.visit_date else "-"
+            village_display = village_names.get(p.patient_village, p.patient_village or "गाव नोंद नाही")
+            gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
+
+            lines.append(f"{i}) *{p.patient_name}* ({village_display})")
+            lines.append(f"वय-{p.patient_age}/{gender}")
+            lines.append(f"📅 भेट तारीख: {v_date_str}")
+            lines.append(f"🔖 {p.reference_number}")
+            lines.append("──────────────────")
 
     formatted = "\n".join(lines).strip()
 
@@ -2747,5 +2867,72 @@ def resolve_village_selection(selection_input: str = None, contact_phone: str = 
         }
 
     return {"success": False, "resolved": False, "village_name": None}
+
+
+@frappe.whitelist()
+def export_translated_villages():
+    import json
+    villages = frappe.get_all(
+        "Village Profile",
+        fields=["village_name", "village_name_marathi", "taluka", "village_number"]
+    )
+    with open("translated_villages.json", "w", encoding="utf-8") as f:
+        json.dump(villages, f, ensure_ascii=False, indent=4)
+    return {"success": True, "count": len(villages)}
+
+
+@frappe.whitelist()
+def import_translated_villages():
+    import json
+    import os
+    
+    file_path = "translated_villages.json"
+    if not os.path.exists(file_path):
+        return {"success": False, "error": f"{file_path} not found"}
+        
+    with open(file_path, "r", encoding="utf-8") as f:
+        villages = json.load(f)
+        
+    count = 0
+    skipped = 0
+    
+    for v in villages:
+        village_name = v.get("village_name")
+        if not village_name:
+            continue
+            
+        if frappe.db.exists("Village Profile", village_name):
+            skipped += 1
+            continue
+            
+        taluka = v.get("taluka")
+        if taluka and not frappe.db.exists("Taluka", taluka):
+            try:
+                t_doc = frappe.get_doc({
+                    "doctype": "Taluka",
+                    "taluka_name": taluka,
+                    "taluka_code": taluka[:3].upper(),
+                    "district": "Gadchiroli",
+                    "state": "Maharashtra"
+                })
+                t_doc.insert(ignore_permissions=True)
+            except Exception:
+                pass
+                
+        doc = frappe.get_doc({
+            "doctype": "Village Profile",
+            "village_name": village_name,
+            "village_number": v.get("village_number"),
+            "taluka": taluka,
+            "village_name_marathi": v.get("village_name_marathi")
+        })
+        doc.insert(ignore_permissions=True)
+        count += 1
+        
+        if count % 100 == 0:
+            frappe.db.commit()
+            
+    frappe.db.commit()
+    return {"success": True, "imported": count, "skipped": skipped}
 
 
