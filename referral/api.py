@@ -11,10 +11,11 @@ VALID_DEPARTMENTS = [
     "Cardiology", "Dermatology", "Diabetology", "ENT",
     "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology",
     "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology",
-    "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"
+    "Plastic Surgery", "Urology", "Pain Management OPD", "Physiotherapy",
+    "Others", "Other"
 ]
 
-REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD", "Others", "Other"]
+REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD", "Physiotherapy", "Others", "Other"]
 SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Plastic Surgery", "Urology", "Pain Management OPD", "Rheumatology OPD", "Others", "Other"]
 SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"]
 
@@ -160,6 +161,9 @@ DEPARTMENT_KEYWORDS = {
     "वेदना व्यवस्थापन ओपीडी": "Pain Management OPD",
     "दर्द प्रबंधन": "Pain Management OPD",
     "दर्द प्रबंधन ओपीडी": "Pain Management OPD",
+    "Physiotherapy": "Physiotherapy",
+    "फिजिओथेरपी": "Physiotherapy",
+    "फिजियोथेरेपी": "Physiotherapy",
     # Medicine
     "औषध": "Medicine",
     "मेडिसिन": "Medicine",
@@ -168,6 +172,56 @@ DEPARTMENT_KEYWORDS = {
     "इतर": "Others",
     "अन्य": "Others",
 }
+
+
+VILLAGE_MATCH_CACHE_TTL_SECONDS = 600
+
+VILLAGE_MESSAGES = {
+    "village_empty": {
+        "en": "Village name cannot be empty. Please try again.",
+        "hi": "गाँव का नाम खाली नहीं हो सकता। कृपया पुनः प्रयास करें।",
+        "mr": "गावाचे नाव रिकामे असू शकत नाही. कृपया पुन्हा प्रयत्न करा.",
+    },
+    "resolved": {
+        "en": "Village confirmed: {name}",
+        "hi": "गाँव की पुष्टि हुई: {name}",
+        "mr": "गाव निश्चित केले: {name}",
+    },
+    "no_match_in_taluka": {
+        "en": "No matching village found under this taluka. Please type the village name again:",
+        "hi": "इस तालुका में यह नाम वाला कोई गाँव नहीं मिला। कृपया गाँव का नाम दोबारा टाइप करें:",
+        "mr": "तुमच्या तालुक्यात या नावाचे गाव आढळले नाही. कृपया गावाचे नाव पुन्हा एकदा टाईप करा:",
+    },
+    "did_you_mean": {
+        "en": "Do you mean one of these villages? Please reply with the correct option number:",
+        "hi": "क्या आपका मतलब इनमें से कोई गाँव है? कृपया सही विकल्प नंबर के साथ जवाब दें:",
+        "mr": "मला खालीलपैकी एक गाव वाटते का? कृपया योग्य पर्याय क्रमांक निवडून पाठवा:",
+    },
+    "none_of_these": {
+        "en": "None of these - Type again",
+        "hi": "इनमें से कोई नहीं - दोबारा टाइप करें",
+        "mr": "यापैकी काहीही नाही (पुन्हा टाईप करा)",
+    },
+    "session_expired": {
+        "en": "Your village list has expired. Please type the village name again.",
+        "hi": "आपकी गाँव सूची समाप्त हो गई है। कृपया गाँव का नाम फिर से टाइप करें।",
+        "mr": "तुमची गाव यादी कालबाह्य झाली आहे. कृपया गावाचे नाव पुन्हा टाईप करा.",
+    },
+}
+
+
+def village_msg(key: str, lang: str, **kwargs) -> str:
+    lang = lang if lang in ("en", "hi", "mr") else "en"
+    template = VILLAGE_MESSAGES[key][lang]
+    return template.format(**kwargs) if kwargs else template
+
+
+def village_display_name(village_name: str, lang: str) -> str:
+    """Single-language display name for a Village Profile record."""
+    if lang == "mr":
+        v_mr = frappe.db.get_value("Village Profile", village_name, "village_name_marathi")
+        return v_mr or village_name
+    return village_name
 
 
 def is_devanagari(text: str) -> bool:
@@ -584,6 +638,8 @@ def resolve_referred_by_who(role_raw: str) -> str:
         return "Supervisor"
     if "optometrist" in cleaned or "ऑप्टोमेट्रिस्ट" in cleaned:
         return "Optometrist"
+    if "mpu" in cleaned or "physiotherap" in cleaned or "फिजिओथेरपिस्ट" in cleaned:
+        return "MPU Physiotherapist"
         
     return role_raw.strip()
 
@@ -958,9 +1014,18 @@ def resolve_facility_type(facility_input: str) -> str | None:
         return None
     facility_clean = facility_input.strip().lower()
     
-    # Check for keywords in lower-case raw inputs
     if "सर्च" in facility_clean or "search" in facility_clean:
         return "SEARCH"
+    if (
+        "village mh" in facility_clean or 
+        "village mental health" in facility_clean or 
+        "गाव" in facility_clean or 
+        "व्हिलेज" in facility_clean or
+        "विलेज" in facility_clean
+    ):
+        return "Village MH Clinic"
+    if "taluka mh" in facility_clean or "taluka mental health" in facility_clean or "तालुका" in facility_clean:
+        return "Taluka MH Clinic"
     if "शासकीय" in facility_clean or "सरकारी" in facility_clean or "government" in facility_clean or "सरकार" in facility_clean:
         return "Government Hospital"
     if "इतर" in facility_clean or "अन्य" in facility_clean or "other" in facility_clean:
@@ -969,6 +1034,16 @@ def resolve_facility_type(facility_input: str) -> str | None:
     facility_type_map = {
         "सर्च": "SEARCH",
         "search": "SEARCH",
+        "village mh clinic": "Village MH Clinic",
+        "taluka mh clinic": "Taluka MH Clinic",
+        "तालुका mh क्लिनिक": "Taluka MH Clinic",
+        "तालुका एमएच क्लिनिक": "Taluka MH Clinic",
+        "तालुका क्लिनिक": "Taluka MH Clinic",
+        "गाव mh क्लिनिक": "Village MH Clinic",
+        "गावातील mh क्लिनिक": "Village MH Clinic",
+        "गाव क्लिनिक": "Village MH Clinic",
+        "विलेज एमएच क्लिनिक": "Village MH Clinic",
+        "व्हिलेज एमएच क्लिनिक": "Village MH Clinic",
         "शासकीय": "Government Hospital",
         "शासकीय रुग्णालय": "Government Hospital",
         "सरकारी": "Government Hospital",
@@ -980,7 +1055,6 @@ def resolve_facility_type(facility_input: str) -> str | None:
         "अन्य": "Other",
         "other": "Other",
     }
-    # Check case-insensitive mapping
     for key, val in facility_type_map.items():
         if key.lower() == facility_clean:
             return val
@@ -1205,7 +1279,7 @@ def create_referral(
         # Defaults to SEARCH hospital if not specified for backward compatibility
         facility_type = resolve_facility_type(service_facility_type) or "SEARCH"
 
-        valid_facilities = ["SEARCH", "Government Hospital", "Other"]
+        valid_facilities = ["SEARCH", "Government Hospital", "Other", "Village MH Clinic", "Taluka MH Clinic"]
         if facility_type not in valid_facilities:
             frappe.throw(f"Invalid service facility type: {facility_type}")
 
@@ -1274,11 +1348,17 @@ def create_referral(
             else:
                 patient_gender = "Other"
 
-        # Parse age
+        # Parse age — supports "X months" (e.g. "7 months" -> 0.7 years, per spec)
+        import re as _re
+        age_clean = (age_raw or "").strip().lower()
+        month_match = _re.search(r"(\d+(\.\d+)?)\s*(month|months|महिने|महिना|माह)", age_clean)
         try:
-            patient_age = int(age_raw)
+            if month_match:
+                patient_age = round(float(month_match.group(1)) / 10, 1)
+            else:
+                patient_age = float(age_clean)
         except Exception:
-            patient_age = 0
+            patient_age = 0.0
 
         # Resolve OPD department (SEARCH only)
         opd_dept = None
@@ -1651,6 +1731,164 @@ def record_supervisor_visit(
             "success": False,
             "error": str(e)
         }
+
+
+MHD_INFO_SOURCE_MAP = {
+    "patient": "Patient", "पेशंट": "Patient", "रुग्ण": "Patient",
+    "relative": "Relative", "नातेवाईक": "Relative", "रिश्तेदार": "Relative",
+    "neighbor": "Neighbor", "neighbour": "Neighbor", "शेजारी": "Neighbor", "पड़ोसी": "Neighbor",
+    "other": "Other", "इतर": "Other", "अन्य": "Other",
+}
+
+MHD_DRINKING_PATTERN_MAP = {
+    "regular": "Regular", "नियमित": "Regular",
+    "binge on regular": "Binge on Regular", "नियमितपणे अति खाणे": "Binge on Regular",
+    "binge": "Binge", "अति खाणे": "Binge", "बिंज": "Binge",
+    "occasional": "Occasional", "अधूनमधून": "Occasional", "प्रासंगिक": "Occasional",
+}
+
+MHD_ALCOHOL_TYPE_MAP = {
+    "country": "Country", "देशी": "Country",
+    "imfl": "IMFL", "विदेशी (imfl)": "IMFL", "विदेशी": "IMFL",
+    "moha / gul": "Moha / Gul", "moha/gul": "Moha / Gul", "मोहा / गुळ": "Moha / Gul", "मोहा / गुल": "Moha / Gul",
+    "tadi / sindhi / gorga": "Tadi / Sindhi / Gorga", "ताडी / सिंधी / गोरगा": "Tadi / Sindhi / Gorga", "ताड़ी / सिंधी / गोरगा": "Tadi / Sindhi / Gorga",
+    "none": "None", "काहीही नाही": "None", "कोई नहीं": "None",
+}
+
+
+def resolve_mhd_select(value_raw: str, mapping: dict) -> str | None:
+    if not value_raw:
+        return None
+    return mapping.get(value_raw.strip().lower(), value_raw.strip())
+
+
+@frappe.whitelist(allow_guest=True)
+def record_mhd_followup(
+    referral_id: str = None,
+    mhd_counselor_phone: str = None,
+    followup_day_offset: str = None,
+    patient_info_source: str = None,
+    days_drank_last_15: str = None,
+    notable_incident: str = None,
+    current_complaints: str = None,
+    drinking_pattern: str = None,
+    alcohol_type: str = None,
+    quantity_ml_per_day: str = None,
+    frequency_per_day: str = None,
+    drank_today: str = None,
+    family_opinion: str = None,
+    counselor_observation: str = None,
+    mhd_counselor_name: str = None,
+    **kwargs
+) -> dict:
+    """
+    Records an MHD counsellor follow-up (30/90-day addiction-management
+    check-in) against a Patient Referral. Called by Glific's 'MHD Followup'
+    flow, entered from the Supervisor Followup flow's MHD Followup branch.
+    """
+    try:
+        import json
+        if frappe.request:
+            try:
+                raw_data = frappe.request.get_data(as_text=True)
+                if raw_data:
+                    data = json.loads(raw_data)
+                    if isinstance(data, dict):
+                        referral_id = referral_id or data.get("referral_id")
+                        mhd_counselor_phone = mhd_counselor_phone or data.get("mhd_counselor_phone")
+                        followup_day_offset = followup_day_offset or data.get("followup_day_offset")
+                        patient_info_source = patient_info_source or data.get("patient_info_source")
+                        days_drank_last_15 = days_drank_last_15 or data.get("days_drank_last_15") or data.get("days_drank_last")
+                        notable_incident = notable_incident or data.get("notable_incident")
+                        current_complaints = current_complaints or data.get("current_complaints")
+                        drinking_pattern = drinking_pattern or data.get("drinking_pattern")
+                        alcohol_type = alcohol_type or data.get("alcohol_type")
+                        quantity_ml_per_day = quantity_ml_per_day or data.get("quantity_ml_per_day") or data.get("quantity_ml")
+                        frequency_per_day = frequency_per_day or data.get("frequency_per_day") or data.get("frequency")
+                        drank_today = drank_today or data.get("drank_today")
+                        family_opinion = family_opinion or data.get("family_opinion")
+                        counselor_observation = counselor_observation or data.get("counselor_observation")
+                        mhd_counselor_name = mhd_counselor_name or data.get("mhd_counselor_name")
+            except Exception:
+                pass
+
+        referral_id = clean_glific_value(referral_id)
+        mhd_counselor_phone = clean_glific_value(mhd_counselor_phone)
+        mhd_counselor_name = clean_glific_value(mhd_counselor_name)
+        followup_day_offset = clean_glific_value(followup_day_offset)
+        patient_info_source = clean_glific_value(patient_info_source)
+        days_drank_last_15 = clean_glific_value(days_drank_last_15)
+        notable_incident = clean_glific_value(notable_incident)
+        current_complaints = clean_glific_value(current_complaints)
+        drinking_pattern = clean_glific_value(drinking_pattern)
+        alcohol_type = clean_glific_value(alcohol_type)
+        quantity_ml_per_day = clean_glific_value(quantity_ml_per_day)
+        frequency_per_day = clean_glific_value(frequency_per_day)
+        drank_today = clean_glific_value(drank_today)
+        family_opinion = clean_glific_value(family_opinion)
+        counselor_observation = clean_glific_value(counselor_observation)
+
+        if not referral_id:
+            return {"success": False, "error": "Missing referral_id"}
+        if not mhd_counselor_phone:
+            return {"success": False, "error": "Missing mhd_counselor_phone"}
+
+        referral = None
+        if frappe.db.exists("Patient Referral", referral_id):
+            referral = frappe.get_doc("Patient Referral", referral_id)
+        elif frappe.db.exists("Patient Referral", {"reference_number": referral_id}):
+            referral = frappe.get_doc("Patient Referral", {"reference_number": referral_id})
+
+        if not referral:
+            return {"success": False, "error": f"Referral {referral_id} not found"}
+
+        try:
+            days_drank_int = int(days_drank_last_15) if days_drank_last_15 else 0
+        except ValueError:
+            days_drank_int = 0
+        days_drank_int = max(0, min(15, days_drank_int))
+
+        try:
+            qty_ml_int = int(quantity_ml_per_day) if quantity_ml_per_day else 0
+        except ValueError:
+            qty_ml_int = 0
+
+        try:
+            freq_int = int(frequency_per_day) if frequency_per_day else 0
+        except ValueError:
+            freq_int = 0
+
+        YES_VALUES = ("yes", "1", "true", "होय", "हो", "हाँ", "han", "hoy")
+        drank_today_flag = 1 if (drank_today and drank_today.strip().lower() in YES_VALUES) else 0
+
+        day_offset_clean = "90" if "90" in (followup_day_offset or "") else "30"
+
+        referral.append("mhd_followups", {
+            "followup_day_offset": day_offset_clean,
+            "visit_date": getdate(today()),
+            "patient_info_source": resolve_mhd_select(patient_info_source, MHD_INFO_SOURCE_MAP),
+            "days_drank_last_15": days_drank_int,
+            "notable_incident": notable_incident,
+            "current_complaints": current_complaints,
+            "drinking_pattern": resolve_mhd_select(drinking_pattern, MHD_DRINKING_PATTERN_MAP),
+            "alcohol_type": resolve_mhd_select(alcohol_type, MHD_ALCOHOL_TYPE_MAP),
+            "quantity_ml_per_day": qty_ml_int,
+            "frequency_per_day": freq_int,
+            "drank_today": drank_today_flag,
+            "family_opinion": family_opinion,
+            "counselor_observation": counselor_observation,
+            "mhd_counselor_name": mhd_counselor_name,
+            "mhd_counselor_phone": mhd_counselor_phone,
+        })
+
+        referral.flags.ignore_mandatory = True
+        referral.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        return {"success": True, "followup_day_offset": day_offset_clean}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "record_mhd_followup API Error")
+        return {"success": False, "error": str(e)}
 
 
 def get_glific_contact_fields(phone: str) -> dict:
@@ -2202,58 +2440,173 @@ def insert_samples():
     return {"success": True}
 
 
+# @frappe.whitelist()
+def import_village_list() -> dict:
+    """
+    One-off import function to read 1500 villages from /Users/sakshi/Downloads/12 Taluka Village List (1500).xlsx
+    and automatically translate village names into Marathi via deep_translator.
+    """
+    import openpyxl
+    from deep_translator import GoogleTranslator
+
+    file_path = "/Users/sakshi/Downloads/12 Taluka Village List (1500).xlsx"
+    try:
+        wb = openpyxl.load_workbook(file_path, read_only=True)
+    except Exception as e:
+        return {"success": False, "error": f"Failed to open workbook: {str(e)}"}
+
+    if "1500 Village" not in wb.sheetnames:
+        return {"success": False, "error": "Sheet '1500 Village' not found in workbook"}
+
+    ws = wb["1500 Village"]
+    rows = list(ws.iter_rows(values_only=True))
+
+    count = 0
+    skipped = 0
+    translated = 0
+    errors = 0
+
+    # Get max village number to increment from
+    max_num_list = frappe.get_all("Village Profile", fields=["village_number"], order_by="village_number desc", limit=1)
+    current_num = max_num_list[0].village_number if max_num_list else 0
+    if not isinstance(current_num, int):
+        current_num = 0
+
+    translator = GoogleTranslator(source="en", target="mr")
+
+    for idx, r in enumerate(rows[2:], start=3):
+        taluka_input, village_input = r[0], r[1]
+        if not village_input:
+            continue
+
+        village_name = str(village_input).strip()
+        taluka_clean = str(taluka_input).strip() if taluka_input else ""
+
+        # Check if village already exists
+        if frappe.db.exists("Village Profile", village_name):
+            skipped += 1
+            continue
+
+        resolved_taluka = resolve_taluka(taluka_clean)
+        if resolved_taluka and not frappe.db.exists("Taluka", resolved_taluka):
+            try:
+                t_doc = frappe.get_doc({
+                    "doctype": "Taluka",
+                    "taluka_name": resolved_taluka,
+                    "taluka_code": resolved_taluka[:3].upper(),
+                    "district": "Gadchiroli",
+                    "state": "Maharashtra"
+                })
+                t_doc.insert(ignore_permissions=True)
+            except Exception:
+                pass
+
+        # Translate to Marathi
+        village_name_marathi = None
+        try:
+            marathi = translator.translate(village_name)
+            if marathi and marathi != village_name:
+                village_name_marathi = marathi
+                translated += 1
+        except Exception:
+            errors += 1
+
+        current_num += 1
+
+        doc = frappe.get_doc({
+            "doctype": "Village Profile",
+            "village_name": village_name,
+            "village_number": current_num,
+            "taluka": resolved_taluka,
+            "village_name_marathi": village_name_marathi
+        })
+        doc.insert(ignore_permissions=True)
+        count += 1
+
+        if count % 100 == 0:
+            frappe.db.commit()
+
+    frappe.db.commit()
+    return {
+        "success": True,
+        "imported": count,
+        "skipped": skipped,
+        "translated": translated,
+        "translation_errors": errors
+    }
+
+
 @frappe.whitelist(allow_guest=True)
-def search_and_resolve_village(village_input: str, taluka: str = None) -> dict:
+def search_and_resolve_village(village_input: str = None, taluka: str = None, contact_phone: str = None, language: str = None, **kwargs) -> dict:
     import json
+
+    # Glific POSTs JSON — fall back to parsing the raw body for keys that
+    # don't match the function's parameter names exactly (e.g. the flow
+    # sends "taluka_input" instead of "taluka").
+    if frappe.request:
+        try:
+            raw_data = frappe.request.get_data(as_text=True)
+            if raw_data:
+                data = json.loads(raw_data)
+                if isinstance(data, dict):
+                    village_input = village_input or data.get("village_input")
+                    taluka = taluka or data.get("taluka") or data.get("taluka_input")
+                    contact_phone = contact_phone or data.get("contact_phone") or data.get("phone")
+                    language = language or data.get("language")
+        except Exception:
+            pass
+
     village_clean = clean_glific_value(village_input)
     taluka_clean = clean_glific_value(taluka)
-    
+    contact_phone = clean_glific_value(contact_phone)
+    lang = (clean_glific_value(language) or "en").strip().lower()
+    if lang not in ("en", "hi", "mr"):
+        lang = "en"
+
     if not village_clean:
         return {
             "success": False,
             "resolved": False,
             "village_name": None,
-            "formatted_text": "गावाचे नाव रिकामे असू शकत नाही. कृपया पुन्हा प्रयत्न करा. (Village name cannot be empty. Please try again.)",
+            "formatted_text": village_msg("village_empty", lang),
             "matches": []
         }
-        
+
     # 1. Try resolving exact/transliterated match using resolve_village
     resolved_village = resolve_village(village_clean)
     if resolved_village:
-        # Verify taluka matches if taluka is provided
         v_taluka = frappe.db.get_value("Village Profile", resolved_village, "taluka")
         resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
-        
-        # If taluka matches or no taluka was specified, resolve immediately!
+
         if not resolved_taluka or v_taluka == resolved_taluka:
-            v_name_mr = frappe.db.get_value("Village Profile", resolved_village, "village_name_marathi") or resolved_village
+            display_name = village_display_name(resolved_village, lang)
             return {
                 "success": True,
                 "resolved": True,
                 "village_name": resolved_village,
-                "formatted_text": f"गाव resolved: {v_name_mr}",
+                "formatted_text": village_msg("resolved", lang, name=display_name),
                 "matches": []
             }
-            
+
     # 2. If not resolved exactly, find similar villages under the specified taluka
     resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
     filters = {}
     if resolved_taluka:
         filters["taluka"] = resolved_taluka
-        
+
     villages = frappe.get_all(
         "Village Profile",
         filters=filters,
         fields=["name", "village_name", "village_name_marathi"]
     )
-    
+
     query = village_clean.strip().lower()
     matches = []
-    
+
     for v in villages:
         name_eng = (v.village_name or "").strip().lower()
         name_mr = (v.village_name_marathi or "").strip().lower()
-        
+
         score = 0
         if query == name_eng or query == name_mr:
             score = 100
@@ -2264,7 +2617,6 @@ def search_and_resolve_village(village_input: str, taluka: str = None) -> dict:
         elif query in name_mr or name_mr in query:
             score = 50
         else:
-            # Transliteration match
             if is_devanagari(village_clean):
                 query_roman = transliterate_to_roman(village_clean).strip().lower()
                 if query_roman == name_eng or query_roman.startswith(name_eng) or name_eng.startswith(query_roman):
@@ -2280,11 +2632,9 @@ def search_and_resolve_village(village_input: str, taluka: str = None) -> dict:
                         score = 40
         if score > 0:
             matches.append((score, v.name))
-            
-    # Sort by score descending
+
     matches.sort(key=lambda x: x[0], reverse=True)
-    
-    # Take top 5 unique matches
+
     unique_matches = []
     seen = set()
     for score, m_name in matches:
@@ -2293,74 +2643,109 @@ def search_and_resolve_village(village_input: str, taluka: str = None) -> dict:
             unique_matches.append(m_name)
             if len(unique_matches) >= 5:
                 break
-                
+
     if not unique_matches:
         return {
             "success": True,
             "resolved": False,
             "village_name": None,
-            "formatted_text": "तुमच्या तालुक्यात या नावाचे गाव आढळले नाही. कृपया गावाचे नाव पुन्हा एकदा टाईप करा: (No matching village found under this taluka. Please type the village name again:)",
+            "formatted_text": village_msg("no_match_in_taluka", lang),
             "matches": []
         }
-        
-    # Format list for WhatsApp response
-    lines = ["मला खालीलपैकी एक गाव वाटते का? कृपया योग्य पर्याय क्रमांक निवडून पाठवा: (Do you mean one of these villages? Please reply with the correct option number:)"]
+
+    # Persist the candidate list server-side, keyed by the WhatsApp phone
+    # number, so resolve_village_selection can retrieve it later without
+    # needing the flow to hand the array back.
+    if contact_phone:
+        frappe.cache().set_value(
+            f"village_matches:{contact_phone}",
+            unique_matches,
+            expires_in_sec=VILLAGE_MATCH_CACHE_TTL_SECONDS,
+        )
+    else:
+        frappe.logger().warning(
+            "[search_and_resolve_village] No contact_phone provided — cannot cache matches for later selection"
+        )
+
+    lines = [village_msg("did_you_mean", lang)]
     for i, m_name in enumerate(unique_matches):
-        m_mr = frappe.db.get_value("Village Profile", m_name, "village_name_marathi")
-        m_disp = f"{m_name} ({m_mr})" if m_mr else m_name
-        lines.append(f"{i + 1}. {m_disp}")
-    lines.append(f"{len(unique_matches) + 1}. यापैकी काहीही नाही (पुन्हा टाईप करा) (None of these - Type again)")
-    
+        lines.append(f"{i + 1}. {village_display_name(m_name, lang)}")
+    lines.append(f"{len(unique_matches) + 1}. {village_msg('none_of_these', lang)}")
+
     return {
         "success": True,
         "resolved": False,
         "village_name": None,
         "formatted_text": "\n".join(lines),
-        "matches": unique_matches
+        "matches": unique_matches,
     }
 
 
 @frappe.whitelist(allow_guest=True)
-def resolve_village_selection(selection_input: str, matches: list | str) -> dict:
+def resolve_village_selection(selection_input: str = None, contact_phone: str = None, language: str = None, **kwargs) -> dict:
     import json
+
+    if frappe.request:
+        try:
+            raw_data = frappe.request.get_data(as_text=True)
+            if raw_data:
+                data = json.loads(raw_data)
+                if isinstance(data, dict):
+                    selection_input = selection_input or data.get("selection_input")
+                    contact_phone = contact_phone or data.get("contact_phone") or data.get("phone")
+                    language = language or data.get("language")
+        except Exception:
+            pass
+
     sel_clean = clean_glific_value(selection_input)
+    contact_phone = clean_glific_value(contact_phone)
+    lang = (clean_glific_value(language) or "en").strip().lower()
+    if lang not in ("en", "hi", "mr"):
+        lang = "en"
+
     if not sel_clean:
         return {"success": False, "resolved": False, "village_name": None}
-        
+    if not contact_phone:
+        return {"success": False, "resolved": False, "village_name": None, "error": "Missing contact_phone"}
+
     num_map = {
         "१": 1, "२": 2, "३": 3, "४": 4, "५": 5, "६": 6, "७": 7, "८": 8, "९": 9, "०": 0
     }
     sel_str = sel_clean.strip()
     for dev_digit, eng_digit in num_map.items():
         sel_str = sel_str.replace(dev_digit, str(eng_digit))
-        
+
     try:
         index = int(sel_str)
     except ValueError:
         return {"success": False, "resolved": False, "village_name": None}
-        
-    if isinstance(matches, str):
-        try:
-            matches_list = json.loads(matches)
-        except Exception:
-            matches_list = [x.strip(" '\"[]") for x in matches.split(",") if x.strip()]
-    else:
-        matches_list = matches or []
-        
+
+    matches_list = frappe.cache().get_value(f"village_matches:{contact_phone}")
+    if not matches_list:
+        return {
+            "success": False,
+            "resolved": False,
+            "village_name": None,
+            "error": village_msg("session_expired", lang),
+        }
+
     if index == len(matches_list) + 1:
         return {
             "success": True,
             "resolved": False,
             "village_name": None
         }
-        
+
     if 1 <= index <= len(matches_list):
         selected_name = matches_list[index - 1]
+        # Clear the cache entry once resolved
+        frappe.cache().delete_value(f"village_matches:{contact_phone}")
         return {
             "success": True,
             "resolved": True,
             "village_name": selected_name
         }
-        
+
     return {"success": False, "resolved": False, "village_name": None}
+
 

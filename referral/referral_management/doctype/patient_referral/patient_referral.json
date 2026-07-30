@@ -46,6 +46,7 @@
   "visit_date",
   "follow_up_section",
   "supervisor_visits",
+  "mhd_followups",
   "visit_count",
   "facility_visited",
   "raw_data_section",
@@ -133,7 +134,7 @@
    "fieldname": "referred_by_who",
    "fieldtype": "Select",
    "label": "Referred By Who",
-   "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nCHW\nSupervisor\nOptometrist"
+   "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist"
   },
   {
    "fieldname": "patient_section",
@@ -162,8 +163,9 @@
   },
   {
    "fieldname": "patient_age",
-   "fieldtype": "Int",
+   "fieldtype": "Float",
    "label": "Age",
+   "precision": "1",
    "reqd": 1
   },
   {
@@ -181,27 +183,27 @@
    "reqd": 1
   },
   {
+   "description": "Where the patient is being referred: SEARCH hospital, Government facility, or Other",
    "fieldname": "service_facility_type",
    "fieldtype": "Select",
    "label": "Service Facility Type",
-   "options": "\nSEARCH\nGovernment Hospital\nOther",
-   "reqd": 1,
-   "description": "Where the patient is being referred: SEARCH hospital, Government facility, or Other"
+   "options": "\nSEARCH\nGovernment Hospital\nVillage MH Clinic\nTaluka MH Clinic\nOther",
+   "reqd": 1
   },
   {
+   "depends_on": "eval:doc.service_facility_type==\"SEARCH\"",
+   "description": "Tier-1 OPD category. Only applicable for SEARCH referrals.",
    "fieldname": "opd_category",
    "fieldtype": "Select",
    "label": "OPD Category",
-   "options": "\nRegular OPD\nSpecialist OPD\nSurgical OPD",
-   "depends_on": "eval:doc.service_facility_type==\"SEARCH\"",
-   "description": "Tier-1 OPD category. Only applicable for SEARCH referrals."
+   "options": "\nRegular OPD\nSpecialist OPD\nSurgical OPD"
   },
   {
+   "depends_on": "eval:doc.service_facility_type==\"Other\"",
+   "description": "Free-text name of non-SEARCH, non-Government facility. Max 200 chars.",
    "fieldname": "other_facility_name",
    "fieldtype": "Data",
-   "label": "Other Facility Name",
-   "depends_on": "eval:doc.service_facility_type==\"Other\"",
-   "description": "Free-text name of non-SEARCH, non-Government facility. Max 200 chars."
+   "label": "Other Facility Name"
   },
   {
    "fieldname": "patient_phone",
@@ -264,7 +266,7 @@
    "fieldname": "opd_departments",
    "fieldtype": "Select",
    "label": "OPD Department",
-   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nMental Health Clinic\nRheumatology OPD\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management OPD\nOthers\nOther",
+   "options": "\nMedicine\nGynaecology\nOrthopedics\nSpine\nSurgery\nDental\nMental Health Clinic\nRheumatology OPD\nCardiology\nDermatology\nDiabetology\nENT\nGastrology\nHead & Neck\nNeurology + Epilepsy\nOncology\nPulmonology\nSickle Cell\nCataract Surgery\nOphthalmology\nPlastic Surgery\nUrology\nPain Management OPD\nPhysiotherapy\nOthers\nOther",
    "reqd": 0
   },
   {
@@ -304,6 +306,13 @@
    "label": "Supervisor Visits",
    "options": "Supervisor Visit",
    "description": "Child table storing up to 3 supervisor follow-up visit records."
+  },
+  {
+   "fieldname": "mhd_followups",
+   "fieldtype": "Table",
+   "label": "MHD Followups",
+   "options": "MHD Followup",
+   "description": "Child table storing MHD counsellor follow-up visits (30/90 day addiction-management follow-ups)."
   },
   {
    "default": "0",

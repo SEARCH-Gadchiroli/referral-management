@@ -59,7 +59,7 @@
    "fieldname": "non_visit_reason_code",
    "fieldtype": "Select",
    "label": "Non-Visit Reason",
-   "options": "\nFinancial Constraints\nTransport Unavailable\nFear or Anxiety\nFeeling Better\nFamily Objection\nDistance Too Far\nUnaware of Appointment\nOther"
+   "options": "\nFinancial Constraints\nTransport Unavailable\nFear or Anxiety\nFeeling Better\nFamily Objection\nDistance Too Far\nUnaware of Appointment\nNot Present At Home\nOther"
   },
   {
    "fieldname": "supervisor_name",
