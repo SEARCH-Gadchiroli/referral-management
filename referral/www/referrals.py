@@ -135,6 +135,17 @@ def get_context(context):
 			if visit.get("confirmation_date"):
 				visit["confirmation_date"] = format_to_dd_mm_yyyy(visit["confirmation_date"])
 
+		ref["mhd_followups"] = frappe.db.get_values(
+			"MHD Followup",
+			{"parent": ref["name"], "parenttype": "Patient Referral"},
+			["followup_day_offset", "visit_date", "patient_info_source", "days_drank_last_15", "notable_incident", "current_complaints", "drinking_pattern", "alcohol_type", "quantity_ml_per_day", "frequency_per_day", "drank_today", "family_opinion", "counselor_observation", "mhd_counselor_name", "mhd_counselor_phone"],
+			as_dict=True,
+			order_by="visit_date asc"
+		) or []
+		for mhd in ref["mhd_followups"]:
+			if mhd.get("visit_date"):
+				mhd["visit_date"] = format_to_dd_mm_yyyy(mhd["visit_date"])
+
 	# Fetch unique values for filters (for dynamic and responsive UI dropdowns)
 	filter_statuses = [r[0] for r in frappe.db.sql("SELECT DISTINCT status FROM `tabPatient Referral` WHERE status IS NOT NULL AND status != ''")]
 	filter_villages = [r[0] for r in frappe.db.sql("SELECT DISTINCT patient_village FROM `tabPatient Referral` WHERE patient_village IS NOT NULL AND patient_village != ''")]

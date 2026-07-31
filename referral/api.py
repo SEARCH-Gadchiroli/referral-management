@@ -287,23 +287,34 @@ def transliterate_to_roman(text: str) -> str:
     instead of translating meaning (which would give 'Witness').
     Falls back to original text if transliteration fails.
     """
-    if not text or not is_devanagari(text):
+    if not text:
         return text
 
+    import re
+    # Clean doctor prefixes in both Devanagari and Latin (case-insensitive, longest match first)
+    text_clean = re.sub(r'^(डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|dr\.|dr|daॉ\.|daॉ|daॅ\.|daॅ)\s*', 'Dr. ', text.strip(), flags=re.IGNORECASE)
+
+    if not is_devanagari(text_clean):
+        return text_clean
+
     try:
-        iast = transliterate(text, sanscript.DEVANAGARI, sanscript.IAST)
+        iast = transliterate(text_clean, sanscript.DEVANAGARI, sanscript.IAST)
         result = _iast_to_english(iast).strip().title()
+        
+        # Ensure "Dr. " has correct casing and is not altered by IAST/Title conversion
+        result = re.sub(r'^(dr\.|daॉ\.|daॅ\.)\s*', 'Dr. ', result, flags=re.IGNORECASE)
+        
         frappe.logger().info(
             f"Transliterated '{text}' → '{result}'"
         )
-        return result if result else text
+        return result if result else text_clean
 
     except Exception as e:
         frappe.log_error(
             f"Transliteration failed for '{text}': {str(e)}",
             "Transliteration Error"
         )
-        return text
+        return text_clean
 
 
 def translate_to_english(text: str) -> str:
@@ -1601,20 +1612,50 @@ def get_referral(referral_id: str = None, reference_number: str = None, supervis
 
 @frappe.whitelist(allow_guest=True)
 def record_supervisor_visit(
-    referral_id: str,
-    supervisor_phone: str,
-    visit_date: str,
-    patient_visited: str,
+    referral_id: str = None,
+    supervisor_phone: str = None,
+    visit_date: str = None,
+    patient_visited: str = None,
     facility_visited: str = None,
     confirmation_date: str = None,
     patient_health_status: str = None,
     supervisor_name: str = None,
     non_visit_reason: str = None,
+    **kwargs
 ) -> dict:
     """
     Records a supervisor follow-up visit and updates the Patient Referral status.
     """
     try:
+        # Try parsing JSON body if available (Glific uses POST)
+        if frappe.request:
+            try:
+                import json
+                raw_data = frappe.request.get_data(as_text=True)
+                if raw_data:
+                    data = json.loads(raw_data)
+                    if isinstance(data, dict):
+                        if not referral_id:
+                            referral_id = data.get("referral_id") or data.get("reference_number")
+                        if not supervisor_phone:
+                            supervisor_phone = data.get("supervisor_phone") or data.get("contact_phone")
+                        if not visit_date:
+                            visit_date = data.get("visit_date") or data.get("date")
+                        if not patient_visited:
+                            patient_visited = data.get("patient_visited") or data.get("visited")
+                        if not facility_visited:
+                            facility_visited = data.get("facility_visited")
+                        if not confirmation_date:
+                            confirmation_date = data.get("confirmation_date")
+                        if not patient_health_status:
+                            patient_health_status = data.get("patient_health_status")
+                        if not supervisor_name:
+                            supervisor_name = data.get("supervisor_name")
+                        if not non_visit_reason:
+                            non_visit_reason = data.get("non_visit_reason")
+            except Exception:
+                pass
+
         # Clean all input variables first (to handle unresolved Glific variables)
         referral_id = clean_glific_value(referral_id)
         supervisor_phone = clean_glific_value(supervisor_phone)
@@ -1630,6 +1671,21 @@ def record_supervisor_visit(
             return {
                 "success": False,
                 "error": "Missing referral_id"
+            }
+        if not supervisor_phone:
+            return {
+                "success": False,
+                "error": "Missing supervisor_phone"
+            }
+        if not visit_date:
+            return {
+                "success": False,
+                "error": "Missing visit_date"
+            }
+        if not patient_visited:
+            return {
+                "success": False,
+                "error": "Missing patient_visited"
             }
 
         # 1. Look up referral
@@ -1897,6 +1953,8 @@ def record_mhd_followup(
             "mhd_counselor_phone": mhd_counselor_phone,
         })
 
+        referral.visit_count = (referral.visit_count or 0) + 1
+
         referral.flags.ignore_mandatory = True
         referral.save(ignore_permissions=True)
         frappe.db.commit()
@@ -1949,12 +2007,13 @@ def get_pending_followups(
     taluka_name: str = None, 
     month: int = None, 
     year: int = None, 
+    duration: str = None,
     **kwargs
 ) -> dict:
     """
     Returns pending follow-up referrals formatted as a ready-to-send
     Marathi WhatsApp message, optionally filtered by village name and taluka name,
-    along with patients who visited SEARCH in the specified month/year.
+    along with patients who visited SEARCH in the specified duration.
 
     Called by Glific 'Follow-up List' flow.
     """
@@ -1976,11 +2035,14 @@ def get_pending_followups(
                         month = data.get("month")
                     if not year:
                         year = data.get("year")
+                    if not duration:
+                        duration = data.get("duration") or data.get("duration_months")
         except Exception:
             pass
 
     month = month or kwargs.get("month")
     year = year or kwargs.get("year")
+    duration = duration or kwargs.get("duration") or kwargs.get("duration_months")
 
     supervisor_phone = clean_glific_value(supervisor_phone)
     village_name = clean_glific_value(village_name)
@@ -1993,7 +2055,84 @@ def get_pending_followups(
         if not taluka_name:
             taluka_name = fields.get("followup_list_taluka_name")
 
+    # 1. Calculate duration date filters
+    from frappe.utils import today, getdate, add_months
+    import calendar
+
+    now_date = getdate(today())
+    start_date = None
+    end_date = None
+    duration_label_mr = "या महिन्यातील"
+
+    # Clean duration input
+    duration_clean = (clean_glific_value(duration) or "").strip().lower()
+    
+    if duration_clean in ("this_month", "this month", "this"):
+        start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
+        _, last_day = calendar.monthrange(now_date.year, now_date.month)
+        end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
+        duration_label_mr = "या महिन्यातील"
+        
+    elif duration_clean in ("last_month", "last month", "last"):
+        prev_date = add_months(now_date, -1)
+        start_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-01")
+        _, last_day = calendar.monthrange(prev_date.year, prev_date.month)
+        end_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-{last_day:02d}")
+        duration_label_mr = "गेल्या महिन्यातील"
+        
+    elif duration_clean in ("last_3_months", "last 3 months", "3"):
+        start_date = add_months(now_date, -3)
+        end_date = now_date
+        duration_label_mr = "गेल्या ३ महिन्यांतील"
+        
+    elif duration_clean in ("past_6_months", "past 6 months", "6"):
+        start_date = add_months(now_date, -6)
+        end_date = now_date
+        duration_label_mr = "गेल्या ६ महिन्यांतील"
+        
+    elif duration_clean in ("all_time", "all time", "all"):
+        start_date = None
+        end_date = None
+        duration_label_mr = "सर्व काळातील"
+    else:
+        # Fallback to month/year if specifically provided as integers
+        if month:
+            target_year = year or now_date.year
+            target_month = month
+            try:
+                target_month = int(target_month)
+                target_year = int(target_year)
+            except (ValueError, TypeError):
+                target_month = now_date.month
+                target_year = now_date.year
+            if 1 <= target_month <= 12:
+                _, last_day = calendar.monthrange(target_year, target_month)
+                start_date = getdate(f"{target_year}-{target_month:02d}-01")
+                end_date = getdate(f"{target_year}-{target_month:02d}-{last_day:02d}")
+                month_names_mr = {
+                    1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
+                    5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
+                    9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
+                }
+                duration_label_mr = f"{month_names_mr.get(target_month, '')} {target_year} मधील"
+        else:
+            # Default to this month
+            start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
+            _, last_day = calendar.monthrange(now_date.year, now_date.month)
+            end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
+            duration_label_mr = "या महिन्यातील"
+
+    # Set up pending referrals filters
     filters = {"status": ["in", ["Pending", "Follow-up In Progress"]]}
+    
+    if start_date:
+        if end_date:
+            filters["referral_date"] = ["between", [start_date, end_date]]
+        else:
+            filters["referral_date"] = [">=", start_date]
+    elif end_date:
+        filters["referral_date"] = ["<=", end_date]
+
     resolved_taluka = None
     if taluka_name:
         resolved_taluka = resolve_taluka(taluka_name)
@@ -2037,40 +2176,21 @@ def get_pending_followups(
         order_by="referral_date asc, patient_village asc",
     )
 
-    # 2. Fetch visited SEARCH referrals for the selected/current month and year
-    from frappe.utils import today, getdate
-    import calendar
-
-    now_date = getdate(today())
-    target_year = year or now_date.year
-    target_month = month or now_date.month
-
-    try:
-        target_year = int(target_year)
-    except (ValueError, TypeError):
-        target_year = now_date.year
-
-    try:
-        target_month = int(target_month)
-    except (ValueError, TypeError):
-        target_month = now_date.month
-
-    if not (1 <= target_month <= 12):
-        target_month = now_date.month
-
-    _, last_day = calendar.monthrange(target_year, target_month)
-    start_date = getdate(f"{target_year}-{target_month:02d}-01")
-    end_date = getdate(f"{target_year}-{target_month:02d}-{last_day:02d}")
-
+    # 2. Fetch visited SEARCH referrals
     # Build visited query conditions dynamically based on filters
     query_conditions = [
         "pr.status = 'Visited'",
         "sv.facility_visited = 'SEARCH'",
-        "sv.patient_visited = 1",
-        "sv.visit_date >= %s",
-        "sv.visit_date <= %s"
+        "sv.patient_visited = 1"
     ]
-    query_args = [start_date, end_date]
+    query_args = []
+    
+    if start_date:
+        query_conditions.append("sv.visit_date >= %s")
+        query_args.append(start_date)
+    if end_date:
+        query_conditions.append("sv.visit_date <= %s")
+        query_args.append(end_date)
 
     if village_id:
         query_conditions.append("pr.patient_village = %s")
@@ -2195,14 +2315,7 @@ def get_pending_followups(
 
     # Format Visited Section
     if visited_referrals:
-        # Show translated month name in headers
-        month_names_mr = {
-            1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
-            5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
-            9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
-        }
-        month_label = month_names_mr.get(target_month, f"महिना {target_month}")
-        lines.append(f"✅ *{month_label} {target_year} मध्ये SEARCH ला भेट दिलेले रुग्ण:*")
+        lines.append(f"✅ *{duration_label_mr} SEARCH ला भेट दिलेले रुग्ण:*")
         lines.append("")
 
         for i, p in enumerate(visited_referrals, 1):
