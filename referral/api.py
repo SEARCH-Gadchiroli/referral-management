@@ -2067,6 +2067,46 @@ def get_pending_followups(
     # Clean duration input
     duration_clean = (clean_glific_value(duration) or "").strip().lower()
     
+    # Map Marathi duration inputs to standard English values
+    marathi_duration_map = {
+        "या महिन्यातील": "this_month",
+        "या महिन्यात": "this_month",
+        "या": "this_month",
+        "चालू महिना": "this_month",
+        "चालू महिन्यातील": "this_month",
+        "गेल्या महिन्यातील": "last_month",
+        "गेल्या महिन्यात": "last_month",
+        "मागील महिना": "last_month",
+        "मागील महिन्यातील": "last_month",
+        "गेल्या ३ महिन्यांतील": "last_3_months",
+        "गेल्या ३ महिन्यात": "last_3_months",
+        "मागील ३ महिने": "last_3_months",
+        "मागील ३ महिन्यांतील": "last_3_months",
+        "गेल्या ६ महिन्यांतील": "past_6_months",
+        "गेल्या ६ महिन्यात": "past_6_months",
+        "मागील ६ महिने": "past_6_months",
+        "मागील ६ महिन्यांतील": "past_6_months",
+        "सर्व काळातील": "all_time",
+        "सर्व": "all_time",
+        "सर्व काळ": "all_time",
+        "सर्वकाळ": "all_time"
+    }
+
+    if duration_clean in marathi_duration_map:
+        duration_clean = marathi_duration_map[duration_clean]
+    else:
+        # Fallback substring checks for extra safety
+        if "सर्व" in duration_clean:
+            duration_clean = "all_time"
+        elif "३" in duration_clean or "3" in duration_clean:
+            duration_clean = "last_3_months"
+        elif "६" in duration_clean or "6" in duration_clean:
+            duration_clean = "past_6_months"
+        elif "गेल्या" in duration_clean or "मागील" in duration_clean or "last" in duration_clean:
+            duration_clean = "last_month"
+        elif "या" in duration_clean or "चालू" in duration_clean or "this" in duration_clean:
+            duration_clean = "this_month"
+
     if duration_clean in ("this_month", "this month", "this"):
         start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
         _, last_day = calendar.monthrange(now_date.year, now_date.month)
