@@ -54,11 +54,9 @@ APPS = [
         "icon": "🌿",
         "color": "#d97706",
         "bg": "#fef3c7",
-        "roles": ["Tribal Health Worker", "Tribal Health Supervisor"],
-        "links": [
-            {"label": "View Sessions",  "url": "/app/health-education", "icon": "📚"},
-            {"label": "New Session",    "url": "/app/health-education/new", "icon": "➕"},
-        ],
+        "roles": ["System Manager", "Tribal Health User"],
+        "url": "/village_health_education",
+        "links": [],
     },
 ]
 
