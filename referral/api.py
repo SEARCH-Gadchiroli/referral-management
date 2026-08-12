@@ -779,38 +779,18 @@ def parse_referral_date(date_str):
     Parses the referral date received from Glific.
 
     Accepts:
-      - 'आज' / 'aaj' / 'today' (defensive — Glific normally already
-        converts the today-shortcut to an ISO date before sending)
-      - ISO format (YYYY-MM-DD) — sent when Glific's "Today" branch
-        computes today's date itself
-      - DD/MM/YYYY — sent when the referrer typed an explicit date
+      - 'आज' / 'aaj' / 'today'
+      - ISO format (YYYY-MM-DD)
+      - DD/MM/YYYY or DD-MM-YYYY — sent when referrer types an explicit date
 
-    Any past date is accepted (no lower bound). Future dates are rejected.
-
-    Raises frappe.ValidationError on invalid input. The caller must catch
-    this and return it as a normal {"success": False, "error": ...} response
-    rather than letting it propagate as an uncaught exception — this is what
-    lets the Glific flow show the specific error text and loop back to the
-    date retry node instead of landing on a generic webhook-failure message.
+    Raises frappe.ValidationError on invalid input.
     """
-    from datetime import datetime
-
     if not date_str or date_str.strip().lower() in ("आज", "aaj", "today"):
         return getdate(today())
 
     date_str = date_str.strip()
-
-    # ISO format (from Glific's "Today" branch, which computes and sends
-    # the date itself rather than the literal word)
-    if "-" in date_str:
-        try:
-            return getdate(date_str)
-        except Exception:
-            frappe.throw("तारीख अवैध आहे. कृपया DD/MM/YYYY या स्वरूपात टाका.")
-
-    try:
-        parsed = datetime.strptime(date_str, "%d/%m/%Y").date()
-    except ValueError:
+    parsed = parse_date(date_str)
+    if not parsed:
         frappe.throw("तारीख अवैध आहे. कृपया DD/MM/YYYY या स्वरूपात टाका.")
 
     return parsed
@@ -1215,46 +1195,46 @@ def create_referral(
     **kwargs
 ) -> dict:
     try:
-        # Fallback JSON body parsing if client does not send application/json Content-Type
-        if not contact_phone and frappe.request:
+        # Fallback / Comprehensive JSON body parsing for all parameters
+        if frappe.request:
             try:
                 import json
                 raw_data = frappe.request.get_data(as_text=True)
                 if raw_data:
                     data = json.loads(raw_data)
                     if isinstance(data, dict):
-                        contact_phone = data.get("contact_phone") or ""
-                        referral_date_raw = data.get("referral_date_raw") or referral_date_raw or ""
-                        referral_date = data.get("referral_date") or referral_date or ""
-                        date_of_referral_raw = data.get("date_of_referral_raw") or date_of_referral_raw or ""
-                        date_of_referral = data.get("date_of_referral") or date_of_referral or ""
-                        selected_phc = data.get("selected_phc") or selected_phc or ""
-                        patient_name_raw = data.get("patient_name_raw") or patient_name_raw or ""
-                        father_name_raw = data.get("father_name_raw") or father_name_raw or ""
-                        gender_raw = data.get("gender_raw") or gender_raw or ""
-                        age_raw = data.get("age_raw") or age_raw or ""
-                        village_raw = data.get("village_raw") or village_raw or ""
-                        patient_taluka_raw = data.get("patient_taluka_raw") or patient_taluka_raw or ""
-                        patient_taluka = data.get("patient_taluka") or patient_taluka or ""
-                        taluka_raw = data.get("taluka_raw") or taluka_raw or ""
-                        service_facility_type = data.get("service_facility_type") or service_facility_type or ""
-                        opd_category_raw = data.get("opd_category_raw") or opd_category_raw or ""
-                        opd_category = data.get("opd_category") or opd_category or ""
-                        departments_raw = data.get("departments_raw") or departments_raw or ""
-                        opd_department_raw = data.get("opd_department_raw") or opd_department_raw or ""
-                        opd_department = data.get("opd_department") or opd_department or ""
-                        other_facility_raw = data.get("other_facility_raw") or other_facility_raw or ""
-                        referring_doctor_raw = data.get("referring_doctor_raw") or referring_doctor_raw or ""
-                        referred_doctor_raw = data.get("referred_doctor_raw") or referred_doctor_raw or ""
-                        referred_doctor = data.get("referred_doctor") or referred_doctor or ""
-                        additional_notes_raw = data.get("additional_notes_raw") or additional_notes_raw or ""
-                        referrer_latitude = data.get("referrer_latitude") or referrer_latitude or ""
-                        referrer_longitude = data.get("referrer_longitude") or referrer_longitude or ""
-                        latitude = data.get("latitude") or latitude or ""
-                        longitude = data.get("longitude") or longitude or ""
-                        patient_phone_raw = data.get("patient_phone_raw") or patient_phone_raw or ""
-                        referred_by_who = data.get("referred_by_who") or referred_by_who or ""
-                        language = data.get("language") or language or ""
+                        contact_phone = contact_phone or data.get("contact_phone") or data.get("phone") or ""
+                        referral_date_raw = referral_date_raw or data.get("referral_date_raw") or data.get("date_of_referral_raw") or data.get("referral_date") or data.get("date_of_referral") or data.get("date") or data.get("date_raw") or ""
+                        referral_date = referral_date or data.get("referral_date") or ""
+                        date_of_referral_raw = date_of_referral_raw or data.get("date_of_referral_raw") or ""
+                        date_of_referral = date_of_referral or data.get("date_of_referral") or ""
+                        selected_phc = selected_phc or data.get("selected_phc") or data.get("phc") or ""
+                        patient_name_raw = patient_name_raw or data.get("patient_name_raw") or data.get("patient_name") or ""
+                        father_name_raw = father_name_raw or data.get("father_name_raw") or data.get("father_name") or ""
+                        gender_raw = gender_raw or data.get("gender_raw") or data.get("patient_gender") or data.get("gender") or ""
+                        age_raw = age_raw or data.get("age_raw") or data.get("patient_age") or data.get("age") or ""
+                        village_raw = village_raw or data.get("village_raw") or data.get("patient_village") or data.get("village") or ""
+                        patient_taluka_raw = patient_taluka_raw or data.get("patient_taluka_raw") or data.get("patient_taluka") or data.get("taluka_raw") or data.get("taluka") or ""
+                        patient_taluka = patient_taluka or data.get("patient_taluka") or ""
+                        taluka_raw = taluka_raw or data.get("taluka_raw") or ""
+                        service_facility_type = service_facility_type or data.get("service_facility_type") or data.get("facility_type") or ""
+                        opd_category_raw = opd_category_raw or data.get("opd_category_raw") or data.get("opd_category") or ""
+                        opd_category = opd_category or data.get("opd_category") or ""
+                        departments_raw = departments_raw or data.get("departments_raw") or data.get("opd_department_raw") or data.get("opd_department") or data.get("department") or ""
+                        opd_department_raw = opd_department_raw or data.get("opd_department_raw") or ""
+                        opd_department = opd_department or data.get("opd_department") or ""
+                        other_facility_raw = other_facility_raw or data.get("other_facility_raw") or data.get("other_facility") or ""
+                        referring_doctor_raw = referring_doctor_raw or data.get("referring_doctor_raw") or data.get("referred_doctor_raw") or data.get("referring_doctor") or data.get("referred_doctor") or ""
+                        referred_doctor_raw = referred_doctor_raw or data.get("referred_doctor_raw") or ""
+                        referred_doctor = referred_doctor or data.get("referred_doctor") or ""
+                        additional_notes_raw = additional_notes_raw or data.get("additional_notes_raw") or data.get("additional_notes") or data.get("notes") or ""
+                        referrer_latitude = referrer_latitude or data.get("referrer_latitude") or data.get("latitude") or ""
+                        referrer_longitude = referrer_longitude or data.get("referrer_longitude") or data.get("longitude") or ""
+                        latitude = latitude or data.get("latitude") or ""
+                        longitude = longitude or data.get("longitude") or ""
+                        patient_phone_raw = patient_phone_raw or data.get("patient_phone_raw") or data.get("patient_phone") or ""
+                        referred_by_who = referred_by_who or data.get("referred_by_who") or ""
+                        language = language or data.get("language") or ""
             except Exception as e:
                 frappe.log_error(f"Fallback JSON parsing failed: {str(e)}", "create_referral JSON Fallback Error")
 
@@ -1300,7 +1280,7 @@ def create_referral(
         actual_lat = referrer_latitude or latitude
         actual_lon = referrer_longitude or longitude
         referral_date_input = (
-            referral_date_raw or referral_date or date_of_referral_raw or date_of_referral
+            referral_date_raw or referral_date or date_of_referral_raw or date_of_referral or kwargs.get("referral_date_raw") or kwargs.get("date_of_referral") or kwargs.get("date") or kwargs.get("referral_date") or kwargs.get("date_raw")
         )
         try:
             referral_date_value = parse_referral_date(referral_date_input)
