@@ -119,6 +119,8 @@ def get_context(context):
 	for ref in referrals:
 		if ref.get("referral_date"):
 			ref["referral_date"] = format_to_dd_mm_yyyy(ref["referral_date"])
+		if ref.get("referral_recorded_date"):
+			ref["referral_recorded_date"] = format_to_dd_mm_yyyy(ref["referral_recorded_date"])
 		if ref.get("visit_date"):
 			ref["visit_date"] = format_to_dd_mm_yyyy(ref["visit_date"])
 

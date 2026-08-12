@@ -1212,6 +1212,14 @@
             <h4 class="detail-section-title">Clinical &amp; Visit Details</h4>
             <div class="detail-grid">
                 <div class="detail-item">
+                    <span class="detail-label">Referral Date</span>
+                    <span class="detail-value" id="detail-referral-date">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Recorded Date</span>
+                    <span class="detail-value" id="detail-referral-recorded-date">-</span>
+                </div>
+                <div class="detail-item">
                     <span class="detail-label">OPD Category</span>
                     <span class="detail-value" id="detail-opd-category">-</span>
                 </div>
@@ -1318,6 +1326,8 @@
         document.getElementById("detail-referrer-dept").innerText = item.referrer_department || "-";
 
         // Clinical details
+        document.getElementById("detail-referral-date").innerText = item.referral_date || "-";
+        document.getElementById("detail-referral-recorded-date").innerText = item.referral_recorded_date || "-";
         document.getElementById("detail-opd-category").innerText = item.opd_category || "-";
         document.getElementById("detail-opd-dept").innerText = item.opd_departments || "-";
         let docName = item.referred_doctor || "-";

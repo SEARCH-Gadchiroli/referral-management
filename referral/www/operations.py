@@ -33,17 +33,17 @@ def get_context(context):
     elif context.tab == 'tribal_health':
         try:
             # Load Tribal Health KPIs
-            total_sessions = frappe.db.count('Health Education')
+            total_sessions = frappe.db.count('Village Health Education')
             
-            # Use raw SQL for aggregations since Health Education is a simple doctype
+            # Use raw SQL for aggregations since Village Health Education is a simple doctype
             total_participants = frappe.db.sql("""
                 SELECT SUM(total_number_of_participants) 
-                FROM `tabHealth Education`
+                FROM `tabVillage Health Education`
             """)[0][0] or 0
             
             recent_sessions = frappe.db.get_all(
-                'Health Education', 
-                fields=['date', 'area', 'total_number_of_participants', 'name', 'select_the_health_education_topics_you_can_choose_more_than_one'],
+                'Village Health Education', 
+                fields=['date', 'area', 'total_number_of_participants', 'name', 'select_the_village_village_health_education_topics_you_can_choose_more_than_one'],
                 order_by='date desc',
                 limit_page_length=10
             )
@@ -55,7 +55,7 @@ def get_context(context):
 
             area_breakdown = frappe.db.sql("""
                 SELECT area, COUNT(*) as sessions, SUM(total_number_of_participants) as participants
-                FROM `tabHealth Education`
+                FROM `tabVillage Health Education`
                 GROUP BY area
                 ORDER BY sessions DESC
             """, as_dict=True)

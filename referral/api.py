@@ -1496,16 +1496,58 @@ def create_referral(
         # Get OPD
         opd_display = referral_doc.opd_departments or referral_doc.opd_category or "-"
 
+        # Get Village display name
+        village_display = village_display_name(referral_doc.patient_village, lang) if referral_doc.patient_village else (village_raw or "-")
+
+        # Format full informatory / confirmation message
+        if lang == "mr":
+            formatted_text = (
+                f"✅ *रेफरल यशस्वीरित्या नोंदवले गेले आहे!*\n\n"
+                f"🔖 *रेफरल क्रमांक:* {referral_doc.reference_number}\n"
+                f"👤 *रुग्णाचे नाव:* {referral_doc.patient_name}\n"
+                f"🏡 *गाव:* {village_display}\n"
+                f"📅 *रेफरल दिनांक:* {ref_date_str}\n"
+                f"🏥 *रुग्णालय:* {facility_display}\n"
+                f"🩺 *विभाग:* {opd_display}\n\n"
+                f"{patient_instruction}"
+            ).strip()
+        elif lang == "hi":
+            formatted_text = (
+                f"✅ *रेफरल सफलतापूर्वक दर्ज किया गया!*\n\n"
+                f"🔖 *रेफरल नंबर:* {referral_doc.reference_number}\n"
+                f"👤 *मरीज का नाम:* {referral_doc.patient_name}\n"
+                f"🏡 *गाँव:* {village_display}\n"
+                f"📅 *रेफरल तिथि:* {ref_date_str}\n"
+                f"🏥 *अस्पताल:* {facility_display}\n"
+                f"🩺 *विभाग:* {opd_display}\n\n"
+                f"{patient_instruction}"
+            ).strip()
+        else:
+            formatted_text = (
+                f"✅ *Referral Registered Successfully!*\n\n"
+                f"🔖 *Reference Number:* {referral_doc.reference_number}\n"
+                f"👤 *Patient Name:* {referral_doc.patient_name}\n"
+                f"🏡 *Village:* {village_display}\n"
+                f"📅 *Referral Date:* {ref_date_str}\n"
+                f"🏥 *Hospital:* {facility_display}\n"
+                f"🩺 *Department:* {opd_display}\n\n"
+                f"{patient_instruction}"
+            ).strip()
+
         return {
             "success": True,
             "reference_number": referral_doc.reference_number,
             "patient_name": referral_doc.patient_name,
             "patient_age": referral_doc.patient_age,
             "patient_gender": referral_doc.patient_gender,
+            "patient_village": village_display,
+            "village_name": village_display,
             "referral_date": ref_date_str,
             "hospital": facility_display,
             "opd": opd_display,
-            "patient_instruction": patient_instruction
+            "patient_instruction": patient_instruction,
+            "formatted_text": formatted_text,
+            "summary_message": formatted_text,
         }
 
     except frappe.ValidationError:
@@ -2848,9 +2890,11 @@ def search_and_resolve_village(village_input: str = None, taluka: str = None, co
     village_clean = clean_glific_value(village_input)
     taluka_clean = clean_glific_value(taluka)
     contact_phone = clean_glific_value(contact_phone)
-    lang = (clean_glific_value(language) or "en").strip().lower()
+    lang = (clean_glific_value(language) or "mr").strip().lower()
+    if is_devanagari(village_clean) and not language:
+        lang = "mr"
     if lang not in ("en", "hi", "mr"):
-        lang = "en"
+        lang = "mr"
 
     if not village_clean:
         return {
@@ -2988,9 +3032,9 @@ def resolve_village_selection(selection_input: str = None, contact_phone: str = 
 
     sel_clean = clean_glific_value(selection_input)
     contact_phone = clean_glific_value(contact_phone)
-    lang = (clean_glific_value(language) or "en").strip().lower()
+    lang = (clean_glific_value(language) or "mr").strip().lower()
     if lang not in ("en", "hi", "mr"):
-        lang = "en"
+        lang = "mr"
 
     if not sel_clean:
         return {"success": False, "resolved": False, "village_name": None}
@@ -3029,10 +3073,12 @@ def resolve_village_selection(selection_input: str = None, contact_phone: str = 
         selected_name = matches_list[index - 1]
         # Clear the cache entry once resolved
         frappe.cache().delete_value(f"village_matches:{contact_phone}")
+        display_name = village_display_name(selected_name, lang)
         return {
             "success": True,
             "resolved": True,
-            "village_name": selected_name
+            "village_name": selected_name,
+            "formatted_text": village_msg("resolved", lang, name=display_name)
         }
 
     return {"success": False, "resolved": False, "village_name": None}

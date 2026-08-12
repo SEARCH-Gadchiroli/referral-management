@@ -54,12 +54,12 @@ class PatientReferral(Document):
             frappe.throw("OPD Department is required for SEARCH referrals")
 
     def before_insert(self):
-        if not self.reference_number:
-            self.reference_number = self.generate_reference_number()
         if not self.referral_date:
             self.referral_date = today()
         if not self.referral_recorded_date:
             self.referral_recorded_date = today()
+        if not self.reference_number:
+            self.reference_number = self.generate_reference_number()
 
     def after_insert(self):
         """Preliminary auto-match on creation — exact matches get auto-saved,
@@ -67,10 +67,15 @@ class PatientReferral(Document):
         self.match_with_census()
 
     def generate_reference_number(self):
-        from frappe.utils import now_datetime
-        date_str = now_datetime().strftime("%d%m%y")
+        from frappe.utils import getdate, today
+        ref_date = getdate(self.referral_date) if self.referral_date else getdate(today())
+        date_str = ref_date.strftime("%d%m%y")
         sequence = self.get_daily_sequence(date_str)
-        return f"{date_str}-{sequence}"
+        candidate = f"{date_str}-{sequence}"
+        while frappe.db.exists("Patient Referral", candidate) or frappe.db.exists("Patient Referral", {"reference_number": candidate}):
+            sequence += 1
+            candidate = f"{date_str}-{sequence}"
+        return candidate
 
     def get_daily_sequence(self, date_str):
         count = frappe.db.count(
