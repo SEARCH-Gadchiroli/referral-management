@@ -254,14 +254,15 @@
     .actions-buttons-wrapper {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .btn-trigger-drawer {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 0 20px;
+        padding: 0 16px;
         height: 44px;
         font-size: 13px;
         font-weight: 600;
@@ -277,6 +278,52 @@
         background: var(--user-pill-bg);
         border-color: var(--text-muted);
         color: var(--text-primary);
+    }
+
+    .btn-export-excel {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        height: 44px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #15803d;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-export-excel:hover {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #166534;
+        transform: translateY(-1px);
+    }
+
+    .btn-export-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 16px;
+        height: 44px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #b91c1c;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-export-pdf:hover {
+        background: #fee2e2;
+        border-color: #fca5a5;
+        color: #991b1b;
+        transform: translateY(-1px);
     }
 
     .filter-count-badge {
@@ -921,6 +968,12 @@
                         <span class="filter-count-badge">{{ active_filters_count }}</span>
                         {% endif %}
                     </button>
+                    <button type="button" class="btn-export-excel" onclick="exportReport('excel')" title="Export report to Excel">
+                        <span>📊</span> Export Excel
+                    </button>
+                    <button type="button" class="btn-export-pdf" onclick="exportReport('pdf')" title="Export report to PDF">
+                        <span>📄</span> Export PDF
+                    </button>
                     {% if active_filters_count > 0 or search %}
                     <a href="/referrals" class="btn-reset-filters">Reset All</a>
                     {% endif %}
@@ -979,6 +1032,28 @@
                         </select>
                     </div>
 
+                    <!-- Taluka -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Taluka</label>
+                        <select class="filter-control" name="taluka">
+                            <option value="">All Talukas</option>
+                            {% for opt in filter_talukas %}
+                            <option value="{{ opt }}" {% if taluka==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Tribal Classification -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Tribal Classification</label>
+                        <select class="filter-control" name="tribal_classification">
+                            <option value="">All Classifications</option>
+                            {% for opt in filter_tribal_classifications %}
+                            <option value="{{ opt }}" {% if tribal_classification==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- PHC -->
                     <div class="drawer-field-group">
                         <label class="filter-label">PHC</label>
@@ -990,6 +1065,28 @@
                         </select>
                     </div>
 
+                    <!-- Service Facility Type -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Service Facility Type</label>
+                        <select class="filter-control" name="service_facility_type">
+                            <option value="">All Service Facilities</option>
+                            {% for opt in filter_service_facility_types %}
+                            <option value="{{ opt }}" {% if service_facility_type==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- OPD Category -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">OPD Category</label>
+                        <select class="filter-control" name="opd_category">
+                            <option value="">All Categories</option>
+                            {% for opt in filter_opd_categories %}
+                            <option value="{{ opt }}" {% if opd_category==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <!-- OPD Department -->
                     <div class="drawer-field-group">
                         <label class="filter-label">OPD Department</label>
@@ -997,6 +1094,17 @@
                             <option value="">All Departments</option>
                             {% for opt in filter_opd_departments %}
                             <option value="{{ opt }}" {% if opd_department==opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Facility Actually Visited -->
+                    <div class="drawer-field-group">
+                        <label class="filter-label">Facility Visited</label>
+                        <select class="filter-control" name="facility_visited">
+                            <option value="">All Facilities Visited</option>
+                            {% for opt in filter_facilities_visited %}
+                            <option value="{{ opt }}" {% if facility_visited==opt %}selected{% endif %}>{{ opt }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -1023,13 +1131,13 @@
                         </select>
                     </div>
 
-                    <!-- Taluka -->
+                    <!-- Referrer Department -->
                     <div class="drawer-field-group">
-                        <label class="filter-label">Taluka</label>
-                        <select class="filter-control" name="taluka">
-                            <option value="">All Talukas</option>
-                            {% for opt in filter_talukas %}
-                            <option value="{{ opt }}" {% if taluka==opt %}selected{% endif %}>{{ opt }}</option>
+                        <label class="filter-label">Referrer Department</label>
+                        <select class="filter-control" name="referrer_department">
+                            <option value="">All Referrer Departments</option>
+                            {% for opt in filter_referrer_departments %}
+                            <option value="{{ opt }}" {% if referrer_department==opt %}selected{% endif %}>{{ opt }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -1495,6 +1603,26 @@
     function changePage(pageNo) {
         document.getElementById("form-page").value = pageNo;
         document.getElementById("filter-form").submit();
+    }
+
+    function exportReport(format) {
+        const form = document.getElementById("filter-form");
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+
+        for (const [key, value] of formData.entries()) {
+            if (value && key !== 'page') {
+                params.append(key, value);
+            }
+        }
+
+        let endpoint = "/api/method/referral.api.export_referrals_excel";
+        if (format === "pdf") {
+            endpoint = "/api/method/referral.api.export_referrals_pdf";
+        }
+
+        const url = endpoint + "?" + params.toString();
+        window.location.href = url;
     }
 
     // Close on ESC

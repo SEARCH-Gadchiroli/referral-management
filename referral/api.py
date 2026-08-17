@@ -111,6 +111,12 @@ DEPARTMENT_KEYWORDS = {
     "कैंसर विज्ञान": "Oncology",
     # Sickle Cell
     "सिकल सेल": "Sickle Cell",
+    "सिकल सेल ओपीडी": "Sickle Cell",
+    "सिकल सेल opd": "Sickle Cell",
+    "सिकलसेल ओपीडी": "Sickle Cell",
+    "सिकलसेल": "Sickle Cell",
+    "sickle cell opd": "Sickle Cell",
+    "sickle cell": "Sickle Cell",
     "विकृतिरक्तकोशिका": "Sickle Cell",
     # Diabetology
     "मधुमेह": "Diabetology",
@@ -283,38 +289,34 @@ def _iast_to_english(iast_text: str) -> str:
 def transliterate_to_roman(text: str) -> str:
     """
     Transliterate Devanagari text to Roman English using indic-transliteration.
-    This does script-to-script conversion (preserves names like साक्षी → Sakshi)
-    instead of translating meaning (which would give 'Witness').
-    Falls back to original text if transliteration fails.
+    This does script-to-script conversion (preserves names like साक्षी → Sakshi).
+    Ensures doctor prefix is formatted as 'डॉ.'.
     """
     if not text:
         return text
 
     import re
-    # Clean doctor prefixes in both Devanagari and Latin (case-insensitive, longest match first)
-    text_clean = re.sub(r'^(डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|dr\.|dr|daॉ\.|daॉ|daॅ\.|daॅ)\s*', 'Dr. ', text.strip(), flags=re.IGNORECASE)
+    dr_pattern = r'^(डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|dr\.|dr|da[ॉॅ\u0945]\.|da[ॉॅ\u0945]|da\.)\s*'
+    has_dr_prefix = bool(re.search(dr_pattern, text.strip(), flags=re.IGNORECASE))
+    clean_name = re.sub(dr_pattern, '', text.strip(), flags=re.IGNORECASE).strip()
 
-    if not is_devanagari(text_clean):
-        return text_clean
+    if is_devanagari(clean_name):
+        try:
+            iast = transliterate(clean_name, sanscript.DEVANAGARI, sanscript.IAST)
+            result = _iast_to_english(iast).strip().title()
+        except Exception as e:
+            frappe.log_error(
+                f"Transliteration failed for '{clean_name}': {str(e)}",
+                "Transliteration Error"
+            )
+            result = clean_name
+    else:
+        result = clean_name
 
-    try:
-        iast = transliterate(text_clean, sanscript.DEVANAGARI, sanscript.IAST)
-        result = _iast_to_english(iast).strip().title()
-        
-        # Ensure "Dr. " has correct casing and is not altered by IAST/Title conversion
-        result = re.sub(r'^(dr\.|daॉ\.|daॅ\.)\s*', 'Dr. ', result, flags=re.IGNORECASE)
-        
-        frappe.logger().info(
-            f"Transliterated '{text}' → '{result}'"
-        )
-        return result if result else text_clean
+    if has_dr_prefix and result:
+        result = f"डॉ. {result}"
 
-    except Exception as e:
-        frappe.log_error(
-            f"Transliteration failed for '{text}': {str(e)}",
-            "Transliteration Error"
-        )
-        return text_clean
+    return result if result else text
 
 
 def translate_to_english(text: str) -> str:
@@ -3129,5 +3131,291 @@ def import_translated_villages():
             
     frappe.db.commit()
     return {"success": True, "imported": count, "skipped": skipped}
+
+
+def _get_filtered_referrals(form_dict):
+	search = form_dict.get("search", "").strip()
+	status = form_dict.get("status", "").strip()
+	village = form_dict.get("village", "").strip()
+	phc = form_dict.get("phc", "").strip()
+	opd_department = form_dict.get("opd_department", "").strip()
+	start_date = form_dict.get("start_date", "").strip()
+	end_date = form_dict.get("end_date", "").strip()
+	referred_by_who = form_dict.get("referred_by_who", "").strip()
+	taluka = form_dict.get("taluka", "").strip()
+	referring_doctor = form_dict.get("referring_doctor", "").strip()
+	referrer_name = form_dict.get("referrer_name", "").strip()
+	gender = form_dict.get("gender", "").strip()
+	min_age = form_dict.get("min_age", "").strip()
+	max_age = form_dict.get("max_age", "").strip()
+	opd_category = form_dict.get("opd_category", "").strip()
+	service_facility_type = form_dict.get("service_facility_type", "").strip()
+	facility_visited = form_dict.get("facility_visited", "").strip()
+	referrer_department = form_dict.get("referrer_department", "").strip()
+	tribal_classification = form_dict.get("tribal_classification", "").strip()
+
+	conditions = []
+	values = {}
+
+	if search:
+		conditions.append("(reference_number LIKE %(search)s OR patient_name LIKE %(search)s OR patient_phone LIKE %(search)s OR referrer_name LIKE %(search)s)")
+		values["search"] = f"%{search}%"
+	if status:
+		conditions.append("status = %(status)s")
+		values["status"] = status
+	if village:
+		conditions.append("patient_village = %(village)s")
+		values["village"] = village
+	if phc:
+		conditions.append("phc = %(phc)s")
+		values["phc"] = phc
+	if opd_department:
+		conditions.append("opd_departments = %(opd_department)s")
+		values["opd_department"] = opd_department
+	if start_date:
+		conditions.append("referral_date >= %(start_date)s")
+		values["start_date"] = start_date
+	if end_date:
+		conditions.append("referral_date <= %(end_date)s")
+		values["end_date"] = end_date
+	if referred_by_who:
+		conditions.append("referred_by_who = %(referred_by_who)s")
+		values["referred_by_who"] = referred_by_who
+	if taluka:
+		conditions.append("patient_taluka = %(taluka)s")
+		values["taluka"] = taluka
+	if referring_doctor:
+		conditions.append("referred_doctor = %(referring_doctor)s")
+		values["referring_doctor"] = referring_doctor
+	if referrer_name:
+		conditions.append("referrer_name = %(referrer_name)s")
+		values["referrer_name"] = referrer_name
+	if gender:
+		conditions.append("patient_gender = %(gender)s")
+		values["gender"] = gender
+	if min_age:
+		conditions.append("patient_age >= %(min_age)s")
+		values["min_age"] = frappe.utils.cint(min_age)
+	if max_age:
+		conditions.append("patient_age <= %(max_age)s")
+		values["max_age"] = frappe.utils.cint(max_age)
+	if opd_category:
+		conditions.append("opd_category = %(opd_category)s")
+		values["opd_category"] = opd_category
+	if service_facility_type:
+		conditions.append("service_facility_type = %(service_facility_type)s")
+		values["service_facility_type"] = service_facility_type
+	if facility_visited:
+		conditions.append("facility_visited = %(facility_visited)s")
+		values["facility_visited"] = facility_visited
+	if referrer_department:
+		conditions.append("referrer_department = %(referrer_department)s")
+		values["referrer_department"] = referrer_department
+	if tribal_classification:
+		conditions.append("tribal_classification = %(tribal_classification)s")
+		values["tribal_classification"] = tribal_classification
+
+	where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+	query = f"""
+		SELECT 
+			name, reference_number, referral_date, referral_recorded_date, status,
+			referrer, referrer_name, referrer_phone, referrer_department,
+			patient_name, patient_father_name, patient_gender, patient_age,
+			patient_village, patient_taluka, service_facility_type, opd_category,
+			other_facility_name, patient_phone, phc, opd_departments, referred_doctor,
+			referred_by_who, additional_notes, hospital_registration_number, visit_date, 
+			facility_visited, tribal_classification, creation
+		FROM `tabPatient Referral`
+		WHERE {where_clause}
+		ORDER BY referral_date DESC, creation DESC
+	"""
+	return frappe.db.sql(query, values, as_dict=True)
+
+
+@frappe.whitelist()
+def export_referrals_excel():
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Authentication required"), frappe.PermissionError)
+	if "System Manager" not in frappe.get_roles() and not frappe.has_permission("Patient Referral", "read"):
+		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
+
+	from frappe.utils.xlsxutils import make_xlsx
+	from frappe.utils import today, format_date
+
+	referrals = _get_filtered_referrals(frappe.form_dict)
+
+	data = [[
+		"Reference Number", "Referral Date", "Recorded Date", "Status",
+		"Point of Referral", "Referrer Name", "Referrer Phone", "Referrer Dept",
+		"Patient Name", "Father's Name", "Gender", "Age", "Phone",
+		"Village", "Taluka", "Tribal Classification", "Service Facility Type",
+		"OPD Category", "OPD Department", "Referred Doctor", "PHC",
+		"Facility Visited", "Hospital Reg No", "Visit Date", "Notes"
+	]]
+
+	for ref in referrals:
+		data.append([
+			ref.get("reference_number") or "",
+			format_date(ref.get("referral_date")) if ref.get("referral_date") else "",
+			format_date(ref.get("referral_recorded_date")) if ref.get("referral_recorded_date") else "",
+			ref.get("status") or "",
+			ref.get("referred_by_who") or "",
+			ref.get("referrer_name") or "",
+			ref.get("referrer_phone") or "",
+			ref.get("referrer_department") or "",
+			ref.get("patient_name") or "",
+			ref.get("patient_father_name") or "",
+			ref.get("patient_gender") or "",
+			ref.get("patient_age") or "",
+			ref.get("patient_phone") or "",
+			ref.get("patient_village") or "",
+			ref.get("patient_taluka") or "",
+			ref.get("tribal_classification") or "",
+			ref.get("service_facility_type") or "",
+			ref.get("opd_category") or "",
+			ref.get("opd_departments") or "",
+			ref.get("referred_doctor") or "",
+			ref.get("phc") or "",
+			ref.get("facility_visited") or "",
+			ref.get("hospital_registration_number") or "",
+			format_date(ref.get("visit_date")) if ref.get("visit_date") else "",
+			frappe.utils.strip_html(ref.get("additional_notes") or "") if ref.get("additional_notes") else ""
+		])
+
+	xlsx_file = make_xlsx(data, "Patient Referrals")
+	frappe.response['filename'] = f"Patient_Referrals_{today()}.xlsx"
+	frappe.response['filecontent'] = xlsx_file.getvalue()
+	frappe.response['type'] = 'binary'
+
+
+@frappe.whitelist()
+def export_referrals_pdf():
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Authentication required"), frappe.PermissionError)
+	if "System Manager" not in frappe.get_roles() and not frappe.has_permission("Patient Referral", "read"):
+		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
+
+	from frappe.utils.pdf import get_pdf
+	from frappe.utils import today, format_date, now_datetime
+
+	referrals = _get_filtered_referrals(frappe.form_dict)
+
+	# Format dates
+	for ref in referrals:
+		if ref.get("referral_date"):
+			ref["referral_date_formatted"] = format_date(ref["referral_date"])
+		else:
+			ref["referral_date_formatted"] = ""
+
+	# Summary of active filters
+	filter_summary = []
+	for key, label in [
+		("search", "Search"), ("status", "Status"), ("gender", "Gender"),
+		("village", "Village"), ("taluka", "Taluka"), ("phc", "PHC"),
+		("opd_department", "OPD Dept"), ("opd_category", "OPD Category"),
+		("service_facility_type", "Service Facility"), ("facility_visited", "Facility Visited"),
+		("referred_by_who", "Point of Referral"), ("referrer_name", "Referrer"),
+		("referrer_department", "Referrer Dept"), ("referring_doctor", "Doctor"),
+		("tribal_classification", "Tribal"), ("start_date", "From Date"), ("end_date", "To Date")
+	]:
+		val = frappe.form_dict.get(key, "").strip()
+		if val:
+			filter_summary.append(f"<b>{label}:</b> {val}")
+
+	filter_summary_str = " | ".join(filter_summary) if filter_summary else "All Records (No active filters)"
+
+	html = f"""
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Patient Referrals Report</title>
+		<style>
+			body {{ font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 0; padding: 0; }}
+			.header {{ text-align: center; border-bottom: 2px solid #059669; padding-bottom: 10px; margin-bottom: 14px; }}
+			.title {{ font-size: 20px; font-weight: bold; color: #059669; margin: 0 0 4px 0; }}
+			.subtitle {{ font-size: 13px; color: #475569; margin: 0; }}
+			.meta-bar {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 10px; color: #475569; }}
+			.meta-item {{ margin-bottom: 4px; }}
+			table {{ width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10px; }}
+			th {{ background-color: #f1f5f9; color: #0f172a; font-weight: bold; text-transform: uppercase; padding: 8px 6px; border: 1px solid #cbd5e1; text-align: left; font-size: 9px; }}
+			td {{ padding: 6px; border: 1px solid #e2e8f0; color: #334155; vertical-align: top; }}
+			tr:nth-child(even) {{ background-color: #f8fafc; }}
+			.footer {{ text-align: right; font-size: 9px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 8px; }}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1 class="title">SEARCH Gadchiroli</h1>
+			<p class="subtitle">Patient Referrals Report</p>
+		</div>
+
+		<div class="meta-bar">
+			<div class="meta-item"><b>Generated On:</b> {now_datetime().strftime("%d-%m-%Y %H:%M")} | <b>Total Records:</b> {len(referrals)}</div>
+			<div class="meta-item"><b>Applied Filters:</b> {filter_summary_str}</div>
+		</div>
+
+		<table>
+			<thead>
+				<tr>
+					<th style="width: 10%;">Ref No.</th>
+					<th style="width: 9%;">Ref Date</th>
+					<th style="width: 11%;">Status</th>
+					<th style="width: 15%;">Patient Name</th>
+					<th style="width: 8%;">Age/Gender</th>
+					<th style="width: 10%;">Village</th>
+					<th style="width: 12%;">Point of Referral</th>
+					<th style="width: 12%;">Referrer Name</th>
+					<th style="width: 13%;">OPD Department</th>
+				</tr>
+			</thead>
+			<tbody>
+	"""
+
+	for ref in referrals:
+		html += f"""
+				<tr>
+					<td style="font-weight: bold;">{ref.get('reference_number') or ''}</td>
+					<td>{ref.get('referral_date_formatted') or ''}</td>
+					<td>{ref.get('status') or ''}</td>
+					<td style="font-weight: bold;">{ref.get('patient_name') or ''}</td>
+					<td>{ref.get('patient_age') or '-'} / {ref.get('patient_gender') or '-'}</td>
+					<td>{ref.get('patient_village') or '-'}</td>
+					<td>{ref.get('referred_by_who') or '-'}</td>
+					<td>{ref.get('referrer_name') or '-'}</td>
+					<td>{ref.get('opd_departments') or '-'}</td>
+				</tr>
+		"""
+
+	if not referrals:
+		html += """
+				<tr>
+					<td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">No referral records match the selected filters.</td>
+				</tr>
+		"""
+
+	html += """
+			</tbody>
+		</table>
+		<div class="footer">
+			Generated via SEARCH Referral Management Portal
+		</div>
+	</body>
+	</html>
+	"""
+
+	try:
+		pdf_file = get_pdf(html, {"orientation": "Landscape", "page-size": "A4"})
+		frappe.response['filename'] = f"Patient_Referrals_Report_{today()}.pdf"
+		frappe.response['filecontent'] = pdf_file
+		frappe.response['type'] = 'pdf'
+	except Exception:
+		# Fallback to returning standalone print-optimized HTML report page
+		html_printable = html.replace("</body>", "<script>window.onload = function() { window.print(); };</script></body>")
+		frappe.response['type'] = 'html'
+		frappe.response['body'] = html_printable
+
+
 
 
