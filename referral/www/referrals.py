@@ -16,10 +16,10 @@ def format_to_dd_mm_yyyy(date_val):
 def normalize_doctor_display(name):
 	if not name:
 		return ""
-	dr_pattern = r'^(डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|dr\.|dr|da[ॉॅ\u0945]\.|da[ॉॅ\u0945]|da\.)\s*'
+	dr_pattern = r'^(dr\.|dr|da[ăāॅॉ\u0945\u0949\u0306\u0902]?\.|da[ăāॅॉ\u0945\u0949\u0306\u0902]?|डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|डा|डाॉ\.|डाॉ)\s*'
 	if re.search(dr_pattern, name.strip(), flags=re.IGNORECASE):
 		clean = re.sub(dr_pattern, '', name.strip(), flags=re.IGNORECASE).strip()
-		return f"डॉ. {clean}" if clean else name.strip()
+		return f"Dr. {clean}" if clean else name.strip()
 	return name.strip()
 
 

@@ -254,3 +254,8 @@ require_type_annotated_api_methods = True
 # ignore_translatable_strings_from = []
 
 # Dashboard page is auto-served from www/dashboard.html at /dashboard
+website_route_rules = [
+    {"from_route": "/portal/<path:app_path>", "to_route": "portal"},
+    {"from_route": "/portal", "to_route": "portal"}
+]
+

@@ -3,7 +3,8 @@ from collections import defaultdict
 from deep_translator import GoogleTranslator
 from indic_transliteration import sanscript
 from indic_transliteration.sanscript import transliterate
-from frappe.utils import getdate, today
+from frappe.utils import getdate, today, cint
+from frappe import _
 
 VALID_DEPARTMENTS = [
     "Medicine", "Gynaecology", "Orthopedics", "Spine",
@@ -290,13 +291,13 @@ def transliterate_to_roman(text: str) -> str:
     """
     Transliterate Devanagari text to Roman English using indic-transliteration.
     This does script-to-script conversion (preserves names like साक्षी → Sakshi).
-    Ensures doctor prefix is formatted as 'डॉ.'.
+    Ensures doctor prefix is formatted as 'Dr.'.
     """
     if not text:
         return text
 
     import re
-    dr_pattern = r'^(डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|dr\.|dr|da[ॉॅ\u0945]\.|da[ॉॅ\u0945]|da\.)\s*'
+    dr_pattern = r'^(dr\.|dr|da[ăāॅॉ\u0945\u0949\u0306\u0902]?\.|da[ăāॅॉ\u0945\u0949\u0306\u0902]?|डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|डा|डाॉ\.|डाॉ)\s*'
     has_dr_prefix = bool(re.search(dr_pattern, text.strip(), flags=re.IGNORECASE))
     clean_name = re.sub(dr_pattern, '', text.strip(), flags=re.IGNORECASE).strip()
 
@@ -314,7 +315,7 @@ def transliterate_to_roman(text: str) -> str:
         result = clean_name
 
     if has_dr_prefix and result:
-        result = f"डॉ. {result}"
+        result = f"Dr. {result}"
 
     return result if result else text
 
@@ -1741,7 +1742,6 @@ def record_supervisor_visit(
             }
 
         # 4. Parse and validate dates
-        from frappe.utils import getdate, today
         visit_date_parsed = parse_date(visit_date)
         if not visit_date_parsed:
             # Default to today if visit_date is missing/unresolved — supervisor records in real time
@@ -3419,3 +3419,273 @@ def export_referrals_pdf():
 
 
 
+
+
+@frappe.whitelist()
+def get_portal_referral_filter_options() -> dict:
+    """Fetch distinct filter options for the referral management portal."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Authentication required"), frappe.PermissionError)
+
+    def get_distinct(field):
+        rows = frappe.db.sql(f"SELECT DISTINCT {field} FROM `tabPatient Referral` WHERE {field} IS NOT NULL AND {field} != ''")
+        return sorted([r[0] for r in rows if r[0]])
+
+    return {
+        "villages": get_distinct("patient_village"),
+        "talukas": get_distinct("patient_taluka"),
+        "tribal_classifications": get_distinct("tribal_classification"),
+        "phcs": get_distinct("phc"),
+        "service_facility_types": get_distinct("service_facility_type"),
+        "opd_categories": get_distinct("opd_category"),
+        "opd_departments": get_distinct("opd_departments"),
+        "facilities_visited": get_distinct("facility_visited"),
+        "referred_by_whos": get_distinct("referred_by_who"),
+        "referrer_names": get_distinct("referrer_name"),
+        "referrer_departments": get_distinct("referrer_department"),
+        "referring_doctors": get_distinct("referred_doctor"),
+        "genders": get_distinct("patient_gender"),
+        "statuses": ["Pending", "Follow-up In Progress", "Visited", "Closed - Not Visited", "No-Show", "Cancelled"]
+    }
+
+
+@frappe.whitelist()
+def get_portal_referrals(
+    search: str = None,
+    status: str = None,
+    village: str = None,
+    taluka: str = None,
+    tribal_classification: str = None,
+    phc: str = None,
+    service_facility_type: str = None,
+    opd_category: str = None,
+    opd_department: str = None,
+    facility_visited: str = None,
+    referred_by_who: str = None,
+    referrer_name: str = None,
+    referrer_department: str = None,
+    referring_doctor: str = None,
+    gender: str = None,
+    min_age: str = None,
+    max_age: str = None,
+    start_date: str = None,
+    end_date: str = None,
+    page: int = 1,
+    page_size: int = 25
+) -> dict:
+    """Fetch paginated patient referrals with all filters for the portal."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Authentication required"), frappe.PermissionError)
+
+    page = cint(page or 1)
+    page_size = cint(page_size or 25)
+    limit_start = (page - 1) * page_size
+
+    conditions = []
+    values = {}
+
+    if search and search.strip():
+        conditions.append("(reference_number LIKE %(search)s OR patient_name LIKE %(search)s OR patient_phone LIKE %(search)s OR referrer_name LIKE %(search)s OR referred_doctor LIKE %(search)s)")
+        values["search"] = f"%{search.strip()}%"
+    if status and status.strip():
+        conditions.append("status = %(status)s")
+        values["status"] = status.strip()
+    if village and village.strip():
+        conditions.append("patient_village = %(village)s")
+        values["village"] = village.strip()
+    if taluka and taluka.strip():
+        conditions.append("patient_taluka = %(taluka)s")
+        values["taluka"] = taluka.strip()
+    if tribal_classification and tribal_classification.strip():
+        conditions.append("tribal_classification = %(tribal_classification)s")
+        values["tribal_classification"] = tribal_classification.strip()
+    if phc and phc.strip():
+        conditions.append("phc = %(phc)s")
+        values["phc"] = phc.strip()
+    if service_facility_type and service_facility_type.strip():
+        conditions.append("service_facility_type = %(service_facility_type)s")
+        values["service_facility_type"] = service_facility_type.strip()
+    if opd_category and opd_category.strip():
+        conditions.append("opd_category = %(opd_category)s")
+        values["opd_category"] = opd_category.strip()
+    if opd_department and opd_department.strip():
+        conditions.append("opd_departments = %(opd_department)s")
+        values["opd_department"] = opd_department.strip()
+    if facility_visited and facility_visited.strip():
+        conditions.append("facility_visited = %(facility_visited)s")
+        values["facility_visited"] = facility_visited.strip()
+    if referred_by_who and referred_by_who.strip():
+        conditions.append("referred_by_who = %(referred_by_who)s")
+        values["referred_by_who"] = referred_by_who.strip()
+    if referrer_name and referrer_name.strip():
+        conditions.append("referrer_name = %(referrer_name)s")
+        values["referrer_name"] = referrer_name.strip()
+    if referrer_department and referrer_department.strip():
+        conditions.append("referrer_department = %(referrer_department)s")
+        values["referrer_department"] = referrer_department.strip()
+    if referring_doctor and referring_doctor.strip():
+        conditions.append("(referred_doctor = %(referring_doctor)s OR referred_doctor LIKE %(referring_doctor_like)s)")
+        values["referring_doctor"] = referring_doctor.strip()
+        values["referring_doctor_like"] = f"%{referring_doctor.strip()}%"
+    if gender and gender.strip():
+        conditions.append("patient_gender = %(gender)s")
+        values["gender"] = gender.strip()
+    if min_age and str(min_age).strip():
+        conditions.append("patient_age >= %(min_age)s")
+        values["min_age"] = cint(min_age)
+    if max_age and str(max_age).strip():
+        conditions.append("patient_age <= %(max_age)s")
+        values["max_age"] = cint(max_age)
+    if start_date and start_date.strip():
+        conditions.append("referral_date >= %(start_date)s")
+        values["start_date"] = start_date.strip()
+    if end_date and end_date.strip():
+        conditions.append("referral_date <= %(end_date)s")
+        values["end_date"] = end_date.strip()
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    total_count_query = f"SELECT COUNT(*) FROM `tabPatient Referral` WHERE {where_clause}"
+    total_records = frappe.db.sql(total_count_query, values)[0][0]
+    total_pages = (total_records + page_size - 1) // page_size
+
+    query = f"""
+        SELECT 
+            name, reference_number, referral_date, referral_recorded_date, status,
+            referrer, referrer_name, referrer_phone, referrer_department,
+            patient_name, patient_father_name, patient_gender, patient_age,
+            patient_village, patient_taluka, service_facility_type, opd_category,
+            other_facility_name, patient_phone, phc, opd_departments, referred_doctor,
+            referred_by_who, additional_notes, hospital_registration_number, visit_date, 
+            facility_visited, tribal_classification, creation
+        FROM `tabPatient Referral`
+        WHERE {where_clause}
+        ORDER BY referral_date DESC, creation DESC
+        LIMIT {limit_start}, {page_size}
+    """
+    referrals = frappe.db.sql(query, values, as_dict=True)
+
+    for ref in referrals:
+        if ref.get("referral_date"):
+            try:
+                ref["referral_date"] = getdate(ref["referral_date"]).strftime("%d-%m-%Y")
+            except Exception:
+                pass
+        if ref.get("referral_recorded_date"):
+            try:
+                ref["referral_recorded_date"] = getdate(ref["referral_recorded_date"]).strftime("%d-%m-%Y")
+            except Exception:
+                pass
+        if ref.get("visit_date"):
+            try:
+                ref["visit_date"] = getdate(ref["visit_date"]).strftime("%d-%m-%Y")
+            except Exception:
+                pass
+
+        ref["supervisor_visits"] = frappe.db.get_values(
+            "Supervisor Visit",
+            {"parent": ref["name"], "parenttype": "Patient Referral"},
+            ["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "supervisor_name", "supervisor_phone"],
+            as_dict=True,
+            order_by="visit_number asc"
+        ) or []
+
+        ref["mhd_followups"] = frappe.db.get_values(
+            "MHD Followup",
+            {"parent": ref["name"], "parenttype": "Patient Referral"},
+            ["followup_day_offset", "visit_date", "patient_info_source", "days_drank_last_15", "notable_incident", "current_complaints", "drinking_pattern", "alcohol_type", "quantity_ml_per_day", "frequency_per_day", "drank_today", "family_opinion", "counselor_observation", "mhd_counselor_name", "mhd_counselor_phone"],
+            as_dict=True,
+            order_by="visit_date asc"
+        ) or []
+
+    return {
+        "records": referrals,
+        "total_records": total_records,
+        "total_pages": total_pages,
+        "current_page": page,
+        "page_size": page_size
+    }
+
+
+@frappe.whitelist()
+def get_portal_village_sessions(search: str = None, session_conducted: str = None, village: str = None, area: str = None, start_date: str = None, end_date: str = None, page: int = 1, page_size: int = 25) -> dict:
+    """Fetch paginated village health education sessions for the portal."""
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Authentication required"), frappe.PermissionError)
+
+    page = cint(page or 1)
+    page_size = cint(page_size or 25)
+    limit_start = (page - 1) * page_size
+
+    conditions = []
+    values = {}
+
+    if search:
+        conditions.append("(name LIKE %(search)s OR village LIKE %(search)s OR health_educator_name LIKE %(search)s OR area LIKE %(search)s OR search_driver_name LIKE %(search)s)")
+        values["search"] = f"%{search.strip()}%"
+    if session_conducted:
+        conditions.append("session_conducted = %(session_conducted)s")
+        values["session_conducted"] = session_conducted.strip()
+    if village:
+        conditions.append("village = %(village)s")
+        values["village"] = village.strip()
+    if area:
+        conditions.append("area = %(area)s")
+        values["area"] = area.strip()
+    if start_date:
+        conditions.append("date >= %(start_date)s")
+        values["start_date"] = start_date.strip()
+    if end_date:
+        conditions.append("date <= %(end_date)s")
+        values["end_date"] = end_date.strip()
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    total_count_query = f"SELECT COUNT(*) FROM `tabVillage Health Education` WHERE {where_clause}"
+    total_records = frappe.db.sql(total_count_query, values)[0][0]
+    total_pages = (total_records + page_size - 1) // page_size
+
+    query = f"""
+        SELECT 
+            name, date, village, area, session_conducted,
+            total_number_of_participants, number_of_places,
+            health_educator_name, search_driver_name,
+            village_patil_met, village_patil_name, village_patil_feedback,
+            reason_for_not_conducting, reason_for_not_meeting_patil, creation
+        FROM `tabVillage Health Education`
+        WHERE {where_clause}
+        ORDER BY date DESC, creation DESC
+        LIMIT {limit_start}, {page_size}
+    """
+    sessions = frappe.db.sql(query, values, as_dict=True)
+
+    for s in sessions:
+        if s.get("date"):
+            try:
+                s["formatted_date"] = getdate(s["date"]).strftime("%d-%m-%Y")
+            except Exception:
+                s["formatted_date"] = str(s["date"])
+
+        s["topics"] = frappe.db.get_values(
+            "Village Health Education Topic",
+            {"parent": s["name"], "parenttype": "Village Health Education"},
+            ["topic"],
+            as_dict=True,
+            order_by="idx asc"
+        ) or []
+
+        s["locations"] = frappe.db.get_values(
+            "Village Health Education Location",
+            {"parent": s["name"], "parenttype": "Village Health Education"},
+            ["location_name", "number_of_participants", "photo"],
+            as_dict=True,
+            order_by="idx asc"
+        ) or []
+
+    return {
+        "records": sessions,
+        "total_records": total_records,
+        "total_pages": total_pages,
+        "current_page": page,
+        "page_size": page_size
+    }
