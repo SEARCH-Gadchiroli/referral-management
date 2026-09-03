@@ -2032,12 +2032,16 @@ def get_pending_followups(
     month: int = None, 
     year: int = None, 
     duration: str = None,
+    followup_list_enter_date: str = None,
+    date: str = None,
+    specific_date: str = None,
     **kwargs
 ) -> dict:
     """
     Returns pending follow-up referrals formatted as a ready-to-send
-    Marathi WhatsApp message, optionally filtered by village name and taluka name,
-    along with patients who visited SEARCH in the specified duration.
+    Marathi WhatsApp message, optionally filtered by village name, taluka name,
+    specific date (DD/MM/YYYY), or duration,
+    along with patients who visited SEARCH in the specified duration/date.
 
     Called by Glific 'Follow-up List' flow.
     """
@@ -2061,25 +2065,52 @@ def get_pending_followups(
                         year = data.get("year")
                     if not duration:
                         duration = data.get("duration") or data.get("duration_months")
+                    if not followup_list_enter_date:
+                        followup_list_enter_date = (
+                            data.get("followup_list_enter_date")
+                            or data.get("followuplist_enter_date")
+                            or data.get("date")
+                            or data.get("specific_date")
+                            or data.get("followup_date")
+                        )
         except Exception:
             pass
 
     month = month or kwargs.get("month")
     year = year or kwargs.get("year")
     duration = duration or kwargs.get("duration") or kwargs.get("duration_months")
+    followup_list_enter_date = (
+        followup_list_enter_date
+        or date
+        or specific_date
+        or kwargs.get("followup_list_enter_date")
+        or kwargs.get("followuplist_enter_date")
+        or kwargs.get("date")
+        or kwargs.get("specific_date")
+        or kwargs.get("followup_date")
+    )
 
     supervisor_phone = clean_glific_value(supervisor_phone)
     village_name = clean_glific_value(village_name)
     taluka_name = clean_glific_value(taluka_name)
+    followup_list_enter_date = clean_glific_value(followup_list_enter_date)
 
-    # If village_name is not provided in body, try querying Glific contact fields
-    if not village_name and supervisor_phone:
-        fields = get_glific_contact_fields(supervisor_phone)
-        village_name = fields.get("followup_list_village_name")
-        if not taluka_name:
-            taluka_name = fields.get("followup_list_taluka_name")
+    # If village_name or date is not provided in body, try querying Glific contact fields
+    if supervisor_phone:
+        if not village_name or not taluka_name or (not followup_list_enter_date and not duration):
+            fields = get_glific_contact_fields(supervisor_phone)
+            if not village_name:
+                village_name = fields.get("followup_list_village_name")
+            if not taluka_name:
+                taluka_name = fields.get("followup_list_taluka_name")
+            if not followup_list_enter_date and not duration:
+                followup_list_enter_date = clean_glific_value(
+                    fields.get("followup_list_enter_date") or fields.get("followuplist_enter_date")
+                )
+                if not followup_list_enter_date:
+                    duration = fields.get("followup_list_duration")
 
-    # 1. Calculate duration date filters
+    # 1. Calculate duration / specific date filters
     from frappe.utils import today, getdate, add_months
     import calendar
 
@@ -2088,103 +2119,154 @@ def get_pending_followups(
     end_date = None
     duration_label_mr = "या महिन्यातील"
 
-    # Clean duration input
-    duration_clean = (clean_glific_value(duration) or "").strip().lower()
-    
-    # Map Marathi duration inputs to standard English values
-    marathi_duration_map = {
-        "या महिन्यातील": "this_month",
-        "या महिन्यात": "this_month",
-        "या": "this_month",
-        "चालू महिना": "this_month",
-        "चालू महिन्यातील": "this_month",
-        "गेल्या महिन्यातील": "last_month",
-        "गेल्या महिन्यात": "last_month",
-        "मागील महिना": "last_month",
-        "मागील महिन्यातील": "last_month",
-        "गेल्या ३ महिन्यांतील": "last_3_months",
-        "गेल्या ३ महिन्यात": "last_3_months",
-        "मागील ३ महिने": "last_3_months",
-        "मागील ३ महिन्यांतील": "last_3_months",
-        "गेल्या ६ महिन्यांतील": "past_6_months",
-        "गेल्या ६ महिन्यात": "past_6_months",
-        "मागील ६ महिने": "past_6_months",
-        "मागील ६ महिन्यांतील": "past_6_months",
-        "सर्व काळातील": "all_time",
-        "सर्व": "all_time",
-        "सर्व काळ": "all_time",
-        "सर्वकाळ": "all_time"
-    }
+    # Priority 1: Check if specific date was provided (e.g. DD/MM/YYYY)
+    parsed_specific_date = None
+    if followup_list_enter_date:
+        parsed_specific_date = parse_date(followup_list_enter_date)
+        if not parsed_specific_date:
+            return {
+                "formatted_text": "❌ दिलेली तारीख योग्य नाही. कृपया DD/MM/YYYY स्वरूपात तारीख टाका (उदा. 15/08/2024).",
+                "count": 0,
+            }
 
-    if duration_clean in marathi_duration_map:
-        duration_clean = marathi_duration_map[duration_clean]
-    else:
-        # Fallback substring checks for extra safety
-        if "सर्व" in duration_clean:
-            duration_clean = "all_time"
-        elif "३" in duration_clean or "3" in duration_clean:
-            duration_clean = "last_3_months"
-        elif "६" in duration_clean or "6" in duration_clean:
-            duration_clean = "past_6_months"
-        elif "गेल्या" in duration_clean or "मागील" in duration_clean or "last" in duration_clean:
-            duration_clean = "last_month"
-        elif "या" in duration_clean or "चालू" in duration_clean or "this" in duration_clean:
-            duration_clean = "this_month"
+    # Also check if duration itself was passed as a specific date string (e.g. "15/08/2024" or "2024-08-15")
+    if not parsed_specific_date and duration:
+        duration_candidate = clean_glific_value(duration)
+        if duration_candidate and ("/" in duration_candidate or (("-" in duration_candidate) and len(duration_candidate) >= 8)):
+            parsed_specific_date = parse_date(duration_candidate)
 
-    if duration_clean in ("this_month", "this month", "this"):
-        start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
-        _, last_day = calendar.monthrange(now_date.year, now_date.month)
-        end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
-        duration_label_mr = "या महिन्यातील"
-        
-    elif duration_clean in ("last_month", "last month", "last"):
-        prev_date = add_months(now_date, -1)
-        start_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-01")
-        _, last_day = calendar.monthrange(prev_date.year, prev_date.month)
-        end_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-{last_day:02d}")
-        duration_label_mr = "गेल्या महिन्यातील"
-        
-    elif duration_clean in ("last_3_months", "last 3 months", "3"):
-        start_date = add_months(now_date, -3)
-        end_date = now_date
-        duration_label_mr = "गेल्या ३ महिन्यांतील"
-        
-    elif duration_clean in ("past_6_months", "past 6 months", "6"):
-        start_date = add_months(now_date, -6)
-        end_date = now_date
-        duration_label_mr = "गेल्या ६ महिन्यांतील"
-        
-    elif duration_clean in ("all_time", "all time", "all"):
-        start_date = None
-        end_date = None
-        duration_label_mr = "सर्व काळातील"
+    if parsed_specific_date:
+        start_date = parsed_specific_date
+        end_date = parsed_specific_date
+        duration_label_mr = f"{parsed_specific_date.strftime('%d/%m/%Y')} रोजी"
     else:
-        # Fallback to month/year if specifically provided as integers
-        if month:
-            target_year = year or now_date.year
-            target_month = month
-            try:
-                target_month = int(target_month)
-                target_year = int(target_year)
-            except (ValueError, TypeError):
-                target_month = now_date.month
-                target_year = now_date.year
-            if 1 <= target_month <= 12:
-                _, last_day = calendar.monthrange(target_year, target_month)
-                start_date = getdate(f"{target_year}-{target_month:02d}-01")
-                end_date = getdate(f"{target_year}-{target_month:02d}-{last_day:02d}")
-                month_names_mr = {
-                    1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
-                    5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
-                    9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
-                }
-                duration_label_mr = f"{month_names_mr.get(target_month, '')} {target_year} मधील"
+        # Clean duration input
+        duration_clean = (clean_glific_value(duration) or "").strip().lower()
+        
+        # Check if duration input is an "Enter date" selection option
+        enter_date_keywords = (
+            "तारीख टाका", "तारीख निवडा", "तारीख प्रविष्ट करा",
+            "तारीख़ लिखें", "तारीख लिखें", "तारीख डाले", "तारीख दर्ज करें",
+            "enter specific date", "enter date", "specific date"
+        )
+        if any(kw in duration_clean for kw in enter_date_keywords):
+            return {
+                "formatted_text": "❌ कृपया तारीख DD/MM/YYYY स्वरूपात टाका (उदा. 15/08/2024).",
+                "count": 0,
+            }
+
+        # Map Marathi & Hindi duration inputs to standard English values
+        duration_map = {
+            # Marathi
+            "या महिन्यातील": "this_month",
+            "या महिन्यात": "this_month",
+            "या": "this_month",
+            "चालू महिना": "this_month",
+            "चालू महिन्यातील": "this_month",
+            "गेल्या महिन्यातील": "last_month",
+            "गेल्या महिन्यात": "last_month",
+            "मागील महिना": "last_month",
+            "मागील महिन्यातील": "last_month",
+            "गेल्या ३ महिन्यांतील": "last_3_months",
+            "गेल्या ३ महिन्यात": "last_3_months",
+            "मागील ३ महिने": "last_3_months",
+            "मागील ३ महिन्यांतील": "last_3_months",
+            "गेल्या ६ महिन्यांतील": "past_6_months",
+            "गेल्या ६ महिन्यात": "past_6_months",
+            "मागील ६ महिने": "past_6_months",
+            "मागील ६ महिन्यांतील": "past_6_months",
+            "सर्व काळातील": "all_time",
+            "सर्व": "all_time",
+            "सर्व काळ": "all_time",
+            "सर्वकाळ": "all_time",
+            # Hindi
+            "इस महीने": "this_month",
+            "इस महीने में": "this_month",
+            "वर्तमान माह": "this_month",
+            "पिछले महीने": "last_month",
+            "पिछले महीने में": "last_month",
+            "पिछला महीना": "last_month",
+            "पिछले ३ महीने": "last_3_months",
+            "पिछले 3 महीने": "last_3_months",
+            "पिछले ३ महीनों में": "last_3_months",
+            "पिछले 3 महीनों में": "last_3_months",
+            "पिछले ६ महीने": "past_6_months",
+            "पिछले 6 महीने": "past_6_months",
+            "पिछले ६ महीनों में": "past_6_months",
+            "पिछले 6 महीनों में": "past_6_months",
+            "सभी समय": "all_time",
+            "शुरुआत से": "all_time"
+        }
+
+        if duration_clean in duration_map:
+            duration_clean = duration_map[duration_clean]
         else:
-            # Default to this month
+            # Fallback substring checks for extra safety
+            if "सर्व" in duration_clean or "सभी" in duration_clean:
+                duration_clean = "all_time"
+            elif "३" in duration_clean or "3" in duration_clean:
+                duration_clean = "last_3_months"
+            elif "६" in duration_clean or "6" in duration_clean:
+                duration_clean = "past_6_months"
+            elif "गेल्या" in duration_clean or "मागील" in duration_clean or "पिछले" in duration_clean or "पिछला" in duration_clean or "last" in duration_clean:
+                duration_clean = "last_month"
+            elif "या" in duration_clean or "चालू" in duration_clean or "इस" in duration_clean or "this" in duration_clean:
+                duration_clean = "this_month"
+
+        if duration_clean in ("this_month", "this month", "this"):
             start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
             _, last_day = calendar.monthrange(now_date.year, now_date.month)
             end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
             duration_label_mr = "या महिन्यातील"
+            
+        elif duration_clean in ("last_month", "last month", "last"):
+            prev_date = add_months(now_date, -1)
+            start_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-01")
+            _, last_day = calendar.monthrange(prev_date.year, prev_date.month)
+            end_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-{last_day:02d}")
+            duration_label_mr = "गेल्या महिन्यातील"
+            
+        elif duration_clean in ("last_3_months", "last 3 months", "3"):
+            start_date = add_months(now_date, -3)
+            end_date = now_date
+            duration_label_mr = "गेल्या ३ महिन्यांतील"
+            
+        elif duration_clean in ("past_6_months", "past 6 months", "6"):
+            start_date = add_months(now_date, -6)
+            end_date = now_date
+            duration_label_mr = "गेल्या ६ महिन्यांतील"
+            
+        elif duration_clean in ("all_time", "all time", "all"):
+            start_date = None
+            end_date = None
+            duration_label_mr = "सर्व काळातील"
+        else:
+            # Fallback to month/year if specifically provided as integers
+            if month:
+                target_year = year or now_date.year
+                target_month = month
+                try:
+                    target_month = int(target_month)
+                    target_year = int(target_year)
+                except (ValueError, TypeError):
+                    target_month = now_date.month
+                    target_year = now_date.year
+                if 1 <= target_month <= 12:
+                    _, last_day = calendar.monthrange(target_year, target_month)
+                    start_date = getdate(f"{target_year}-{target_month:02d}-01")
+                    end_date = getdate(f"{target_year}-{target_month:02d}-{last_day:02d}")
+                    month_names_mr = {
+                        1: "जानेवारी", 2: "फेब्रुवारी", 3: "मार्च", 4: "एप्रिल",
+                        5: "मे", 6: "जून", 7: "जुलै", 8: "ऑगस्ट",
+                        9: "सप्टेंबर", 10: "ऑक्टोबर", 11: "नोव्हेंबर", 12: "डिसेंबर"
+                    }
+                    duration_label_mr = f"{month_names_mr.get(target_month, '')} {target_year} मधील"
+            else:
+                # Default to this month
+                start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
+                _, last_day = calendar.monthrange(now_date.year, now_date.month)
+                end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
+                duration_label_mr = "या महिन्यातील"
 
     # Set up pending referrals filters
     filters = {"status": ["in", ["Pending", "Follow-up In Progress"]]}
