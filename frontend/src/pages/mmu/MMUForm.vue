@@ -152,16 +152,15 @@
 
           <!-- Village Name -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Village Name (Marathi)</label>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Village Name (Village Profile)</label>
             <select
               v-model="form.village_name"
               @change="onVillageChange"
               class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-              :disabled="!form.area_name"
             >
-              <option value="">{{ form.area_name ? 'Select Village' : 'First select an Area' }}</option>
-              <option v-for="v in availableVillages" :key="v.code" :value="v.name">
-                {{ v.name }}
+              <option value="">Select Village (Village Profile)</option>
+              <option v-for="v in availableVillages" :key="v.name" :value="v.name">
+                {{ v.displayName || v.name }}
               </option>
             </select>
           </div>
@@ -627,10 +626,36 @@ export default {
       return this.$route.params.id || ''
     },
     availableVillages() {
+      const profiles = this.masterData.village_profiles || []
+      if (profiles.length > 0) {
+        let list = profiles
+        if (this.form.area_name) {
+          const areaNorm = this.form.area_name.toLowerCase().replace('_', ' ')
+          const filtered = profiles.filter(p => {
+            const taluka = (p.taluka || '').toLowerCase()
+            return taluka && (areaNorm.includes(taluka) || taluka.includes(areaNorm))
+          })
+          if (filtered.length > 0) {
+            list = filtered
+          }
+        }
+        return list.map(p => ({
+          name: p.name,
+          code: p.village_number || 0,
+          displayName: p.village_name_marathi ? `${p.name} (${p.village_name_marathi})` : p.name,
+          marathi: p.village_name_marathi,
+          taluka: p.taluka
+        }))
+      }
+
       if (!this.form.area_name || !this.masterData.villages) return []
       const area = (this.masterData.areas || []).find(a => a.name === this.form.area_name)
       if (!area) return []
-      return this.masterData.villages[String(area.code)] || []
+      return (this.masterData.villages[String(area.code)] || []).map(v => ({
+        name: v.name,
+        code: v.code,
+        displayName: v.name
+      }))
     },
     dentalDiagnoses() {
       return (this.masterData.diagnoses || []).filter(d => d.code >= 226)
@@ -669,16 +694,12 @@ export default {
     onAreaChange() {
       const area = (this.masterData.areas || []).find(a => a.name === this.form.area_name)
       this.form.area_code = area ? area.code : 0
-      this.form.village_name = ''
-      this.form.village_code = 0
     },
     onVillageChange() {
-      if (this.form.village_name && this.form.area_name) {
-        const area = (this.masterData.areas || []).find(a => a.name === this.form.area_name)
-        if (area) {
-          const vList = this.masterData.villages[String(area.code)] || []
-          const vObj = vList.find(v => v.name === this.form.village_name)
-          if (vObj) this.form.village_code = vObj.code
+      if (this.form.village_name) {
+        const matched = this.availableVillages.find(v => v.name === this.form.village_name)
+        if (matched && matched.code) {
+          this.form.village_code = matched.code
         }
       }
       if (!this.isEditMode) {

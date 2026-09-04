@@ -146,6 +146,68 @@
             </div>
           </div>
 
+          <!-- Census Citizen Linkage -->
+          <div v-if="referral?.census_match || referral?.census_member_id">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-1.5">
+              <FeatherIcon name="users" class="w-4 h-4 text-violet-600 shrink-0" />
+              Census Citizen Linkage
+            </h3>
+            <div class="p-4 rounded-xl bg-violet-50/50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div class="space-y-1">
+                <div class="font-bold text-violet-900 dark:text-violet-200 text-sm flex items-center gap-2">
+                  <span>{{ referral?.matched_member_name || referral?.patient_name }}</span>
+                  <span v-if="referral?.census_member_id" class="px-2 py-0.5 rounded-md bg-violet-200/80 dark:bg-violet-800 text-violet-900 dark:text-violet-100 text-[11px] font-mono font-bold">
+                    {{ referral.census_member_id }}
+                  </span>
+                </div>
+                <div class="text-violet-700 dark:text-violet-400">
+                  Household ID: <span class="font-semibold">{{ referral?.census_match }}</span>
+                  <span v-if="referral?.matched_member_age"> | Age: {{ referral.matched_member_age }} yrs</span>
+                  <span v-if="referral?.match_confidence"> | Confidence: {{ referral.match_confidence }}%</span>
+                </div>
+              </div>
+              <span
+                class="px-2.5 py-1 rounded-full font-bold text-xs shrink-0 self-start sm:self-center"
+                :class="{
+                  'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300': referral?.match_status === 'Auto-Matched' || referral?.match_status === 'Manually Verified',
+                  'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300': referral?.match_status === 'Multiple Matches',
+                  'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400': !referral?.match_status || referral?.match_status === 'Unmatched'
+                }"
+              >
+                {{ referral?.match_status || 'Matched' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Linked MMU Visit Encounter -->
+          <div v-if="referral?.mmu_patient_record">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-1.5">
+              <FeatherIcon name="truck" class="w-4 h-4 text-rose-600 shrink-0" />
+              Linked MMU Field Encounter
+            </h3>
+            <div class="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div class="space-y-1">
+                <div class="font-bold text-rose-950 dark:text-rose-200 text-sm flex items-center gap-2">
+                  <span>Visit # {{ referral.mmu_patient_record }}</span>
+                  <span v-if="referral?.mmu_details?.date_of_visit" class="text-xs font-normal text-rose-700 dark:text-rose-400">
+                    ({{ referral.mmu_details.date_of_visit }})
+                  </span>
+                </div>
+                <div v-if="referral?.mmu_details" class="text-rose-800 dark:text-rose-300">
+                  <span class="font-semibold">Diagnoses: </span>
+                  <span>{{ [referral.mmu_details.diagnosis_1, referral.mmu_details.diagnosis_2, referral.mmu_details.dental_diagnosis].filter(Boolean).join(', ') || 'General Examination' }}</span>
+                </div>
+              </div>
+              <router-link
+                :to="'/mmu/' + encodeURIComponent(referral.mmu_patient_record)"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold hover:bg-rose-50 transition-colors shrink-0 self-start sm:self-center"
+              >
+                <FeatherIcon name="external-link" class="w-3.5 h-3.5" />
+                <span>View MMU Form</span>
+              </router-link>
+            </div>
+          </div>
+
           <!-- Clinical & Visit Details -->
           <div>
             <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-1.5">

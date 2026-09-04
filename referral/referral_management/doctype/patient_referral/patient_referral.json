@@ -18,6 +18,7 @@
   "referrer_latitude",
   "referrer_longitude",
   "referred_by_who",
+  "mmu_patient_record",
   "patient_section",
   "patient_name",
   "patient_father_name",
@@ -32,6 +33,7 @@
   "phc",
   "census_section",
   "census_match",
+  "census_member_id",
   "matched_member_name",
   "matched_member_age",
   "match_confidence",
@@ -137,6 +139,12 @@
    "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist"
   },
   {
+   "fieldname": "mmu_patient_record",
+   "fieldtype": "Link",
+   "label": "MMU Patient Record",
+   "options": "MMU Patient Record"
+  },
+  {
    "fieldname": "patient_section",
    "fieldtype": "Section Break",
    "label": "Patient Info"
@@ -196,7 +204,7 @@
    "fieldname": "opd_category",
    "fieldtype": "Select",
    "label": "OPD Category",
-   "options": "\nRegular OPD\nSpecialist OPD\nSurgical OPD"
+   "options": "\nRegular OPD\nSpecialist OPD\nCataract Surgery"
   },
   {
    "depends_on": "eval:doc.service_facility_type==\"Other\"",
@@ -226,6 +234,12 @@
    "fieldtype": "Link",
    "label": "Matched Census Household",
    "options": "Census Household"
+  },
+  {
+   "fieldname": "census_member_id",
+   "fieldtype": "Data",
+   "label": "Census Member ID",
+   "read_only": 1
   },
   {
    "fieldname": "matched_member_name",
@@ -271,9 +285,10 @@
   },
   {
    "fieldname": "referred_doctor",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Referred Doctor"
+   "label": "Referred Doctor",
+   "options": "\nDr Kunal Vidhale\nDr Adhya Dubey\nDr Sanjeev Kumar\nDr Ashwini Shinde\nDr Mrunali Chaudhari\nDr Shrirang Pathak\nDr Pritam Dorlikar\nDr Rohini Wankhede\nDr Aditya Agrawal\nDr Ganesh Kudmethe\nOther"
   },
   {
    "fieldname": "additional_notes",

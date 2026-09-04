@@ -235,22 +235,22 @@ export default {
       filterOptions: {},
       filters: {
         search: '',
-        status: '',
-        gender: '',
+        status: [],
+        gender: [],
         min_age: '',
         max_age: '',
-        village: '',
-        taluka: '',
-        tribal_classification: '',
-        phc: '',
-        service_facility_type: '',
-        opd_category: '',
-        opd_department: '',
-        facility_visited: '',
-        referred_by_who: '',
-        referrer_name: '',
-        referrer_department: '',
-        referring_doctor: '',
+        village: [],
+        taluka: [],
+        tribal_classification: [],
+        phc: [],
+        service_facility_type: [],
+        opd_category: [],
+        opd_department: [],
+        facility_visited: [],
+        referred_by_who: [],
+        referrer_name: [],
+        referrer_department: [],
+        referring_doctor: [],
         start_date: '',
         end_date: '',
       },
@@ -265,7 +265,11 @@ export default {
         'opd_department', 'facility_visited', 'referred_by_who', 'referrer_name',
         'referrer_department', 'referring_doctor', 'start_date', 'end_date'
       ]
-      return keys.filter(k => Boolean(this.filters[k])).length
+      return keys.filter(k => {
+        const val = this.filters[k]
+        if (Array.isArray(val)) return val.length > 0
+        return Boolean(val)
+      }).length
     },
     hasActiveFilters() {
       return Boolean(this.filters.search) || this.activeFilterCount > 0
@@ -306,22 +310,22 @@ export default {
     resetAllFilters() {
       this.filters = {
         search: '',
-        status: '',
-        gender: '',
+        status: [],
+        gender: [],
         min_age: '',
         max_age: '',
-        village: '',
-        taluka: '',
-        tribal_classification: '',
-        phc: '',
-        service_facility_type: '',
-        opd_category: '',
-        opd_department: '',
-        facility_visited: '',
-        referred_by_who: '',
-        referrer_name: '',
-        referrer_department: '',
-        referring_doctor: '',
+        village: [],
+        taluka: [],
+        tribal_classification: [],
+        phc: [],
+        service_facility_type: [],
+        opd_category: [],
+        opd_department: [],
+        facility_visited: [],
+        referred_by_who: [],
+        referrer_name: [],
+        referrer_department: [],
+        referring_doctor: [],
         start_date: '',
         end_date: '',
       }
@@ -334,7 +338,11 @@ export default {
     buildFilterParams() {
       const params = new URLSearchParams()
       for (const [k, v] of Object.entries(this.filters)) {
-        if (v !== '' && v !== null && v !== undefined) {
+        if (Array.isArray(v)) {
+          if (v.length > 0) {
+            params.set(k, v.join(','))
+          }
+        } else if (v !== '' && v !== null && v !== undefined) {
           params.set(k, v)
         }
       }

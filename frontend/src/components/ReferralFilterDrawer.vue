@@ -17,12 +17,12 @@
             </div>
             <div>
               <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">Filter Referrals</h2>
-              <p class="text-xs text-slate-400">Refine referral list by criteria</p>
+              <p class="text-xs text-slate-400">Multi-select filters & criteria</p>
             </div>
           </div>
           <button
             @click="$emit('close')"
-            class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <FeatherIcon name="x" class="w-4 h-4" />
           </button>
@@ -32,28 +32,20 @@
         <div class="p-5 overflow-y-auto space-y-4 flex-1 text-xs text-slate-700 dark:text-slate-300">
           
           <!-- Status -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Status</label>
-            <select
-              v-model="localFilters.status"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Statuses</option>
-              <option v-for="opt in options.statuses || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Status"
+            placeholder="All Statuses"
+            :options="options.statuses || []"
+            v-model="localFilters.status"
+          />
 
           <!-- Gender -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
-            <select
-              v-model="localFilters.gender"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Genders</option>
-              <option v-for="opt in options.genders || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Gender"
+            placeholder="All Genders"
+            :options="options.genders || []"
+            v-model="localFilters.gender"
+          />
 
           <!-- Age Range -->
           <div class="grid grid-cols-2 gap-2.5">
@@ -80,148 +72,100 @@
           </div>
 
           <!-- Patient Village -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Patient Village</label>
-            <select
-              v-model="localFilters.village"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Villages</option>
-              <option v-for="opt in options.villages || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Patient Village"
+            placeholder="All Villages"
+            :options="options.villages || []"
+            v-model="localFilters.village"
+          />
 
           <!-- Taluka -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Taluka</label>
-            <select
-              v-model="localFilters.taluka"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Talukas</option>
-              <option v-for="opt in options.talukas || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Taluka"
+            placeholder="All Talukas"
+            :options="options.talukas || []"
+            v-model="localFilters.taluka"
+          />
 
           <!-- Tribal Classification -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Tribal Classification</label>
-            <select
-              v-model="localFilters.tribal_classification"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Classifications</option>
-              <option v-for="opt in options.tribal_classifications || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Tribal Classification"
+            placeholder="All Classifications"
+            :options="options.tribal_classifications || []"
+            v-model="localFilters.tribal_classification"
+          />
 
           <!-- PHC -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">PHC</label>
-            <select
-              v-model="localFilters.phc"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All PHCs</option>
-              <option v-for="opt in options.phcs || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="PHC"
+            placeholder="All PHCs"
+            :options="options.phcs || []"
+            v-model="localFilters.phc"
+          />
 
           <!-- Service Facility Type -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Service Facility Type</label>
-            <select
-              v-model="localFilters.service_facility_type"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Facilities</option>
-              <option v-for="opt in options.service_facility_types || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Service Facility Type"
+            placeholder="All Facilities"
+            :options="options.service_facility_types || []"
+            v-model="localFilters.service_facility_type"
+          />
 
           <!-- OPD Category -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">OPD Category</label>
-            <select
-              v-model="localFilters.opd_category"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Categories</option>
-              <option v-for="opt in options.opd_categories || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="OPD Category"
+            placeholder="All Categories"
+            :options="options.opd_categories || []"
+            v-model="localFilters.opd_category"
+          />
 
           <!-- OPD Department -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">OPD Department</label>
-            <select
-              v-model="localFilters.opd_department"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Departments</option>
-              <option v-for="opt in options.opd_departments || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="OPD Department"
+            placeholder="All Departments"
+            :options="options.opd_departments || []"
+            v-model="localFilters.opd_department"
+          />
 
           <!-- Facility Visited -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Facility Visited</label>
-            <select
-              v-model="localFilters.facility_visited"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Visited Facilities</option>
-              <option v-for="opt in options.facilities_visited || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Facility Visited"
+            placeholder="All Visited Facilities"
+            :options="options.facilities_visited || []"
+            v-model="localFilters.facility_visited"
+          />
 
           <!-- Point of Referral -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Point of Referral</label>
-            <select
-              v-model="localFilters.referred_by_who"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Points of Referral</option>
-              <option v-for="opt in options.referred_by_whos || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Point of Referral"
+            placeholder="All Points of Referral"
+            :options="options.referred_by_whos || []"
+            v-model="localFilters.referred_by_who"
+          />
 
           <!-- Referrer Name -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Referrer Name</label>
-            <select
-              v-model="localFilters.referrer_name"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Referrers</option>
-              <option v-for="opt in options.referrer_names || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Referrer Name"
+            placeholder="All Referrers"
+            :options="options.referrer_names || []"
+            v-model="localFilters.referrer_name"
+          />
 
           <!-- Referrer Department -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Referrer Department</label>
-            <select
-              v-model="localFilters.referrer_department"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Departments</option>
-              <option v-for="opt in options.referrer_departments || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Referrer Department"
+            placeholder="All Departments"
+            :options="options.referrer_departments || []"
+            v-model="localFilters.referrer_department"
+          />
 
           <!-- Referring Doctor -->
-          <div>
-            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Referring Doctor</label>
-            <select
-              v-model="localFilters.referring_doctor"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
-            >
-              <option value="">All Doctors</option>
-              <option v-for="opt in options.referring_doctors || []" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </div>
+          <MultiSelectDropdown
+            label="Referring Doctor"
+            placeholder="All Doctors"
+            :options="options.referring_doctors || []"
+            v-model="localFilters.referring_doctor"
+          />
 
           <!-- Date Range -->
           <div class="grid grid-cols-2 gap-2.5">
@@ -247,17 +191,17 @@
 
         <!-- Footer Actions -->
         <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between gap-3">
-          <Button @click="resetDrawer" variant="subtle" class="text-xs text-slate-600 dark:text-slate-400">
+          <Button @click="resetDrawer" variant="subtle" class="text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
             Clear All
           </Button>
           <div class="flex items-center gap-2">
-            <Button @click="$emit('close')" variant="outline" class="text-xs">
+            <Button @click="$emit('close')" variant="outline" class="text-xs cursor-pointer">
               Cancel
             </Button>
             <Button
               @click="applyDrawer"
               variant="solid"
-              class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              class="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium cursor-pointer"
             >
               Apply Filters
             </Button>
@@ -271,12 +215,14 @@
 
 <script>
 import { FeatherIcon, Button } from 'frappe-ui'
+import MultiSelectDropdown from './MultiSelectDropdown.vue'
 
 export default {
   name: 'ReferralFilterDrawer',
   components: {
     FeatherIcon,
     Button,
+    MultiSelectDropdown,
   },
   props: {
     isOpen: Boolean,
@@ -297,7 +243,18 @@ export default {
       immediate: true,
       deep: true,
       handler(val) {
-        this.localFilters = { ...val }
+        // Deep copy array values to prevent reference mutations
+        const copy = {}
+        for (const [k, v] of Object.entries(val || {})) {
+          if (Array.isArray(v)) {
+            copy[k] = [...v]
+          } else if (typeof v === 'string' && ['status', 'gender', 'village', 'taluka', 'tribal_classification', 'phc', 'service_facility_type', 'opd_category', 'opd_department', 'facility_visited', 'referred_by_who', 'referrer_name', 'referrer_department', 'referring_doctor'].includes(k)) {
+            copy[k] = v ? v.split(',').map(s => s.trim()).filter(Boolean) : []
+          } else {
+            copy[k] = v
+          }
+        }
+        this.localFilters = copy
       },
     },
   },
@@ -309,22 +266,22 @@ export default {
     resetDrawer() {
       this.localFilters = {
         search: this.localFilters.search || '',
-        status: '',
-        gender: '',
+        status: [],
+        gender: [],
         min_age: '',
         max_age: '',
-        village: '',
-        taluka: '',
-        tribal_classification: '',
-        phc: '',
-        service_facility_type: '',
-        opd_category: '',
-        opd_department: '',
-        facility_visited: '',
-        referred_by_who: '',
-        referrer_name: '',
-        referrer_department: '',
-        referring_doctor: '',
+        village: [],
+        taluka: [],
+        tribal_classification: [],
+        phc: [],
+        service_facility_type: [],
+        opd_category: [],
+        opd_department: [],
+        facility_visited: [],
+        referred_by_who: [],
+        referrer_name: [],
+        referrer_department: [],
+        referring_doctor: [],
         start_date: '',
         end_date: '',
       }

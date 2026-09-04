@@ -18,7 +18,8 @@ VALID_DEPARTMENTS = [
 
 REGULAR_OPD_DEPTS = ["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Pain Management OPD", "Rheumatology OPD", "Physiotherapy", "Others", "Other"]
 SPECIALIST_OPD_DEPTS = ["Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Plastic Surgery", "Urology", "Pain Management OPD", "Rheumatology OPD", "Others", "Other"]
-SURGICAL_OPD_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"]
+CATARACT_SURGERY_DEPTS = ["Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD", "Others", "Other"]
+SURGICAL_OPD_DEPTS = CATARACT_SURGERY_DEPTS  # Backward compatibility alias
 
 # Hindi/Marathi keywords → English OPD department mapping
 DEPARTMENT_KEYWORDS = {
@@ -345,10 +346,11 @@ def translate_to_english(text: str) -> str:
         return text
 
 
-def resolve_village(village_raw: str) -> str | None:
+def resolve_village(village_raw: str, taluka: str = None) -> str | None:
     """
     Resolve village name to Village Profile record.
     Tries: original text, Marathi name, transliterated, case-insensitive, fuzzy.
+    If taluka is provided, prioritizes villages in that taluka.
     Returns None if no match found (never falls back to a random village).
     """
     if not village_raw:
@@ -356,9 +358,36 @@ def resolve_village(village_raw: str) -> str | None:
         return None
 
     village_raw = village_raw.strip()
-    frappe.logger().info(f"[resolve_village] Starting search for: '{village_raw}'")
+    frappe.logger().info(f"[resolve_village] Starting search for: '{village_raw}' (taluka: {taluka})")
 
-    # Try original text exact match (English or Marathi)
+    # 1. Try exact match in specified taluka first (if provided)
+    if taluka:
+        village = frappe.db.get_value(
+            "Village Profile", {"village_name": village_raw, "taluka": taluka}, "name"
+        )
+        if village:
+            frappe.logger().info(f"[resolve_village] Exact English match in taluka {taluka} found: {village}")
+            return village
+
+        if is_devanagari(village_raw):
+            village = frappe.db.get_value(
+                "Village Profile", {"village_name_marathi": village_raw, "taluka": taluka}, "name"
+            )
+            if village:
+                frappe.logger().info(f"[resolve_village] Exact Marathi match in taluka {taluka} found: {village}")
+                return village
+
+        # Case-insensitive in specified taluka
+        village = frappe.db.sql("""
+            SELECT name FROM `tabVillage Profile`
+            WHERE LOWER(village_name) = LOWER(%(name)s) AND taluka = %(taluka)s
+            LIMIT 1
+        """, {"name": village_raw, "taluka": taluka}, as_dict=True)
+        if village:
+            frappe.logger().info(f"[resolve_village] Case-insensitive match in taluka {taluka} found: {village[0].name}")
+            return village[0].name
+
+    # 2. Try original text exact match (English or Marathi) across all talukas
     village = frappe.db.get_value(
         "Village Profile", {"village_name": village_raw}, "name"
     )
@@ -390,6 +419,14 @@ def resolve_village(village_raw: str) -> str | None:
         transliterated = transliterate_to_roman(village_raw)
         frappe.logger().info(f"[resolve_village] Transliterated to: '{transliterated}'")
         if transliterated:
+            if taluka:
+                village = frappe.db.get_value(
+                    "Village Profile", {"village_name": transliterated, "taluka": taluka}, "name"
+                )
+                if village:
+                    frappe.logger().info(f"[resolve_village] Transliterated match in taluka {taluka} found: {village}")
+                    return village
+
             village = frappe.db.get_value(
                 "Village Profile", {"village_name": transliterated}, "name"
             )
@@ -596,8 +633,8 @@ def resolve_department(dept_raw: str, opd_category: str = None) -> str | None:
             valid_depts = REGULAR_OPD_DEPTS
         elif opd_category == "Specialist OPD":
             valid_depts = SPECIALIST_OPD_DEPTS
-        elif opd_category == "Surgical OPD":
-            valid_depts = SURGICAL_OPD_DEPTS
+        elif opd_category in ("Cataract Surgery", "Surgical OPD"):
+            valid_depts = CATARACT_SURGERY_DEPTS
         
         if resolved not in valid_depts:
             frappe.logger().warning(f"Resolved department '{resolved}' does not match category '{opd_category}'")
@@ -617,16 +654,18 @@ def resolve_opd_category(category_raw: str) -> str:
         return "Regular OPD"
     if "तज्ञ" in cleaned or "विशेषज्ञ" in cleaned or "specialist" in cleaned:
         return "Specialist OPD"
-    if "शस्त्रक्रिया" in cleaned or "surgical" in cleaned or "मोतीबिंदू" in cleaned or "मोतियाबिंद" in cleaned or "cataract" in cleaned:
-        return "Surgical OPD"
+    if "मोतीबिंदू" in cleaned or "मोतियाबिंद" in cleaned or "cataract" in cleaned or "शस्त्रक्रिया" in cleaned or "surgical" in cleaned:
+        return "Cataract Surgery"
 
     category_map = {
         "regular": "Regular OPD",
         "regular opd": "Regular OPD",
         "specialist": "Specialist OPD",
         "specialist opd": "Specialist OPD",
-        "surgical": "Surgical OPD",
-        "surgical opd": "Surgical OPD",
+        "cataract": "Cataract Surgery",
+        "cataract surgery": "Cataract Surgery",
+        "surgical": "Cataract Surgery",
+        "surgical opd": "Cataract Surgery",
     }
     return category_map.get(cleaned, category_raw.strip())
 
@@ -656,6 +695,69 @@ def resolve_referred_by_who(role_raw: str) -> str:
         return "MPU Physiotherapist"
         
     return role_raw.strip()
+
+
+VALID_DOCTORS = [
+    "Dr Kunal Vidhale",
+    "Dr Adhya Dubey",
+    "Dr Sanjeev Kumar",
+    "Dr Ashwini Shinde",
+    "Dr Mrunali Chaudhari",
+    "Dr Shrirang Pathak",
+    "Dr Pritam Dorlikar",
+    "Dr Rohini Wankhede",
+    "Dr Aditya Agrawal",
+    "Dr Ganesh Kudmethe",
+    "Other"
+]
+
+
+def resolve_referred_doctor(doctor_raw: str) -> str:
+    if not doctor_raw:
+        return ""
+    
+    cleaned = doctor_raw.strip()
+    if is_devanagari(cleaned):
+        cleaned = transliterate_to_roman(cleaned)
+
+    cleaned_lower = cleaned.lower()
+    import re
+    dr_stripped = re.sub(r'^(dr\.|dr|da[ăāॅॉ\u0945\u0949\u0306\u0902]?\.|da[ăāॅॉ\u0945\u0949\u0306\u0902]?|डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|डा|डाॉ\.|डाॉ)\s*', '', cleaned_lower, flags=re.IGNORECASE).strip()
+
+    doctor_keywords = {
+        "kunal": "Dr Kunal Vidhale",
+        "vidhale": "Dr Kunal Vidhale",
+        "adhya": "Dr Adhya Dubey",
+        "dubey": "Dr Adhya Dubey",
+        "sanjeev": "Dr Sanjeev Kumar",
+        "kumar": "Dr Sanjeev Kumar",
+        "ashwini": "Dr Ashwini Shinde",
+        "shinde": "Dr Ashwini Shinde",
+        "mrunali": "Dr Mrunali Chaudhari",
+        "chaudhari": "Dr Mrunali Chaudhari",
+        "shrirang": "Dr Shrirang Pathak",
+        "pathak": "Dr Shrirang Pathak",
+        "pritam": "Dr Pritam Dorlikar",
+        "dorlikar": "Dr Pritam Dorlikar",
+        "rohini": "Dr Rohini Wankhede",
+        "wankhede": "Dr Rohini Wankhede",
+        "aditya": "Dr Aditya Agrawal",
+        "agrawal": "Dr Aditya Agrawal",
+        "ganesh": "Dr Ganesh Kudmethe",
+        "kudmethe": "Dr Ganesh Kudmethe",
+        "other": "Other",
+        "इतर": "Other"
+    }
+
+    for doc in VALID_DOCTORS:
+        if cleaned_lower == doc.lower() or cleaned_lower == doc.lower().replace("dr ", "dr. "):
+            return doc
+
+    for kw, doc in doctor_keywords.items():
+        if kw in dr_stripped or kw in cleaned_lower:
+            return doc
+
+    return "Other" if cleaned_lower in ("other", "इतर") else (f"Dr. {dr_stripped.title()}" if dr_stripped else doctor_raw.strip())
 
 
 def resolve_taluka(taluka_raw: str) -> str | None:
@@ -1370,7 +1472,7 @@ def create_referral(
         additional_notes = translate_to_english(additional_notes_raw)
         
         # Referring Doctor resolution
-        referring_doctor = transliterate_to_roman(doctor_input)
+        referring_doctor = resolve_referred_doctor(doctor_input)
         
         # Resolve Referred By Who role (e.g. MMU Doctor, ASHA, etc.)
         referred_by_resolved = resolve_referred_by_who(referred_by_who)
@@ -2292,14 +2394,25 @@ def get_pending_followups(
     resolved_village_name_mr = None
     village_id = None
     if village_name:
-        village_id = resolve_village(village_name)
+        village_id = resolve_village(village_name, taluka=resolved_taluka)
         if not village_id:
             return {
                 "formatted_text": f"❌ गाव '{village_name}' आढळले नाही. कृपया गावाचे नाव तपासा आणि पुन्हा प्रयत्न करा.",
                 "count": 0,
             }
-        filters["patient_village"] = village_id
-        resolved_village_name_mr = frappe.db.get_value("Village Profile", village_id, "village_name_marathi") or village_name
+        
+        # Get village profile info
+        v_profile = frappe.db.get_value("Village Profile", village_id, ["village_name", "village_name_marathi"], as_dict=True) or {}
+        v_name_eng = v_profile.get("village_name") or village_name
+        v_name_mr = v_profile.get("village_name_marathi") or village_name
+        resolved_village_name_mr = v_name_mr
+
+        # Support querying by Village Profile document ID, English name, Marathi name, or raw input
+        possible_village_keys = list({k for k in [village_id, v_name_eng, v_name_mr, village_name] if k})
+        if len(possible_village_keys) == 1:
+            filters["patient_village"] = possible_village_keys[0]
+        else:
+            filters["patient_village"] = ["in", possible_village_keys]
 
     # 1. Fetch pending referrals
     referrals = frappe.get_all(
@@ -2339,8 +2452,12 @@ def get_pending_followups(
         query_args.append(end_date)
 
     if village_id:
-        query_conditions.append("pr.patient_village = %s")
-        query_args.append(village_id)
+        if len(possible_village_keys) == 1:
+            query_conditions.append("pr.patient_village = %s")
+            query_args.append(possible_village_keys[0])
+        else:
+            query_conditions.append("pr.patient_village IN %s")
+            query_args.append(tuple(possible_village_keys))
     elif resolved_taluka:
         query_conditions.append("pr.patient_taluka = %s")
         query_args.append(resolved_taluka)
@@ -2787,7 +2904,7 @@ def insert_samples():
             "village_raw": "Arjuni",
             "patient_taluka_raw": "Dhanora",
             "service_facility_type": "SEARCH",
-            "opd_category_raw": "Surgical OPD",
+            "opd_category_raw": "Cataract Surgery",
             "departments_raw": "Ophthalmology",
             "referral_date_raw": "05/07/2026",
             "patient_phone_raw": "9100000004",
@@ -3215,26 +3332,68 @@ def import_translated_villages():
     return {"success": True, "imported": count, "skipped": skipped}
 
 
+def _parse_multi_filter_values(val):
+	"""
+	Parse filter values that may be passed as:
+	- a list or tuple
+	- a JSON array string e.g. '["Pending", "Visited"]'
+	- a comma-separated string e.g. 'Pending, Visited'
+	- a single string e.g. 'Pending'
+	Returns a list of cleaned, non-empty strings.
+	"""
+	if not val:
+		return []
+	if isinstance(val, (list, tuple, set)):
+		return [str(v).strip() for v in val if str(v).strip()]
+	
+	val_str = str(val).strip()
+	if not val_str:
+		return []
+	
+	if val_str.startswith("[") and val_str.endswith("]"):
+		try:
+			import json
+			parsed = json.loads(val_str)
+			if isinstance(parsed, list):
+				return [str(v).strip() for v in parsed if str(v).strip()]
+		except Exception:
+			pass
+			
+	return [p.strip() for p in val_str.split(",") if p.strip()]
+
+
+def _apply_multi_filter(conditions, values, field_sql, param_name, raw_val):
+	items = _parse_multi_filter_values(raw_val)
+	if not items:
+		return
+	if len(items) == 1:
+		conditions.append(f"{field_sql} = %({param_name})s")
+		values[param_name] = items[0]
+	else:
+		conditions.append(f"{field_sql} IN %({param_name})s")
+		values[param_name] = tuple(items)
+
+
 def _get_filtered_referrals(form_dict):
 	search = form_dict.get("search", "").strip()
-	status = form_dict.get("status", "").strip()
-	village = form_dict.get("village", "").strip()
-	phc = form_dict.get("phc", "").strip()
-	opd_department = form_dict.get("opd_department", "").strip()
+	status = form_dict.get("status")
+	village = form_dict.get("village")
+	phc = form_dict.get("phc")
+	opd_department = form_dict.get("opd_department")
 	start_date = form_dict.get("start_date", "").strip()
 	end_date = form_dict.get("end_date", "").strip()
-	referred_by_who = form_dict.get("referred_by_who", "").strip()
-	taluka = form_dict.get("taluka", "").strip()
-	referring_doctor = form_dict.get("referring_doctor", "").strip()
-	referrer_name = form_dict.get("referrer_name", "").strip()
-	gender = form_dict.get("gender", "").strip()
+	referred_by_who = form_dict.get("referred_by_who")
+	taluka = form_dict.get("taluka")
+	referring_doctor = form_dict.get("referring_doctor")
+	referrer_name = form_dict.get("referrer_name")
+	gender = form_dict.get("gender")
 	min_age = form_dict.get("min_age", "").strip()
 	max_age = form_dict.get("max_age", "").strip()
-	opd_category = form_dict.get("opd_category", "").strip()
-	service_facility_type = form_dict.get("service_facility_type", "").strip()
-	facility_visited = form_dict.get("facility_visited", "").strip()
-	referrer_department = form_dict.get("referrer_department", "").strip()
-	tribal_classification = form_dict.get("tribal_classification", "").strip()
+	opd_category = form_dict.get("opd_category")
+	service_facility_type = form_dict.get("service_facility_type")
+	facility_visited = form_dict.get("facility_visited")
+	referrer_department = form_dict.get("referrer_department")
+	tribal_classification = form_dict.get("tribal_classification")
 
 	conditions = []
 	values = {}
@@ -3242,60 +3401,49 @@ def _get_filtered_referrals(form_dict):
 	if search:
 		conditions.append("(reference_number LIKE %(search)s OR patient_name LIKE %(search)s OR patient_phone LIKE %(search)s OR referrer_name LIKE %(search)s)")
 		values["search"] = f"%{search}%"
-	if status:
-		conditions.append("status = %(status)s")
-		values["status"] = status
-	if village:
-		conditions.append("patient_village = %(village)s")
-		values["village"] = village
-	if phc:
-		conditions.append("phc = %(phc)s")
-		values["phc"] = phc
-	if opd_department:
-		conditions.append("opd_departments = %(opd_department)s")
-		values["opd_department"] = opd_department
+
+	_apply_multi_filter(conditions, values, "status", "status", status)
+	_apply_multi_filter(conditions, values, "patient_village", "village", village)
+	_apply_multi_filter(conditions, values, "patient_taluka", "taluka", taluka)
+	_apply_multi_filter(conditions, values, "tribal_classification", "tribal_classification", tribal_classification)
+	_apply_multi_filter(conditions, values, "phc", "phc", phc)
+	_apply_multi_filter(conditions, values, "service_facility_type", "service_facility_type", service_facility_type)
+	_apply_multi_filter(conditions, values, "opd_category", "opd_category", opd_category)
+	_apply_multi_filter(conditions, values, "opd_departments", "opd_department", opd_department)
+	_apply_multi_filter(conditions, values, "facility_visited", "facility_visited", facility_visited)
+	_apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
+	_apply_multi_filter(conditions, values, "referrer_name", "referrer_name", referrer_name)
+	_apply_multi_filter(conditions, values, "referrer_department", "referrer_department", referrer_department)
+	_apply_multi_filter(conditions, values, "patient_gender", "gender", gender)
+
+	doc_items = _parse_multi_filter_values(referring_doctor)
+	if doc_items:
+		if len(doc_items) == 1:
+			conditions.append("(referred_doctor = %(referring_doctor)s OR referred_doctor LIKE %(referring_doctor_like)s)")
+			values["referring_doctor"] = doc_items[0]
+			values["referring_doctor_like"] = f"%{doc_items[0]}%"
+		else:
+			doc_conds = []
+			for idx, d_item in enumerate(doc_items):
+				d_key = f"referring_doctor_{idx}"
+				d_like_key = f"referring_doctor_like_{idx}"
+				doc_conds.append(f"(referred_doctor = %({d_key})s OR referred_doctor LIKE %({d_like_key})s)")
+				values[d_key] = d_item
+				values[d_like_key] = f"%{d_item}%"
+			conditions.append(f"({' OR '.join(doc_conds)})")
+
 	if start_date:
 		conditions.append("referral_date >= %(start_date)s")
 		values["start_date"] = start_date
 	if end_date:
 		conditions.append("referral_date <= %(end_date)s")
 		values["end_date"] = end_date
-	if referred_by_who:
-		conditions.append("referred_by_who = %(referred_by_who)s")
-		values["referred_by_who"] = referred_by_who
-	if taluka:
-		conditions.append("patient_taluka = %(taluka)s")
-		values["taluka"] = taluka
-	if referring_doctor:
-		conditions.append("referred_doctor = %(referring_doctor)s")
-		values["referring_doctor"] = referring_doctor
-	if referrer_name:
-		conditions.append("referrer_name = %(referrer_name)s")
-		values["referrer_name"] = referrer_name
-	if gender:
-		conditions.append("patient_gender = %(gender)s")
-		values["gender"] = gender
 	if min_age:
 		conditions.append("patient_age >= %(min_age)s")
 		values["min_age"] = frappe.utils.cint(min_age)
 	if max_age:
 		conditions.append("patient_age <= %(max_age)s")
 		values["max_age"] = frappe.utils.cint(max_age)
-	if opd_category:
-		conditions.append("opd_category = %(opd_category)s")
-		values["opd_category"] = opd_category
-	if service_facility_type:
-		conditions.append("service_facility_type = %(service_facility_type)s")
-		values["service_facility_type"] = service_facility_type
-	if facility_visited:
-		conditions.append("facility_visited = %(facility_visited)s")
-		values["facility_visited"] = facility_visited
-	if referrer_department:
-		conditions.append("referrer_department = %(referrer_department)s")
-		values["referrer_department"] = referrer_department
-	if tribal_classification:
-		conditions.append("tribal_classification = %(tribal_classification)s")
-		values["tribal_classification"] = tribal_classification
 
 	where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -3566,64 +3714,52 @@ def get_portal_referrals(
     conditions = []
     values = {}
 
-    if search and search.strip():
+    if search and str(search).strip():
         conditions.append("(reference_number LIKE %(search)s OR patient_name LIKE %(search)s OR patient_phone LIKE %(search)s OR referrer_name LIKE %(search)s OR referred_doctor LIKE %(search)s)")
-        values["search"] = f"%{search.strip()}%"
-    if status and status.strip():
-        conditions.append("status = %(status)s")
-        values["status"] = status.strip()
-    if village and village.strip():
-        conditions.append("patient_village = %(village)s")
-        values["village"] = village.strip()
-    if taluka and taluka.strip():
-        conditions.append("patient_taluka = %(taluka)s")
-        values["taluka"] = taluka.strip()
-    if tribal_classification and tribal_classification.strip():
-        conditions.append("tribal_classification = %(tribal_classification)s")
-        values["tribal_classification"] = tribal_classification.strip()
-    if phc and phc.strip():
-        conditions.append("phc = %(phc)s")
-        values["phc"] = phc.strip()
-    if service_facility_type and service_facility_type.strip():
-        conditions.append("service_facility_type = %(service_facility_type)s")
-        values["service_facility_type"] = service_facility_type.strip()
-    if opd_category and opd_category.strip():
-        conditions.append("opd_category = %(opd_category)s")
-        values["opd_category"] = opd_category.strip()
-    if opd_department and opd_department.strip():
-        conditions.append("opd_departments = %(opd_department)s")
-        values["opd_department"] = opd_department.strip()
-    if facility_visited and facility_visited.strip():
-        conditions.append("facility_visited = %(facility_visited)s")
-        values["facility_visited"] = facility_visited.strip()
-    if referred_by_who and referred_by_who.strip():
-        conditions.append("referred_by_who = %(referred_by_who)s")
-        values["referred_by_who"] = referred_by_who.strip()
-    if referrer_name and referrer_name.strip():
-        conditions.append("referrer_name = %(referrer_name)s")
-        values["referrer_name"] = referrer_name.strip()
-    if referrer_department and referrer_department.strip():
-        conditions.append("referrer_department = %(referrer_department)s")
-        values["referrer_department"] = referrer_department.strip()
-    if referring_doctor and referring_doctor.strip():
-        conditions.append("(referred_doctor = %(referring_doctor)s OR referred_doctor LIKE %(referring_doctor_like)s)")
-        values["referring_doctor"] = referring_doctor.strip()
-        values["referring_doctor_like"] = f"%{referring_doctor.strip()}%"
-    if gender and gender.strip():
-        conditions.append("patient_gender = %(gender)s")
-        values["gender"] = gender.strip()
+        values["search"] = f"%{str(search).strip()}%"
+
+    _apply_multi_filter(conditions, values, "status", "status", status)
+    _apply_multi_filter(conditions, values, "patient_village", "village", village)
+    _apply_multi_filter(conditions, values, "patient_taluka", "taluka", taluka)
+    _apply_multi_filter(conditions, values, "tribal_classification", "tribal_classification", tribal_classification)
+    _apply_multi_filter(conditions, values, "phc", "phc", phc)
+    _apply_multi_filter(conditions, values, "service_facility_type", "service_facility_type", service_facility_type)
+    _apply_multi_filter(conditions, values, "opd_category", "opd_category", opd_category)
+    _apply_multi_filter(conditions, values, "opd_departments", "opd_department", opd_department)
+    _apply_multi_filter(conditions, values, "facility_visited", "facility_visited", facility_visited)
+    _apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
+    _apply_multi_filter(conditions, values, "referrer_name", "referrer_name", referrer_name)
+    _apply_multi_filter(conditions, values, "referrer_department", "referrer_department", referrer_department)
+    _apply_multi_filter(conditions, values, "patient_gender", "gender", gender)
+
+    doc_items = _parse_multi_filter_values(referring_doctor)
+    if doc_items:
+        if len(doc_items) == 1:
+            conditions.append("(referred_doctor = %(referring_doctor)s OR referred_doctor LIKE %(referring_doctor_like)s)")
+            values["referring_doctor"] = doc_items[0]
+            values["referring_doctor_like"] = f"%{doc_items[0]}%"
+        else:
+            doc_conds = []
+            for idx, d_item in enumerate(doc_items):
+                d_key = f"referring_doctor_{idx}"
+                d_like_key = f"referring_doctor_like_{idx}"
+                doc_conds.append(f"(referred_doctor = %({d_key})s OR referred_doctor LIKE %({d_like_key})s)")
+                values[d_key] = d_item
+                values[d_like_key] = f"%{d_item}%"
+            conditions.append(f"({' OR '.join(doc_conds)})")
+
     if min_age and str(min_age).strip():
         conditions.append("patient_age >= %(min_age)s")
         values["min_age"] = cint(min_age)
     if max_age and str(max_age).strip():
         conditions.append("patient_age <= %(max_age)s")
         values["max_age"] = cint(max_age)
-    if start_date and start_date.strip():
+    if start_date and str(start_date).strip():
         conditions.append("referral_date >= %(start_date)s")
-        values["start_date"] = start_date.strip()
-    if end_date and end_date.strip():
+        values["start_date"] = str(start_date).strip()
+    if end_date and str(end_date).strip():
         conditions.append("referral_date <= %(end_date)s")
-        values["end_date"] = end_date.strip()
+        values["end_date"] = str(end_date).strip()
 
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
@@ -3639,7 +3775,9 @@ def get_portal_referrals(
             patient_village, patient_taluka, service_facility_type, opd_category,
             other_facility_name, patient_phone, phc, opd_departments, referred_doctor,
             referred_by_who, additional_notes, hospital_registration_number, visit_date, 
-            facility_visited, tribal_classification, creation
+            facility_visited, tribal_classification, census_match, census_member_id,
+            matched_member_name, matched_member_age, match_confidence, match_status,
+            mmu_patient_record, creation
         FROM `tabPatient Referral`
         WHERE {where_clause}
         ORDER BY referral_date DESC, creation DESC
@@ -3663,6 +3801,20 @@ def get_portal_referrals(
                 ref["visit_date"] = getdate(ref["visit_date"]).strftime("%d-%m-%Y")
             except Exception:
                 pass
+
+        if ref.get("mmu_patient_record") and frappe.db.exists("DocType", "MMU Patient Record"):
+            try:
+                mmu_data = frappe.db.get_value(
+                    "MMU Patient Record",
+                    ref["mmu_patient_record"],
+                    ["name", "date_of_visit", "diagnosis_1", "diagnosis_2", "dental_diagnosis", "physiotherapy_diag", "patient_referred"],
+                    as_dict=True
+                )
+                if mmu_data and mmu_data.get("date_of_visit"):
+                    mmu_data["date_of_visit"] = str(mmu_data["date_of_visit"])
+                ref["mmu_details"] = mmu_data
+            except Exception:
+                ref["mmu_details"] = None
 
         ref["supervisor_visits"] = frappe.db.get_values(
             "Supervisor Visit",
