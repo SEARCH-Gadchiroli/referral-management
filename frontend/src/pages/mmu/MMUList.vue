@@ -183,7 +183,7 @@
 
               <td class="px-4 py-3.5 max-w-xs">
                 <div class="truncate text-slate-800 dark:text-slate-200 font-medium">
-                  {{ [rec.diagnosis_1, rec.diagnosis_2, rec.diagnosis_3, rec.dental_diagnosis].filter(Boolean).join(', ') || '-' }}
+                  {{ [rec.diagnosis_1, rec.diagnosis_2, rec.diagnosis_3, rec.diagnosis_4, rec.diagnosis_5, rec.diagnosis_6, rec.dental_diagnosis, rec.dental_diagnosis_2].filter(Boolean).join(', ') || '-' }}
                 </div>
               </td>
 

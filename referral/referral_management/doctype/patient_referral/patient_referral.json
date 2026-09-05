@@ -136,7 +136,7 @@
    "fieldname": "referred_by_who",
    "fieldtype": "Select",
    "label": "Referred By Who",
-   "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist"
+   "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nArogyadoot\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist"
   },
   {
    "fieldname": "mmu_patient_record",

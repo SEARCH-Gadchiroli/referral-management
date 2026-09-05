@@ -218,6 +218,175 @@ VILLAGE_MESSAGES = {
 }
 
 
+GENDER_TRANSLATIONS = {
+    "mr": {
+        "Female": "स्त्री",
+        "Male": "पुरुष",
+        "Other": "इतर",
+        "स्त्री": "स्त्री",
+        "महिला": "स्त्री",
+        "पुरुष": "पुरुष",
+        "इतर": "इतर",
+    },
+    "hi": {
+        "Female": "महिला",
+        "Male": "पुरुष",
+        "Other": "अन्य",
+        "स्त्री": "महिला",
+        "महिला": "महिला",
+        "पुरुष": "पुरुष",
+        "इतर": "अन्य",
+    },
+    "en": {
+        "Female": "Female",
+        "Male": "Male",
+        "Other": "Other",
+        "स्त्री": "Female",
+        "महिला": "Female",
+        "पुरुष": "Male",
+        "इतर": "Other",
+    }
+}
+
+OPD_TRANSLATIONS = {
+    "mr": {
+        "Medicine": "औषधशास्त्र",
+        "Gynaecology": "स्त्रीरोग व प्रसूती",
+        "Orthopedics": "अस्थिरोग",
+        "Spine": "मणकारोग",
+        "Surgery": "शस्त्रक्रिया",
+        "Dental": "दंतचिकित्सा",
+        "Mental Health Clinic": "मानसिक आरोग्य क्लिनिक",
+        "Psychiatry": "मानसोपचार",
+        "Rheumatology OPD": "संधिवात",
+        "Rheumatology": "संधिवात",
+        "Cardiology": "हृदयरोग",
+        "Dermatology": "त्वचारोग",
+        "Diabetology": "मधुमेह",
+        "ENT": "कान, नाक, घसा",
+        "Gastrology": "पोट व जठररोग",
+        "Head & Neck": "डोके आणि मान",
+        "Neurology + Epilepsy": "मेंदू व मज्जातंतू / अपस्मार",
+        "Neurology": "मेंदू व मज्जातंतू",
+        "Epilepsy": "अपस्मार",
+        "Oncology": "कर्करोग",
+        "Pulmonology": "फुफ्फुस व श्वसनरोग",
+        "Sickle Cell": "सिकलसेल",
+        "Cataract Surgery": "मोतीबिंदू शस्त्रक्रिया",
+        "Ophthalmology": "नेत्ररोग",
+        "Plastic Surgery": "प्लास्टिक सर्जरी",
+        "Urology": "मूत्ररोग",
+        "Pain Management OPD": "वेदना व्यवस्थापन",
+        "Pain Management": "वेदना व्यवस्थापन",
+        "Physiotherapy": "फिजिओथेरपी",
+        "Regular OPD": "नियमित ओपीडी",
+        "Specialist OPD": "तज्ञ ओपीडी",
+        "Surgical OPD": "शस्त्रक्रिया ओपीडी",
+        "Others": "इतर",
+        "Other": "इतर"
+    },
+    "hi": {
+        "Medicine": "औषधशास्त्र",
+        "Gynaecology": "स्त्री रोग व प्रसूति",
+        "Orthopedics": "हड्डी रोग",
+        "Spine": "रीढ़ की हड्डी",
+        "Surgery": "शल्य चिकित्सा",
+        "Dental": "दंत चिकित्सा",
+        "Mental Health Clinic": "मानसिक स्वास्थ्य क्लिनिक",
+        "Psychiatry": "मानसिक स्वास्थ्य",
+        "Rheumatology OPD": "संधिवात",
+        "Rheumatology": "संधिवात",
+        "Cardiology": "हृदय रोग",
+        "Dermatology": "त्वचा रोग",
+        "Diabetology": "मधुमेह",
+        "ENT": "कान, नाक, गला",
+        "Gastrology": "पेट व जठर रोग",
+        "Head & Neck": "सिर और गर्दन",
+        "Neurology + Epilepsy": "तंत्रिका विज्ञान / मिर्गी",
+        "Neurology": "तंत्रिका विज्ञान",
+        "Epilepsy": "मिर्गी",
+        "Oncology": "कैंसर",
+        "Pulmonology": "फेफड़े व श्वसन रोग",
+        "Sickle Cell": "सिकल सेल",
+        "Cataract Surgery": "मोतियाबिंद सर्जरी",
+        "Ophthalmology": "नेत्र रोग",
+        "Plastic Surgery": "प्लास्टिक सर्जरी",
+        "Urology": "मूत्र रोग",
+        "Pain Management OPD": "दर्द प्रबंधन",
+        "Pain Management": "दर्द प्रबंधन",
+        "Physiotherapy": "फिजियोथेरेपी",
+        "Regular OPD": "नियमित ओपीडी",
+        "Specialist OPD": "विशेषज्ञ ओपीडी",
+        "Surgical OPD": "सर्जिकल ओपीडी",
+        "Others": "अन्य",
+        "Other": "अन्य"
+    }
+}
+
+FACILITY_TRANSLATIONS = {
+    "mr": {
+        "SEARCH": "सर्च रुग्णालय",
+        "SEARCH Hospital": "सर्च रुग्णालय",
+        "Government Hospital": "शासकीय रुग्णालय",
+        "Taluka MH Clinic": "तालुका मानसिक आरोग्य क्लिनिक",
+        "Village MH Clinic": "गाव मानसिक आरोग्य क्लिनिक",
+        "Other": "इतर रुग्णालय",
+    },
+    "hi": {
+        "SEARCH": "सर्च अस्पताल",
+        "SEARCH Hospital": "सर्च अस्पताल",
+        "Government Hospital": "सरकारी अस्पताल",
+        "Taluka MH Clinic": "तालुका मानसिक स्वास्थ्य क्लिनिक",
+        "Village MH Clinic": "गाँव मानसिक स्वास्थ्य क्लिनिक",
+        "Other": "अन्य अस्पताल",
+    },
+    "en": {
+        "SEARCH": "SEARCH Hospital",
+        "SEARCH Hospital": "SEARCH Hospital",
+        "Government Hospital": "Government Hospital",
+        "Taluka MH Clinic": "Taluka MH Clinic",
+        "Village MH Clinic": "Village MH Clinic",
+        "Other": "Other Hospital",
+    }
+}
+
+REFERRED_BY_WHO_TRANSLATIONS = {
+    "mr": {
+        "MMU Doctor": "एमएमयू डॉक्टर",
+        "Arogyadoot": "आरोग्यदूत",
+        "ASHA": "आशा",
+        "Muktipath Karyakarta": "मुक्तिपथ कार्यकर्ता",
+        "MHD counsellor": "एमएचडी समुपदेशक",
+        "Supervisor": "सुपरवायझर",
+        "Optometrist": "नेत्र तपासणी अधिकारी",
+        "MPU Physiotherapist": "फिजिओथेरपिस्ट",
+        "CHW": "आरोग्यदूत",
+    },
+    "hi": {
+        "MMU Doctor": "एमएमयू डॉक्टर",
+        "Arogyadoot": "आरोग्यदूत",
+        "ASHA": "आशा",
+        "Muktipath Karyakarta": "मुक्तिपथ कार्यकर्ता",
+        "MHD counsellor": "एमएचडी परामर्शदाता",
+        "Supervisor": "सुपरवाइजर",
+        "Optometrist": "नेत्र जांच अधिकारी",
+        "MPU Physiotherapist": "फिजियोथेरेपिस्ट",
+        "CHW": "आरोग्यदूत",
+    },
+    "en": {
+        "MMU Doctor": "MMU Doctor",
+        "Arogyadoot": "Arogyadoot",
+        "ASHA": "ASHA",
+        "Muktipath Karyakarta": "Muktipath Karyakarta",
+        "MHD counsellor": "MHD counsellor",
+        "Supervisor": "Supervisor",
+        "Optometrist": "Optometrist",
+        "MPU Physiotherapist": "MPU Physiotherapist",
+        "CHW": "CHW",
+    }
+}
+
+
 def village_msg(key: str, lang: str, **kwargs) -> str:
     lang = lang if lang in ("en", "hi", "mr") else "en"
     template = VILLAGE_MESSAGES[key][lang]
@@ -230,6 +399,87 @@ def village_display_name(village_name: str, lang: str) -> str:
         v_mr = frappe.db.get_value("Village Profile", village_name, "village_name_marathi")
         return v_mr or village_name
     return village_name
+
+
+def format_patient_name(name: str, raw_name: str = None, lang: str = "mr") -> str:
+    """Returns patient name formatted for target language (Devanagari if mr/hi, English if en)."""
+    if not name and not raw_name:
+        return ""
+    
+    val = name or raw_name
+    if lang == "en":
+        if is_devanagari(val):
+            return transliterate_to_roman(val)
+        return val
+
+    # Target is Devanagari (mr or hi)
+    if raw_name and is_devanagari(raw_name):
+        return raw_name.strip()
+    if is_devanagari(val):
+        return val.strip()
+
+    # If name is in Roman script, translate/transliterate to Devanagari
+    try:
+        translated = GoogleTranslator(source="en", target=lang).translate(val)
+        return translated.strip() if translated else val
+    except Exception:
+        try:
+            return transliterate(val, sanscript.ITRANS, sanscript.DEVANAGARI)
+        except Exception:
+            return val
+
+
+def format_gender(gender: str, lang: str = "mr") -> str:
+    """Returns localized gender string."""
+    if not gender:
+        return ""
+    g_map = GENDER_TRANSLATIONS.get(lang, {})
+    return g_map.get(str(gender).strip(), str(gender).strip())
+
+
+def format_opd(opd: str, lang: str = "mr") -> str:
+    """Returns localized OPD department / category name."""
+    if not opd:
+        return ""
+    if lang == "en":
+        return opd
+    opd_map = OPD_TRANSLATIONS.get(lang, {})
+    return opd_map.get(str(opd).strip(), str(opd).strip())
+
+
+def format_facility(facility: str, other_name: str = None, lang: str = "mr") -> str:
+    """Returns localized hospital / facility name."""
+    if not facility:
+        return other_name or ""
+    if facility == "Other" and other_name:
+        return other_name
+    if lang == "en":
+        return "SEARCH Hospital" if facility == "SEARCH" else (other_name or facility)
+    fac_map = FACILITY_TRANSLATIONS.get(lang, {})
+    return fac_map.get(str(facility).strip(), other_name or facility)
+
+
+def format_referred_by_who(role: str, lang: str = "mr") -> str:
+    """Returns localized referred_by_who role string."""
+    if not role:
+        return ""
+    if lang == "en":
+        return role
+    role_map = REFERRED_BY_WHO_TRANSLATIONS.get(lang, {})
+    return role_map.get(str(role).strip(), str(role).strip())
+
+
+def format_age_display(age) -> str:
+    """Formats age without trailing decimals (e.g. 40.0 -> '40')."""
+    if age is None or age == "":
+        return ""
+    try:
+        val = float(age)
+        if val.is_integer():
+            return str(int(val))
+        return str(val)
+    except Exception:
+        return str(age)
 
 
 def is_devanagari(text: str) -> bool:
@@ -677,7 +927,7 @@ def resolve_referred_by_who(role_raw: str) -> str:
     cleaned = role_raw.strip().lower()
     
     # Check for keywords in Marathi/Hindi/English
-    if "mmu" in cleaned:
+    if "mmu" in cleaned or "doctor" in cleaned or "docter" in cleaned or "डॉक्टर" in cleaned:
         return "MMU Doctor"
     if "counsellor" in cleaned or "समुपदेशक" in cleaned or "परामर्शदाता" in cleaned or "mhd" in cleaned:
         return "MHD counsellor"
@@ -685,13 +935,15 @@ def resolve_referred_by_who(role_raw: str) -> str:
         return "Muktipath Karyakarta"
     if "asha" in cleaned or "आशा" in cleaned:
         return "ASHA"
+    if "arogyadoot" in cleaned or "आरोग्यदूत" in cleaned:
+        return "Arogyadoot"
     if "chw" in cleaned:
         return "CHW"
-    if "supervisor" in cleaned or "सुपरवायझर" in cleaned:
+    if "supervisor" in cleaned or "सुपरवायझर" in cleaned or "सुपरवाइजर" in cleaned:
         return "Supervisor"
-    if "optometrist" in cleaned or "ऑप्टोमेट्रिस्ट" in cleaned:
+    if "optometrist" in cleaned or "ऑप्टोमेट्रिस्ट" in cleaned or "नेत्र" in cleaned:
         return "Optometrist"
-    if "mpu" in cleaned or "physiotherap" in cleaned or "फिजिओथेरपिस्ट" in cleaned:
+    if "mpu" in cleaned or "physiotherap" in cleaned or "फिजिओथेरपिस्ट" in cleaned or "फिजियो" in cleaned:
         return "MPU Physiotherapist"
         
     return role_raw.strip()
@@ -1017,13 +1269,30 @@ def resolve_non_visit_reason(reason_input: str) -> str | None:
         "अंतर खूप जास्त आहे": "Distance Too Far",
         "दूरी बहुत अधिक है": "Distance Too Far",
         
+        "NV-09": "No Time",
+        "No Time": "No Time",
+        "Lack of Time": "No Time",
+        "No time": "No Time",
+        "वेळ नाही": "No Time",
+        "वेळ मिळाला नाही": "No Time",
+        "वेळेचा अभाव": "No Time",
+        "कामामुळे वेळ नाही": "No Time",
+        "वेळ": "No Time",
+        "समय नहीं": "No Time",
+        "समय का अभाव": "No Time",
+        "समय नहीं मिला": "No Time",
+        "समय": "No Time",
+
         "NV-08": "Other",
         "Other": "Other",
         "Other (Specify)": "Other",
+        "Other Reason": "Other",
         "इतर": "Other",
         "अन्य": "Other",
         "इतर (नमूद करा)": "Other",
-        "अन्य (निर्दिष्ट करें)": "Other"
+        "अन्य (निर्दिष्ट करें)": "Other",
+        "इतर कारण": "Other",
+        "अन्य कारण": "Other"
     }
     
     # Try direct mapping
@@ -1042,7 +1311,8 @@ def resolve_non_visit_reason(reason_input: str) -> str | None:
         if key.lower() in reason_clean.lower():
             return val
             
-    return None
+    # Default non-empty input to Other
+    return "Other"
 
 
 def resolve_patient_health_status(status_input: str) -> str | None:
@@ -1564,75 +1834,112 @@ def create_referral(
         if lang not in ("en", "hi", "mr"):
             lang = "mr"
 
-        # Get hospital / facility display name
-        facility_display = referral_doc.service_facility_type
+        # Localized patient, facility, and OPD values
+        patient_name_display = format_patient_name(referral_doc.patient_name, patient_name_raw, lang)
+        patient_father_name_display = format_patient_name(referral_doc.patient_father_name, father_name_raw, lang)
+        gender_display_val = format_gender(referral_doc.patient_gender, lang)
+        facility_display = format_facility(referral_doc.service_facility_type, referral_doc.other_facility_name, lang)
+        opd_raw_val = referral_doc.opd_departments or referral_doc.opd_category or "-"
+        opd_display = format_opd(opd_raw_val, lang)
+        village_display = village_display_name(referral_doc.patient_village, lang) if referral_doc.patient_village else (village_raw or "-")
+        age_display = format_age_display(referral_doc.patient_age)
+        referred_by_who_display = format_referred_by_who(referral_doc.referred_by_who, lang) or referral_doc.referred_by_who or ""
+
         patient_instruction = ""
-        if referral_doc.service_facility_type == "Other" and referral_doc.other_facility_name:
-            facility_display = referral_doc.other_facility_name
-        elif referral_doc.service_facility_type == "SEARCH":
-            facility_display = "SEARCH Hospital"
+        if referral_doc.service_facility_type == "SEARCH":
             if lang == "mr":
-                patient_instruction = "कृपया SEARCH रुग्णालयातील नोंदणी खिडकीवर (Registration Desk) आपली रेफरल स्लिप दाखवा."
+                patient_instruction = "कृपया SEARCH हॉस्पिटलमधील नोंदणी कक्षात रेफरल स्लिप दाखवा."
             elif lang == "hi":
                 patient_instruction = "कृपया SEARCH अस्पताल के पंजीकरण काउंटर (Registration Desk) पर अपनी रेफरल पर्ची दिखाएं।"
             else:
                 patient_instruction = "Please show your referral slip at the registration desk in SEARCH Hospital."
 
-        # Get OPD
-        opd_display = referral_doc.opd_departments or referral_doc.opd_category or "-"
-
-        # Get Village display name
-        village_display = village_display_name(referral_doc.patient_village, lang) if referral_doc.patient_village else (village_raw or "-")
-
         # Format full informatory / confirmation message
+        referred_by_line_mr = f"रेफर करणारे: {referred_by_who_display}\n" if referred_by_who_display else ""
+        referred_by_line_hi = f"रेफर करने वाले: {referred_by_who_display}\n" if referred_by_who_display else ""
+        referred_by_line_en = f"Referred By: {referred_by_who_display}\n" if referred_by_who_display else ""
+
         if lang == "mr":
             formatted_text = (
-                f"✅ *रेफरल यशस्वीरित्या नोंदवले गेले आहे!*\n\n"
-                f"🔖 *रेफरल क्रमांक:* {referral_doc.reference_number}\n"
-                f"👤 *रुग्णाचे नाव:* {referral_doc.patient_name}\n"
-                f"🏡 *गाव:* {village_display}\n"
-                f"📅 *रेफरल दिनांक:* {ref_date_str}\n"
-                f"🏥 *रुग्णालय:* {facility_display}\n"
-                f"🩺 *विभाग:* {opd_display}\n\n"
+                f"✅ *रेफेरल ची नोंदणी यशस्वी झाली, धन्यवाद!*\n\n"
+                f"संदर्भ क्रमांक: {referral_doc.reference_number}\n"
+                f"रुग्णाचे नाव: {patient_name_display}\n"
+                f"वय: {age_display}\n"
+                f"लिंग: {gender_display_val}\n"
+                f"रेफरलची तारीख: {ref_date_str}\n"
+                f"रुग्णालय: {facility_display}\n"
+                f"ओपीडी (OPD): {opd_display}\n"
+                f"गावाचे नाव: {village_display}\n"
+                f"{referred_by_line_mr}\n"
                 f"{patient_instruction}"
             ).strip()
         elif lang == "hi":
             formatted_text = (
                 f"✅ *रेफरल सफलतापूर्वक दर्ज किया गया!*\n\n"
-                f"🔖 *रेफरल नंबर:* {referral_doc.reference_number}\n"
-                f"👤 *मरीज का नाम:* {referral_doc.patient_name}\n"
-                f"🏡 *गाँव:* {village_display}\n"
-                f"📅 *रेफरल तिथि:* {ref_date_str}\n"
-                f"🏥 *अस्पताल:* {facility_display}\n"
-                f"🩺 *विभाग:* {opd_display}\n\n"
+                f"रेफरल नंबर: {referral_doc.reference_number}\n"
+                f"मरीज का नाम: {patient_name_display}\n"
+                f"उम्र: {age_display}\n"
+                f"लिंग: {gender_display_val}\n"
+                f"रेफरल तिथि: {ref_date_str}\n"
+                f"अस्पताल: {facility_display}\n"
+                f"ओपीडी (OPD): {opd_display}\n"
+                f"गाँव का नाम: {village_display}\n"
+                f"{referred_by_line_hi}\n"
                 f"{patient_instruction}"
             ).strip()
         else:
             formatted_text = (
                 f"✅ *Referral Registered Successfully!*\n\n"
-                f"🔖 *Reference Number:* {referral_doc.reference_number}\n"
-                f"👤 *Patient Name:* {referral_doc.patient_name}\n"
-                f"🏡 *Village:* {village_display}\n"
-                f"📅 *Referral Date:* {ref_date_str}\n"
-                f"🏥 *Hospital:* {facility_display}\n"
-                f"🩺 *Department:* {opd_display}\n\n"
+                f"Reference Number: {referral_doc.reference_number}\n"
+                f"Patient Name: {patient_name_display}\n"
+                f"Age: {age_display}\n"
+                f"Gender: {gender_display_val}\n"
+                f"Referral Date: {ref_date_str}\n"
+                f"Hospital: {facility_display}\n"
+                f"OPD: {opd_display}\n"
+                f"Village Name: {village_display}\n"
+                f"{referred_by_line_en}\n"
                 f"{patient_instruction}"
             ).strip()
 
         return {
             "success": True,
             "reference_number": referral_doc.reference_number,
-            "patient_name": referral_doc.patient_name,
-            "patient_age": referral_doc.patient_age,
-            "patient_gender": referral_doc.patient_gender,
+            "patient_name": patient_name_display,
+            "patient_father_name": patient_father_name_display,
+            "patient_age": age_display,
+            "age": age_display,
+            "patient_gender": gender_display_val,
+            "gender": gender_display_val,
             "patient_village": village_display,
             "village_name": village_display,
+            "village": village_display,
             "referral_date": ref_date_str,
+            "date": ref_date_str,
             "hospital": facility_display,
+            "service_facility_type": facility_display,
             "opd": opd_display,
+            "opd_department": opd_display,
+            "referred_by_who": referred_by_who_display,
+            "referredbywho": referred_by_who_display,
+            "referred_by": referred_by_who_display,
             "patient_instruction": patient_instruction,
             "formatted_text": formatted_text,
             "summary_message": formatted_text,
+            "message": {
+                "reference_number": referral_doc.reference_number,
+                "patient_name": patient_name_display,
+                "patient_age": age_display,
+                "patient_gender": gender_display_val,
+                "hospital": facility_display,
+                "opd": opd_display,
+                "village_name": village_display,
+                "referred_by_who": referred_by_who_display,
+                "referredbywho": referred_by_who_display,
+                "referred_by": referred_by_who_display,
+                "formatted_text": formatted_text,
+                "summary_message": formatted_text,
+            }
         }
 
     except frappe.ValidationError:
@@ -1646,12 +1953,32 @@ def create_referral(
 
 
 @frappe.whitelist(allow_guest=True)
-def get_referral(referral_id: str = None, reference_number: str = None, supervisor_phone: str = None) -> dict:
+def get_referral(
+    referral_id: str = None,
+    reference_number: str = None,
+    supervisor_phone: str = None,
+    language: str = None,
+    **kwargs
+) -> dict:
     """
     Look up a Patient Referral by reference_number or patient_name.
-    Supports guest access and returns flat and nested referral details.
+    Supports guest access and returns flat and nested referral details in requested language.
     """
     try:
+        # Fallback JSON parsing
+        if frappe.request:
+            try:
+                import json
+                raw_data = frappe.request.get_data(as_text=True)
+                if raw_data:
+                    data = json.loads(raw_data)
+                    if isinstance(data, dict):
+                        referral_id = referral_id or data.get("referral_id") or data.get("reference_number")
+                        reference_number = reference_number or data.get("reference_number")
+                        language = language or data.get("language")
+            except Exception:
+                pass
+
         ref_id = referral_id or reference_number
         if not ref_id:
             return {
@@ -1659,7 +1986,7 @@ def get_referral(referral_id: str = None, reference_number: str = None, supervis
                 "error": "Missing referral ID or reference number"
             }
 
-        ref_id = ref_id.strip()
+        ref_id = clean_glific_value(ref_id).strip()
         referral = None
         # Try exact match on name (name in Frappe is the reference_number due to autonaming)
         # or direct search by reference_number field
@@ -1685,19 +2012,45 @@ def get_referral(referral_id: str = None, reference_number: str = None, supervis
                 "error": f"Referral {ref_id} not found"
             }
 
+        lang = (clean_glific_value(language) or "mr").strip().lower()
+        if lang not in ("en", "hi", "mr"):
+            lang = "mr"
+
+        raw_patient_name = None
+        if getattr(referral, "raw_patient_data", None):
+            raw_patient_name = frappe.db.get_value("Raw Patient Data", referral.raw_patient_data, "patient_name_raw")
+
+        patient_name_display = format_patient_name(referral.patient_name, raw_patient_name, lang)
+        gender_display = format_gender(referral.patient_gender, lang)
+        age_display = format_age_display(referral.patient_age)
+        village_display = village_display_name(referral.patient_village, lang) if referral.patient_village else ""
+        facility_display = format_facility(referral.service_facility_type, referral.other_facility_name, lang)
+        opd_display = format_opd(referral.opd_departments or referral.opd_category, lang)
+
         phc_name = frappe.db.get_value("PHC", referral.phc, "phc_name") if referral.phc else ""
-        patient_village_name = frappe.db.get_value(
-            "Village Profile", referral.patient_village, "village_name"
-        ) if referral.patient_village else ""
         referrer_name = frappe.db.get_value(
             "Referrer", referral.referrer, "full_name"
         ) if referral.referrer else ""
 
+        referred_by_who_display = format_referred_by_who(referral.referred_by_who, lang) or referral.referred_by_who or ""
+
         # Flat structure for Glific
         res = {
-            "patient_name": referral.patient_name,
+            "patient_name": patient_name_display,
+            "patient_age": age_display,
+            "age": age_display,
+            "patient_gender": gender_display,
+            "gender": gender_display,
+            "patient_village": village_display,
+            "village_name": village_display,
+            "village": village_display,
             "referral_date": str(referral.referral_date),
-            "opd_department": referral.opd_departments or referral.service_facility_type,
+            "hospital": facility_display,
+            "opd": opd_display,
+            "opd_department": opd_display,
+            "referred_by_who": referred_by_who_display,
+            "referredbywho": referred_by_who_display,
+            "referred_by": referred_by_who_display,
             "reference_number": referral.reference_number,
             "visit_count": referral.visit_count or 0,
             "status": referral.status,
@@ -1712,19 +2065,35 @@ def get_referral(referral_id: str = None, reference_number: str = None, supervis
             "referrer_name": referrer_name,
             "referrer_phone": referral.referrer_phone,
             "phc": phc_name,
-            "patient_name": referral.patient_name,
-            "patient_father_name": referral.patient_father_name,
-            "patient_gender": referral.patient_gender,
-            "patient_age": referral.patient_age,
-            "patient_village": patient_village_name,
+            "patient_name": patient_name_display,
+            "patient_father_name": format_patient_name(referral.patient_father_name, lang=lang),
+            "patient_gender": gender_display,
+            "patient_age": age_display,
+            "patient_village": village_display,
             "patient_taluka": referral.patient_taluka or "",
             "patient_phone": referral.patient_phone or "",
+            "hospital": facility_display,
             "opd_category": referral.opd_category or "",
-            "opd_department": referral.opd_departments or "",
+            "opd_department": opd_display,
+            "referred_by_who": referred_by_who_display,
+            "referredbywho": referred_by_who_display,
+            "referred_by": referred_by_who_display,
             "referred_doctor": referral.referred_doctor or "",
             "additional_notes": referral.additional_notes or "",
             "match_status": referral.match_status,
             "tribal_classification": referral.tribal_classification or "",
+        }
+        res["message"] = {
+            "reference_number": referral.reference_number,
+            "patient_name": patient_name_display,
+            "patient_age": age_display,
+            "patient_gender": gender_display,
+            "hospital": facility_display,
+            "opd": opd_display,
+            "village_name": village_display,
+            "referred_by_who": referred_by_who_display,
+            "referredbywho": referred_by_who_display,
+            "referred_by": referred_by_who_display,
         }
 
         return res
@@ -1748,6 +2117,9 @@ def record_supervisor_visit(
     patient_health_status: str = None,
     supervisor_name: str = None,
     non_visit_reason: str = None,
+    other_non_visit_reason: str = None,
+    non_visit_reason_text: str = None,
+    other_reason: str = None,
     **kwargs
 ) -> dict:
     """
@@ -1780,6 +2152,14 @@ def record_supervisor_visit(
                             supervisor_name = data.get("supervisor_name")
                         if not non_visit_reason:
                             non_visit_reason = data.get("non_visit_reason")
+                        if not other_non_visit_reason:
+                            other_non_visit_reason = (
+                                data.get("other_non_visit_reason")
+                                or data.get("non_visit_reason_text")
+                                or data.get("non_visit_reason_other")
+                                or data.get("other_reason")
+                                or data.get("other")
+                            )
             except Exception:
                 pass
 
@@ -1793,6 +2173,14 @@ def record_supervisor_visit(
         patient_health_status = clean_glific_value(patient_health_status)
         supervisor_name = clean_glific_value(supervisor_name)
         non_visit_reason = clean_glific_value(non_visit_reason)
+        other_non_visit_reason = clean_glific_value(
+            other_non_visit_reason
+            or non_visit_reason_text
+            or other_reason
+            or kwargs.get("other_non_visit_reason")
+            or kwargs.get("non_visit_reason_text")
+            or kwargs.get("other_reason")
+        )
 
         if not referral_id:
             return {
@@ -1878,11 +2266,18 @@ def record_supervisor_visit(
                 
             resolved_facility = resolve_facility_type(facility_visited)
             reason_code = None
+            other_text = None
         else:
             confirmation_date_parsed = None
             resolved_facility = None
             
             reason_code = resolve_non_visit_reason(non_visit_reason)
+            other_text = other_non_visit_reason or None
+            
+            # If user typed custom text in non_visit_reason directly, or selected Other
+            if reason_code == "Other":
+                if not other_text and non_visit_reason and non_visit_reason not in ("Other", "NV-08", "इतर", "अन्य", "Other (Specify)", "इतर (नमूद करा)", "अन्य (निर्दिष्ट करें)"):
+                    other_text = non_visit_reason
 
         referral.append("supervisor_visits", {
             "visit_number": new_visit_number,
@@ -1892,6 +2287,7 @@ def record_supervisor_visit(
             "confirmation_date": confirmation_date_parsed,
             "patient_health_status": resolve_patient_health_status(patient_health_status) if is_visited else None,
             "non_visit_reason_code": reason_code if not is_visited else None,
+            "non_visit_reason_text": other_text if (not is_visited and reason_code == "Other") else None,
             "supervisor_name": supervisor_name,
             "supervisor_phone": supervisor_phone,
         })
@@ -2137,11 +2533,12 @@ def get_pending_followups(
     followup_list_enter_date: str = None,
     date: str = None,
     specific_date: str = None,
+    language: str = "mr",
     **kwargs
 ) -> dict:
     """
     Returns pending follow-up referrals formatted as a ready-to-send
-    Marathi WhatsApp message, optionally filtered by village name, taluka name,
+    WhatsApp message, optionally filtered by village name, taluka name,
     specific date (DD/MM/YYYY), or duration,
     along with patients who visited SEARCH in the specified duration/date.
 
@@ -2175,12 +2572,15 @@ def get_pending_followups(
                             or data.get("specific_date")
                             or data.get("followup_date")
                         )
+                    if not language:
+                        language = data.get("language")
         except Exception:
             pass
 
     month = month or kwargs.get("month")
     year = year or kwargs.get("year")
     duration = duration or kwargs.get("duration") or kwargs.get("duration_months")
+    language = language or kwargs.get("language")
     followup_list_enter_date = (
         followup_list_enter_date
         or date
@@ -2196,6 +2596,10 @@ def get_pending_followups(
     village_name = clean_glific_value(village_name)
     taluka_name = clean_glific_value(taluka_name)
     followup_list_enter_date = clean_glific_value(followup_list_enter_date)
+
+    lang = (clean_glific_value(language) or "mr").strip().lower()
+    if lang not in ("en", "hi", "mr"):
+        lang = "mr"
 
     # If village_name or date is not provided in body, try querying Glific contact fields
     if supervisor_phone:
@@ -2219,15 +2623,16 @@ def get_pending_followups(
     now_date = getdate(today())
     start_date = None
     end_date = None
-    duration_label_mr = "या महिन्यातील"
+    duration_label_mr = "या महिन्यातील" if lang == "mr" else ("इस महीने" if lang == "hi" else "this month")
 
     # Priority 1: Check if specific date was provided (e.g. DD/MM/YYYY)
     parsed_specific_date = None
     if followup_list_enter_date:
         parsed_specific_date = parse_date(followup_list_enter_date)
         if not parsed_specific_date:
+            err_msg = "❌ दिलेली तारीख योग्य नाही. कृपया DD/MM/YYYY स्वरूपात तारीख टाका (उदा. 15/08/2024)." if lang == "mr" else "❌ Invalid date format. Please enter date in DD/MM/YYYY format."
             return {
-                "formatted_text": "❌ दिलेली तारीख योग्य नाही. कृपया DD/MM/YYYY स्वरूपात तारीख टाका (उदा. 15/08/2024).",
+                "formatted_text": err_msg,
                 "count": 0,
             }
 
@@ -2240,61 +2645,39 @@ def get_pending_followups(
     if parsed_specific_date:
         start_date = parsed_specific_date
         end_date = parsed_specific_date
-        duration_label_mr = f"{parsed_specific_date.strftime('%d/%m/%Y')} रोजी"
+        duration_label_mr = f"{parsed_specific_date.strftime('%d/%m/%Y')} रोजी" if lang == "mr" else f"on {parsed_specific_date.strftime('%d/%m/%Y')}"
     else:
         # Clean duration input
         duration_clean = (clean_glific_value(duration) or "").strip().lower()
         
         # Check if duration input is an "Enter date" selection option
-        enter_date_keywords = (
-            "तारीख टाका", "तारीख निवडा", "तारीख प्रविष्ट करा",
-            "तारीख़ लिखें", "तारीख लिखें", "तारीख डाले", "तारीख दर्ज करें",
-            "enter specific date", "enter date", "specific date"
-        )
-        if any(kw in duration_clean for kw in enter_date_keywords):
+        if duration_clean in ("enter date", "enter_date", "तारीख प्रविष्ट करा", "तारीख टाका", "दिनांक टाका"):
             return {
-                "formatted_text": "❌ कृपया तारीख DD/MM/YYYY स्वरूपात टाका (उदा. 15/08/2024).",
+                "formatted_text": "कृपया DD/MM/YYYY स्वरूपात तारीख टाका (उदा. 15/08/2024):",
                 "count": 0,
+                "requires_date_input": True
             }
 
         # Map Marathi & Hindi duration inputs to standard English values
         duration_map = {
-            # Marathi
-            "या महिन्यातील": "this_month",
             "या महिन्यात": "this_month",
-            "या": "this_month",
             "चालू महिना": "this_month",
-            "चालू महिन्यातील": "this_month",
-            "गेल्या महिन्यातील": "last_month",
             "गेल्या महिन्यात": "last_month",
             "मागील महिना": "last_month",
-            "मागील महिन्यातील": "last_month",
-            "गेल्या ३ महिन्यांतील": "last_3_months",
-            "गेल्या ३ महिन्यात": "last_3_months",
+            "गेल्या ३ महिन्यांत": "last_3_months",
             "मागील ३ महिने": "last_3_months",
-            "मागील ३ महिन्यांतील": "last_3_months",
-            "गेल्या ६ महिन्यांतील": "past_6_months",
-            "गेल्या ६ महिन्यात": "past_6_months",
+            "गेल्या ६ महिन्यांत": "past_6_months",
             "मागील ६ महिने": "past_6_months",
-            "मागील ६ महिन्यांतील": "past_6_months",
-            "सर्व काळातील": "all_time",
-            "सर्व": "all_time",
             "सर्व काळ": "all_time",
-            "सर्वकाळ": "all_time",
-            # Hindi
+            "सुरुवातीपासून": "all_time",
+            "this month": "this_month",
+            "last month": "last_month",
+            "last 3 months": "last_3_months",
+            "past 6 months": "past_6_months",
+            "all time": "all_time",
             "इस महीने": "this_month",
-            "इस महीने में": "this_month",
-            "वर्तमान माह": "this_month",
             "पिछले महीने": "last_month",
-            "पिछले महीने में": "last_month",
-            "पिछला महीना": "last_month",
-            "पिछले ३ महीने": "last_3_months",
-            "पिछले 3 महीने": "last_3_months",
-            "पिछले ३ महीनों में": "last_3_months",
             "पिछले 3 महीनों में": "last_3_months",
-            "पिछले ६ महीने": "past_6_months",
-            "पिछले 6 महीने": "past_6_months",
-            "पिछले ६ महीनों में": "past_6_months",
             "पिछले 6 महीनों में": "past_6_months",
             "सभी समय": "all_time",
             "शुरुआत से": "all_time"
@@ -2319,29 +2702,29 @@ def get_pending_followups(
             start_date = getdate(f"{now_date.year}-{now_date.month:02d}-01")
             _, last_day = calendar.monthrange(now_date.year, now_date.month)
             end_date = getdate(f"{now_date.year}-{now_date.month:02d}-{last_day:02d}")
-            duration_label_mr = "या महिन्यातील"
+            duration_label_mr = "या महिन्यातील" if lang == "mr" else "this month"
             
         elif duration_clean in ("last_month", "last month", "last"):
             prev_date = add_months(now_date, -1)
             start_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-01")
             _, last_day = calendar.monthrange(prev_date.year, prev_date.month)
             end_date = getdate(f"{prev_date.year}-{prev_date.month:02d}-{last_day:02d}")
-            duration_label_mr = "गेल्या महिन्यातील"
+            duration_label_mr = "गेल्या महिन्यातील" if lang == "mr" else "last month"
             
         elif duration_clean in ("last_3_months", "last 3 months", "3"):
             start_date = add_months(now_date, -3)
             end_date = now_date
-            duration_label_mr = "गेल्या ३ महिन्यांतील"
+            duration_label_mr = "गेल्या ३ महिन्यांतील" if lang == "mr" else "last 3 months"
             
         elif duration_clean in ("past_6_months", "past 6 months", "6"):
             start_date = add_months(now_date, -6)
             end_date = now_date
-            duration_label_mr = "गेल्या ६ महिन्यांतील"
+            duration_label_mr = "गेल्या ६ महिन्यांतील" if lang == "mr" else "past 6 months"
             
         elif duration_clean in ("all_time", "all time", "all"):
             start_date = None
             end_date = None
-            duration_label_mr = "सर्व काळातील"
+            duration_label_mr = "सर्व काळातील" if lang == "mr" else "all time"
         else:
             # Fallback to month/year if specifically provided as integers
             if month:
@@ -2431,6 +2814,8 @@ def get_pending_followups(
             "opd_category",
             "other_facility_name",
             "visit_count",
+            "raw_patient_data",
+            "referred_by_who",
         ],
         order_by="referral_date asc, patient_village asc",
     )
@@ -2466,7 +2851,8 @@ def get_pending_followups(
         SELECT DISTINCT 
             pr.reference_number, pr.patient_name, pr.patient_age, pr.patient_gender,
             pr.patient_village, pr.patient_taluka, pr.referral_date, pr.service_facility_type,
-            pr.opd_departments, pr.opd_category, pr.other_facility_name, pr.visit_count, sv.visit_date
+            pr.opd_departments, pr.opd_category, pr.other_facility_name, pr.visit_count,
+            pr.raw_patient_data, pr.referred_by_who, sv.visit_date
         FROM `tabPatient Referral` pr
         JOIN `tabSupervisor Visit` sv ON sv.parent = pr.name
         WHERE {" AND ".join(query_conditions)}
@@ -2478,24 +2864,31 @@ def get_pending_followups(
 
     if not referrals and not visited_referrals:
         if village_name:
+            no_rec_txt = f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित किंवा भेट दिलेले रुग्ण नाहीत ✅" if lang == "mr" else f"No pending or visited patients found in {village_name} ✅"
             return {
-                "formatted_text": f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित किंवा भेट दिलेले रुग्ण नाहीत ✅",
+                "formatted_text": no_rec_txt,
                 "count": 0,
             }
+        no_rec_txt = "सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅" if lang == "mr" else "No pending follow-ups currently ✅"
         return {
-            "formatted_text": "सध्या कोणतेही प्रलंबित फॉलो-अप नाहीत ✅",
+            "formatted_text": no_rec_txt,
             "count": 0,
         }
 
     # Resolve village links to display names
     village_names = {}
     all_village_ids = set()
+    all_raw_ids = set()
     for r in referrals:
         if r.patient_village:
             all_village_ids.add(r.patient_village)
+        if getattr(r, "raw_patient_data", None):
+            all_raw_ids.add(r.raw_patient_data)
     for r in visited_referrals:
         if r.patient_village:
             all_village_ids.add(r.patient_village)
+        if getattr(r, "raw_patient_data", None):
+            all_raw_ids.add(r.raw_patient_data)
 
     if all_village_ids:
         for v in frappe.get_all(
@@ -2503,40 +2896,41 @@ def get_pending_followups(
             filters={"name": ["in", list(all_village_ids)]},
             fields=["name", "village_name", "village_name_marathi"],
         ):
-            village_names[v.name] = v.village_name_marathi or v.village_name
+            if lang == "mr":
+                village_names[v.name] = v.village_name_marathi or v.village_name
+            else:
+                village_names[v.name] = v.village_name or v.village_name_marathi
 
-    gender_mr = {"Male": "पुरुष", "Female": "स्त्री", "Other": "इतर"}
-    dept_map_mr = {
-        "Medicine": "औषध",
-        "Gynaecology": "स्त्रीरोग",
-        "Orthopedics": "अस्थिरोग",
-        "Spine": "मणका",
-        "Surgery": "शस्त्रक्रिया",
-        "Dental": "दंत",
-        "Psychiatry": "मानसोपचार",
-        "Rheumatology": "संधिवात",
-        "Cardiology": "हृदयरोग",
-        "Dermatology": "त्वचारोग",
-        "Diabetology": "मधुमेह",
-        "ENT": "कान नाक घसा",
-        "Gastrology": "पोटरोग",
-        "Head & Neck": "डोके आणि मान",
-        "Neurology + Epilepsy": "अपस्मार/मज्जातंतू",
-        "Oncology": "कर्करोग",
-        "Pulmonology": "श्वसन/फुफ्फुस",
-        "Sickle Cell": "सिकल सेल",
-        "Cataract Surgery": "मोतीबिंदू शस्त्रक्रिया",
-        "Ophthalmology": "नेत्र",
-        "Plastic Surgery": "प्लास्टिक सर्जरी",
-        "Urology": "मूत्ररोग",
-        "Pain Management": "वेदना व्यवस्थापन",
-        "Others": "इतर",
-        "Regular OPD": "नियमित ओपीडी",
-        "Specialist OPD": "तज्ञ ओपीडी",
-        "Surgical OPD": "शस्त्रक्रिया ओपीडी"
-    }
+    raw_names = {}
+    if all_raw_ids:
+        for rp in frappe.get_all(
+            "Raw Patient Data",
+            filters={"name": ["in", list(all_raw_ids)]},
+            fields=["name", "patient_name_raw"],
+        ):
+            raw_names[rp.name] = rp.patient_name_raw
 
-    lines = ["*रेफर सर्च — फॉलो-अप यादी* 📋", ""]
+    if lang == "mr":
+        lines = ["*रेफर सर्च — फॉलो-अप यादी* 📋", ""]
+        age_label = "वय"
+        dept_label = "विभाग"
+        ref_by_label = "रेफर करणारे"
+        visited_date_label = "भेट तारीख"
+        next_visit_label = "पुढील भेट क्र."
+    elif lang == "hi":
+        lines = ["*रेफर सर्च — फॉलो-अप सूची* 📋", ""]
+        age_label = "उम्र"
+        dept_label = "विभाग"
+        ref_by_label = "रेफर करने वाले"
+        visited_date_label = "विज़िट तिथि"
+        next_visit_label = "अगली विज़िट क्र."
+    else:
+        lines = ["*Referral SEARCH — Follow-up List* 📋", ""]
+        age_label = "Age"
+        dept_label = "Dept"
+        ref_by_label = "Referred By"
+        visited_date_label = "Visit Date"
+        next_visit_label = "Next Visit #"
 
     # Format Pending Section
     if referrals:
@@ -2544,7 +2938,7 @@ def get_pending_followups(
         grouped = defaultdict(lambda: defaultdict(list))
         for r in referrals:
             date_str = r.referral_date.strftime("%d/%m/%y")
-            village_display = village_names.get(r.patient_village, r.patient_village or "गाव नोंद नाही")
+            village_display = village_names.get(r.patient_village, r.patient_village or ("गाव नोंद नाही" if lang == "mr" else "No Village"))
             grouped[date_str][village_display].append(r)
 
         for date_str in sorted(
@@ -2555,40 +2949,57 @@ def get_pending_followups(
             for village, patients in villages.items():
                 lines.append(f"🟦 *{date_str}* ({village})")
                 for i, p in enumerate(patients, 1):
-                    if p.service_facility_type == "Other" and p.other_facility_name:
-                        hospital = p.other_facility_name
-                    else:
-                        hospital = p.service_facility_type or "SEARCH"
+                    raw_name = raw_names.get(p.raw_patient_data) if getattr(p, "raw_patient_data", None) else None
+                    p_name = format_patient_name(p.patient_name, raw_name, lang)
+                    p_age = format_age_display(p.patient_age)
+                    p_gender = format_gender(p.patient_gender, lang)
+                    hospital = format_facility(p.service_facility_type, p.other_facility_name, lang)
+                    dept_display = format_opd(p.opd_departments or p.opd_category or "-", lang)
+                    ref_by = format_referred_by_who(getattr(p, "referred_by_who", None), lang)
 
-                    dept = p.opd_departments or p.opd_category or "-"
-                    dept_mr = dept_map_mr.get(dept, dept)
-                    gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
-
-                    lines.append(f"{i}) *{p.patient_name}*")
-                    lines.append(f"वय-{p.patient_age}/{gender}")
-                    lines.append(f"🏥 {hospital} | विभाग: {dept_mr}")
+                    lines.append(f"{i}) *{p_name}*")
+                    lines.append(f"{age_label}-{p_age}/{p_gender}")
+                    lines.append(f"🏥 {hospital} | {dept_label}: {dept_display}")
+                    if ref_by:
+                        lines.append(f"🔹 {ref_by_label}: {ref_by}")
                     lines.append(f"🔖 {p.reference_number}")
                     if p.visit_count and p.visit_count > 0:
-                        lines.append(f"पुढील भेट क्र. {p.visit_count + 1}")
+                        lines.append(f"{next_visit_label} {p.visit_count + 1}")
                     lines.append("──────────────────")
     else:
         if visited_referrals:
-            lines.append("प्रलंबित फॉलो-अप: काहीही नाही ✅")
+            if lang == "mr":
+                lines.append("प्रलंबित फॉलो-अप: काहीही नाही ✅")
+            elif lang == "hi":
+                lines.append("लंबित फॉलो-अप: कोई नहीं ✅")
+            else:
+                lines.append("Pending follow-ups: None ✅")
             lines.append("──────────────────")
 
     # Format Visited Section
     if visited_referrals:
-        lines.append(f"✅ *{duration_label_mr} SEARCH ला भेट दिलेले रुग्ण:*")
+        if lang == "mr":
+            lines.append(f"✅ *{duration_label_mr} SEARCH ला भेट दिलेले रुग्ण:*")
+        elif lang == "hi":
+            lines.append(f"✅ *{duration_label_mr} SEARCH अस्पताल आए हुए मरीज़:*")
+        else:
+            lines.append(f"✅ *Patients who visited SEARCH {duration_label_mr}:*")
         lines.append("")
 
         for i, p in enumerate(visited_referrals, 1):
             v_date_str = p.visit_date.strftime("%d/%m/%y") if p.visit_date else "-"
-            village_display = village_names.get(p.patient_village, p.patient_village or "गाव नोंद नाही")
-            gender = gender_mr.get(p.patient_gender, p.patient_gender or "")
+            village_display = village_names.get(p.patient_village, p.patient_village or ("गाव नोंद नाही" if lang == "mr" else "No Village"))
+            raw_name = raw_names.get(p.raw_patient_data) if getattr(p, "raw_patient_data", None) else None
+            p_name = format_patient_name(p.patient_name, raw_name, lang)
+            p_age = format_age_display(p.patient_age)
+            p_gender = format_gender(p.patient_gender, lang)
+            ref_by = format_referred_by_who(getattr(p, "referred_by_who", None), lang)
 
-            lines.append(f"{i}) *{p.patient_name}* ({village_display})")
-            lines.append(f"वय-{p.patient_age}/{gender}")
-            lines.append(f"📅 भेट तारीख: {v_date_str}")
+            lines.append(f"{i}) *{p_name}* ({village_display})")
+            lines.append(f"{age_label}-{p_age}/{p_gender}")
+            lines.append(f"📅 {visited_date_label}: {v_date_str}")
+            if ref_by:
+                lines.append(f"🔹 {ref_by_label}: {ref_by}")
             lines.append(f"🔖 {p.reference_number}")
             lines.append("──────────────────")
 
@@ -2596,7 +3007,8 @@ def get_pending_followups(
 
     # WhatsApp message hard limit is 4096 chars. Truncate safely if huge.
     if len(formatted) > 3900:
-        formatted = formatted[:3900] + "\n\n... यादी खूप मोठी आहे. कृपया प्रशासकाशी संपर्क साधा."
+        trunc_msg = "\n\n... यादी खूप मोठी आहे. कृपया प्रशासकाशी संपर्क साधा." if lang == "mr" else "\n\n... List is too long. Please contact admin."
+        formatted = formatted[:3900] + trunc_msg
 
     return {"formatted_text": formatted, "count": len(referrals)}
 
@@ -3807,7 +4219,7 @@ def get_portal_referrals(
                 mmu_data = frappe.db.get_value(
                     "MMU Patient Record",
                     ref["mmu_patient_record"],
-                    ["name", "date_of_visit", "diagnosis_1", "diagnosis_2", "dental_diagnosis", "physiotherapy_diag", "patient_referred"],
+                    ["name", "date_of_visit", "diagnosis_1", "diagnosis_2", "diagnosis_3", "diagnosis_4", "diagnosis_5", "diagnosis_6", "dental_diagnosis", "dental_diagnosis_2", "patient_referred", "patient_referred_by_doctor"],
                     as_dict=True
                 )
                 if mmu_data and mmu_data.get("date_of_visit"):
@@ -3819,7 +4231,7 @@ def get_portal_referrals(
         ref["supervisor_visits"] = frappe.db.get_values(
             "Supervisor Visit",
             {"parent": ref["name"], "parenttype": "Patient Referral"},
-            ["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "supervisor_name", "supervisor_phone"],
+            ["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "non_visit_reason_text", "supervisor_name", "supervisor_phone"],
             as_dict=True,
             order_by="visit_number asc"
         ) or []

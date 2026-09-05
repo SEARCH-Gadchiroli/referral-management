@@ -11,6 +11,7 @@
   "confirmation_date",
   "patient_health_status",
   "non_visit_reason_code",
+  "non_visit_reason_text",
   "supervisor_name",
   "supervisor_phone"
  ],
@@ -59,7 +60,13 @@
    "fieldname": "non_visit_reason_code",
    "fieldtype": "Select",
    "label": "Non-Visit Reason",
-   "options": "\nFinancial Constraints\nTransport Unavailable\nFear or Anxiety\nFeeling Better\nFamily Objection\nDistance Too Far\nUnaware of Appointment\nNot Present At Home\nOther"
+   "options": "\nFinancial Constraints\nTransport Unavailable\nFear or Anxiety\nFeeling Better\nFamily Objection\nDistance Too Far\nUnaware of Appointment\nNot Present At Home\nNo Time\nOther"
+  },
+  {
+   "depends_on": "eval:doc.non_visit_reason_code=='Other'",
+   "fieldname": "non_visit_reason_text",
+   "fieldtype": "Small Text",
+   "label": "Other Non-Visit Reason / Details"
   },
   {
    "fieldname": "supervisor_name",

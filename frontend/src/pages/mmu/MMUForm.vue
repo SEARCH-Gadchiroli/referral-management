@@ -22,7 +22,7 @@
 
       <div class="flex flex-wrap items-center gap-2.5">
         <button
-          v-if="isEditMode"
+          v-if="isEditMode && canDelete"
           @click="deleteRecord"
           type="button"
           :disabled="saving"
@@ -292,7 +292,8 @@
           <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">2. Clinical Diagnoses (Codes 1 - 225)</h2>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <!-- Clinical Diagnoses (1 to 6) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
           
           <!-- Diagnosis 1 -->
           <div>
@@ -342,29 +343,60 @@
             />
           </div>
 
-          <!-- Dental Diagnosis -->
+          <!-- Diagnosis 5 -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Dental Diagnosis</label>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Diagnosis 5</label>
             <input
               type="text"
-              list="dental-list"
-              v-model="form.dental_diagnosis"
-              placeholder="Search dental diagnosis..."
+              list="diag-list"
+              v-model="form.diagnosis_5"
+              placeholder="Search or select diagnosis..."
               class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             />
           </div>
 
-          <!-- Physiotherapy Diagnosis -->
+          <!-- Diagnosis 6 -->
           <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Physiotherapy Diagnosis</label>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Diagnosis 6</label>
             <input
               type="text"
-              v-model="form.physiotherapy_diag"
-              placeholder="Enter physiotherapy remarks/diagnosis..."
+              list="diag-list"
+              v-model="form.diagnosis_6"
+              placeholder="Search or select diagnosis..."
               class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
             />
           </div>
 
+        </div>
+
+        <!-- Dental Diagnoses (1 & 2) -->
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+          <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Dental Diagnoses (Codes &ge; 226)</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <!-- Dental Diagnosis 1 -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Dental Diagnosis 1</label>
+              <input
+                type="text"
+                list="dental-list"
+                v-model="form.dental_diagnosis"
+                placeholder="Search dental diagnosis 1..."
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <!-- Dental Diagnosis 2 -->
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Dental Diagnosis 2</label>
+              <input
+                type="text"
+                list="dental-list"
+                v-model="form.dental_diagnosis_2"
+                placeholder="Search dental diagnosis 2..."
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Datalists for instant native searchable dropdowns -->
@@ -443,7 +475,7 @@
 
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
           
           <!-- Patient Referred -->
           <div>
@@ -457,6 +489,17 @@
                 {{ opt }}
               </option>
             </select>
+          </div>
+
+          <!-- Patient Referred by Doctor -->
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Patient Referred by Doctor</label>
+            <input
+              type="text"
+              v-model="form.patient_referred_by_doctor"
+              placeholder="Enter Doctor name..."
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-hidden bg-slate-50/50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+            />
           </div>
 
           <!-- Patient Referred Where -->
@@ -600,16 +643,21 @@ export default {
         diag_code_3: 0,
         diagnosis_4: '',
         diag_code_4: 0,
-        dental_diagnosis: '',
-        diag_code_6: 0,
-        physiotherapy_diag: '',
+        diagnosis_5: '',
         diag_code_5: 0,
+        diagnosis_6: '',
+        diag_code_6: 0,
+        dental_diagnosis: '',
+        diag_code_dental_1: 0,
+        dental_diagnosis_2: '',
+        diag_code_dental_2: 0,
         patient_newly_diag: '',
         followup_hypertension: '',
         followup_diabetes: '',
         followup_chronic_disease: '',
         patient_referred: 'No',
         patient_referred_where: '',
+        patient_referred_by_doctor: '',
         census_match: null,
         matched_member_name: '',
         matched_member_age: 0,
@@ -659,6 +707,9 @@ export default {
     },
     dentalDiagnoses() {
       return (this.masterData.diagnoses || []).filter(d => d.code >= 226)
+    },
+    canDelete() {
+      return Boolean(this.masterData?.can_delete)
     },
   },
   created() {
@@ -824,8 +875,17 @@ export default {
       if (this.form.diagnosis_4) {
         this.form.diag_code_4 = diagMap[this.form.diagnosis_4.toLowerCase()] || 0
       }
+      if (this.form.diagnosis_5) {
+        this.form.diag_code_5 = diagMap[this.form.diagnosis_5.toLowerCase()] || 0
+      }
+      if (this.form.diagnosis_6) {
+        this.form.diag_code_6 = diagMap[this.form.diagnosis_6.toLowerCase()] || 0
+      }
       if (this.form.dental_diagnosis) {
-        this.form.diag_code_6 = diagMap[this.form.dental_diagnosis.toLowerCase()] || 0
+        this.form.diag_code_dental_1 = diagMap[this.form.dental_diagnosis.toLowerCase()] || 0
+      }
+      if (this.form.dental_diagnosis_2) {
+        this.form.diag_code_dental_2 = diagMap[this.form.dental_diagnosis_2.toLowerCase()] || 0
       }
 
       if (this.form.village_name && this.form.area_name) {
@@ -929,16 +989,21 @@ export default {
         diag_code_3: 0,
         diagnosis_4: '',
         diag_code_4: 0,
-        dental_diagnosis: '',
-        diag_code_6: 0,
-        physiotherapy_diag: '',
+        diagnosis_5: '',
         diag_code_5: 0,
+        diagnosis_6: '',
+        diag_code_6: 0,
+        dental_diagnosis: '',
+        diag_code_dental_1: 0,
+        dental_diagnosis_2: '',
+        diag_code_dental_2: 0,
         patient_newly_diag: '',
         followup_hypertension: '',
         followup_diabetes: '',
         followup_chronic_disease: '',
         patient_referred: 'No',
         patient_referred_where: '',
+        patient_referred_by_doctor: '',
         census_match: null,
         matched_member_name: '',
         matched_member_age: 0,

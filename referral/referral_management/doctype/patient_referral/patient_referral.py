@@ -14,12 +14,14 @@ class PatientReferral(Document):
 
         additional_notes: DF.TextEditor | None
         census_match: DF.Link | None
+        census_member_id: DF.Data | None
         hospital_registration_number: DF.Data | None
         match_confidence: DF.Float
         match_status: DF.Literal["Unmatched", "Auto-Matched", "Multiple Matches", "Manually Verified"]
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
-        opd_category: DF.Literal["", "Regular OPD", "Specialist OPD", "Surgical OPD"]
+        mmu_patient_record: DF.Link | None
+        opd_category: DF.Literal["", "Regular OPD", "Specialist OPD", "Cataract Surgery"]
         opd_departments: DF.Literal["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Rheumatology OPD", "Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD"]
         patient_age: DF.Int
         patient_father_name: DF.Data
@@ -32,8 +34,21 @@ class PatientReferral(Document):
         raw_patient_data: DF.Link | None
         reference_number: DF.Data
         referral_date: DF.Date
-        referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Optometrist"]
-        referred_doctor: DF.Data | None
+        referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Optometrist", "MPU Physiotherapist"]
+        referred_doctor: DF.Literal[
+            "",
+            "Dr Kunal Vidhale",
+            "Dr Adhya Dubey",
+            "Dr Sanjeev Kumar",
+            "Dr Ashwini Shinde",
+            "Dr Mrunali Chaudhari",
+            "Dr Shrirang Pathak",
+            "Dr Pritam Dorlikar",
+            "Dr Rohini Wankhede",
+            "Dr Aditya Agrawal",
+            "Dr Ganesh Kudmethe",
+            "Other",
+        ]
         referring_doctor: DF.Data | None
         referrer: DF.Link
         referrer_latitude: DF.Data | None
@@ -63,8 +78,9 @@ class PatientReferral(Document):
 
     def after_insert(self):
         """Preliminary auto-match on creation — exact matches get auto-saved,
-        multiple matches are flagged for admin review."""
+        multiple matches are flagged for admin review. Also links matching MMU visits."""
         self.match_with_census()
+        self.link_matching_mmu_visit()
 
     def generate_reference_number(self):
         from frappe.utils import getdate, today
@@ -124,6 +140,7 @@ class PatientReferral(Document):
         query = """
             SELECT
                 cfm.name,
+                cfm.identification_number,
                 cfm.member_name,
                 cfm.age,
                 cfm.gender,
@@ -162,6 +179,10 @@ class PatientReferral(Document):
             # Get caste info
             caste = household_caste_map.get(m.household, "")
 
+            # Compute Member ID (e.g. HH-44-149-149-1)
+            id_num = m.identification_number or 1
+            member_id = f"{m.household}-{id_num}"
+
             # Compute confidence
             first_match = (m_first == patient_first.lower())
             father_match = (patient_father_first and m_father == patient_father_first)
@@ -180,6 +201,8 @@ class PatientReferral(Document):
 
             results.append({
                 "household": m.household,
+                "member_id": member_id,
+                "identification_number": id_num,
                 "member_name": m.member_name,
                 "member_first_name": m_first.title(),
                 "member_father_name": m_father.title(),
@@ -212,6 +235,7 @@ class PatientReferral(Document):
         if len(exact_matches) == 1:
             match = exact_matches[0]
             self.census_match = match["household"]
+            self.census_member_id = match.get("member_id") or f"{match['household']}-{match.get('identification_number', 1)}"
             self.matched_member_name = match["member_name"]
             self.matched_member_age = match["age"]
             self.match_confidence = match["confidence"]
@@ -223,6 +247,7 @@ class PatientReferral(Document):
             # Single non-exact match — auto-save but with lower confidence
             match = matches[0]
             self.census_match = match["household"]
+            self.census_member_id = match.get("member_id") or f"{match['household']}-{match.get('identification_number', 1)}"
             self.matched_member_name = match["member_name"]
             self.matched_member_age = match["age"]
             self.match_confidence = match["confidence"]
@@ -236,7 +261,70 @@ class PatientReferral(Document):
 
     def _set_unmatched(self):
         self.match_status = "Unmatched"
+        self.census_member_id = None
         self.save()
+
+    def link_matching_mmu_visit(self):
+        """
+        Cross-links this referral with an MMU Patient Record encounter.
+        Searches tabMMU Patient Record in the same village for this patient/census member
+        within a 30-day window around the referral date.
+        """
+        if getattr(self, "mmu_patient_record", None):
+            return
+
+        patient_village = getattr(self, "patient_village", None)
+        if not patient_village:
+            return
+
+        from frappe.utils import getdate, add_days, today
+        referral_date = getattr(self, "referral_date", None)
+        ref_date = getdate(referral_date) if referral_date else getdate(today())
+        start_date = add_days(ref_date, -30)
+        end_date = add_days(ref_date, 7)
+
+        matched_mmu = None
+
+        # 1. Search by census_member_id if available
+        census_member_id = getattr(self, "census_member_id", None)
+        if census_member_id:
+            matched_mmu = frappe.db.sql("""
+                SELECT name FROM `tabMMU Patient Record`
+                WHERE census_member_id = %s
+                  AND date_of_visit BETWEEN %s AND %s
+                ORDER BY date_of_visit DESC LIMIT 1
+            """, (census_member_id, start_date, end_date), as_dict=True)
+
+        # 2. Search by census_match household if available
+        census_match = getattr(self, "census_match", None)
+        if not matched_mmu and census_match:
+            matched_mmu = frappe.db.sql("""
+                SELECT name FROM `tabMMU Patient Record`
+                WHERE census_match = %s
+                  AND date_of_visit BETWEEN %s AND %s
+                ORDER BY date_of_visit DESC LIMIT 1
+            """, (census_match, start_date, end_date), as_dict=True)
+
+        # 3. Search by village and patient first name
+        patient_name = getattr(self, "patient_name", None)
+        if not matched_mmu and patient_name:
+            patient_first = patient_name.strip().split()[0]
+            matched_mmu = frappe.db.sql("""
+                SELECT name FROM `tabMMU Patient Record`
+                WHERE village_name = %s
+                  AND patient_name LIKE %s
+                  AND date_of_visit BETWEEN %s AND %s
+                ORDER BY date_of_visit DESC LIMIT 1
+            """, (patient_village, f"%{patient_first}%", start_date, end_date), as_dict=True)
+
+        if matched_mmu:
+            mmu_name = matched_mmu[0].name
+            self.mmu_patient_record = mmu_name
+            try:
+                self.db_set("mmu_patient_record", mmu_name, update_modified=False)
+                frappe.db.set_value("MMU Patient Record", mmu_name, "patient_referral", self.name, update_modified=False)
+            except Exception:
+                pass
 
 
 @frappe.whitelist()
@@ -271,11 +359,12 @@ def confirm_census_match(
     household: str,
     member_name: str,
     member_age: int = 0,
-    confidence: float = 100.0
+    confidence: float = 100.0,
+    member_id: str | None = None
 ) -> dict:
     """
     Whitelisted API for admin to confirm a selected census match.
-    Sets match_status to 'Manually Verified'.
+    Sets match_status to 'Manually Verified' and computes census_member_id.
     """
     try:
         doc = frappe.get_doc("Patient Referral", referral_name)
@@ -285,13 +374,28 @@ def confirm_census_match(
         doc.match_confidence = float(confidence)
         doc.match_status = "Manually Verified"
 
+        if member_id:
+            doc.census_member_id = member_id
+        elif household and member_name:
+            member = frappe.db.get_value(
+                "Census Family Member",
+                {"parent": household, "member_name": member_name},
+                ["identification_number"],
+                as_dict=True
+            )
+            id_num = member.identification_number if member and member.identification_number else 1
+            doc.census_member_id = f"{household}-{id_num}"
+
         doc.save()
+        doc.link_matching_mmu_visit()
         frappe.db.commit()
 
         return {
             "success": True,
-            "message": f"Census match confirmed for {referral_name}"
+            "message": f"Census match confirmed for {referral_name}",
+            "census_member_id": doc.census_member_id
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "confirm_census_match Error")
         return {"success": False, "error": str(e)}
+

@@ -195,7 +195,7 @@
                 </div>
                 <div v-if="referral?.mmu_details" class="text-rose-800 dark:text-rose-300">
                   <span class="font-semibold">Diagnoses: </span>
-                  <span>{{ [referral.mmu_details.diagnosis_1, referral.mmu_details.diagnosis_2, referral.mmu_details.dental_diagnosis].filter(Boolean).join(', ') || 'General Examination' }}</span>
+                  <span>{{ [referral.mmu_details.diagnosis_1, referral.mmu_details.diagnosis_2, referral.mmu_details.diagnosis_3, referral.mmu_details.diagnosis_4, referral.mmu_details.diagnosis_5, referral.mmu_details.diagnosis_6, referral.mmu_details.dental_diagnosis, referral.mmu_details.dental_diagnosis_2].filter(Boolean).join(', ') || 'General Examination' }}</span>
                 </div>
               </div>
               <router-link
@@ -268,7 +268,7 @@
                     <th class="px-3 py-2 text-left">Visit #</th>
                     <th class="px-3 py-2 text-left">Visit Date</th>
                     <th class="px-3 py-2 text-left">Visited?</th>
-                    <th class="px-3 py-2 text-left">Facility</th>
+                    <th class="px-3 py-2 text-left">Facility / Reason</th>
                     <th class="px-3 py-2 text-left">Supervisor</th>
                   </tr>
                 </thead>
@@ -276,8 +276,17 @@
                   <tr v-for="v in referral.supervisor_visits" :key="v.visit_number">
                     <td class="px-3 py-2 font-bold">{{ v.visit_number }}</td>
                     <td class="px-3 py-2">{{ v.visit_date }}</td>
-                    <td class="px-3 py-2">{{ v.patient_visited || '-' }}</td>
-                    <td class="px-3 py-2">{{ v.facility_visited || '-' }}</td>
+                    <td class="px-3 py-2">
+                      <span v-if="v.patient_visited" class="text-emerald-600 font-medium">Yes</span>
+                      <span v-else class="text-rose-500 font-medium">No</span>
+                    </td>
+                    <td class="px-3 py-2">
+                      <span v-if="v.patient_visited">{{ v.facility_visited || '-' }}</span>
+                      <span v-else class="text-slate-600 dark:text-slate-400">
+                        {{ v.non_visit_reason_code || '-' }}
+                        <span v-if="v.non_visit_reason_text" class="text-[11px] block text-slate-500 italic">({{ v.non_visit_reason_text }})</span>
+                      </span>
+                    </td>
                     <td class="px-3 py-2">{{ v.supervisor_name || '-' }}</td>
                   </tr>
                 </tbody>
