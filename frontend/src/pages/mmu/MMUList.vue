@@ -293,7 +293,7 @@ export default {
   methods: {
     async fetchMasterData() {
       try {
-        const res = await fetch('/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_master_data')
+        const res = await fetch('/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_master_data')
         const data = await res.json()
         if (data.message) {
           this.masterData = data.message
@@ -337,7 +337,7 @@ export default {
           page_size: '100',
         })
 
-        const res = await fetch(`/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_portal_mmu_records?${params.toString()}`)
+        const res = await fetch(`/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_portal_mmu_records?${params.toString()}`)
         const data = await res.json()
         if (data.message && data.message.records) {
           this.records = data.message.records

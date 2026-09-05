@@ -721,7 +721,7 @@ export default {
   methods: {
     async fetchMasterData() {
       try {
-        const res = await fetch('/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_master_data')
+        const res = await fetch('/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_master_data')
         const data = await res.json()
         if (data.message) {
           this.masterData = data.message
@@ -732,7 +732,7 @@ export default {
     },
     async fetchRecord(id) {
       try {
-        const res = await fetch(`/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_record_details?record_name=${encodeURIComponent(id)}`)
+        const res = await fetch(`/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_record_details?record_name=${encodeURIComponent(id)}`)
         const data = await res.json()
         if (data.message && !data.message.error) {
           Object.assign(this.form, data.message)
@@ -769,7 +769,7 @@ export default {
       }
 
       try {
-        const url = `/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_next_patient_id?village_code=${villageCode}&village_name=${encodeURIComponent(villageName)}`
+        const url = `/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_next_patient_id?village_code=${villageCode}&village_name=${encodeURIComponent(villageName)}`
         const res = await fetch(url)
         const data = await res.json()
         if (data.message && data.message.next_id) {
@@ -832,7 +832,7 @@ export default {
     async lookupPatient() {
       if (!this.form.patient_unique_id) return
       try {
-        const url = `/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.get_patient_details?patient_id=${encodeURIComponent(this.form.patient_unique_id)}&date_of_visit=${encodeURIComponent(this.form.date_of_visit)}`
+        const url = `/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_patient_details?patient_id=${encodeURIComponent(this.form.patient_unique_id)}&date_of_visit=${encodeURIComponent(this.form.date_of_visit)}`
         const res = await fetch(url)
         const data = await res.json()
         if (data.message && !data.message.error) {
@@ -916,7 +916,7 @@ export default {
           name: this.isEditMode ? this.editId : undefined,
         }
 
-        const res = await fetch('/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.save_patient_record', {
+        const res = await fetch('/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.save_patient_record', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -949,7 +949,7 @@ export default {
       this.saving = true
       try {
         const csrf = window.csrf_token || (document.cookie.match(/csrf_token=([^;]+)/) || [])[1] || ''
-        const res = await fetch('/api/method/mmu.mmu.page.mmu_patient_record.mmu_patient_record.delete_patient_record', {
+        const res = await fetch('/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.delete_patient_record', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
