@@ -1961,10 +1961,21 @@ def get_referral(
     **kwargs
 ) -> dict:
     """
-    Look up a Patient Referral by reference_number or patient_name.
+    Look up a Patient Referral by reference_number, patient_name, or patient_phone.
     Supports guest access and returns flat and nested referral details in requested language.
     """
     try:
+        # Check form_dict and kwargs
+        if frappe.form_dict:
+            referral_id = referral_id or frappe.form_dict.get("referral_id") or frappe.form_dict.get("reference_number") or frappe.form_dict.get("ref_id") or frappe.form_dict.get("ref_no") or frappe.form_dict.get("referral_number") or frappe.form_dict.get("id") or frappe.form_dict.get("text") or frappe.form_dict.get("search") or frappe.form_dict.get("search_term")
+            reference_number = reference_number or frappe.form_dict.get("reference_number")
+            language = language or frappe.form_dict.get("language")
+
+        if kwargs:
+            referral_id = referral_id or kwargs.get("referral_id") or kwargs.get("reference_number") or kwargs.get("ref_id") or kwargs.get("ref_no") or kwargs.get("referral_number") or kwargs.get("id") or kwargs.get("text") or kwargs.get("search") or kwargs.get("search_term")
+            reference_number = reference_number or kwargs.get("reference_number")
+            language = language or kwargs.get("language")
+
         # Fallback JSON parsing
         if frappe.request:
             try:
@@ -1973,7 +1984,7 @@ def get_referral(
                 if raw_data:
                     data = json.loads(raw_data)
                     if isinstance(data, dict):
-                        referral_id = referral_id or data.get("referral_id") or data.get("reference_number")
+                        referral_id = referral_id or data.get("referral_id") or data.get("reference_number") or data.get("ref_id") or data.get("ref_no") or data.get("referral_number") or data.get("id") or data.get("text") or data.get("search") or data.get("search_term")
                         reference_number = reference_number or data.get("reference_number")
                         language = language or data.get("language")
             except Exception:
@@ -1987,6 +1998,12 @@ def get_referral(
             }
 
         ref_id = clean_glific_value(ref_id).strip()
+        clean_id = ref_id.lstrip("#").strip().rstrip(".")
+        if clean_id.upper().startswith("REF:"):
+            clean_id = clean_id[4:].strip()
+        elif clean_id.upper().startswith("REF-"):
+            clean_id = clean_id[4:].strip()
+
         referral = None
         # Try exact match on name (name in Frappe is the reference_number due to autonaming)
         # or direct search by reference_number field
@@ -1994,9 +2011,21 @@ def get_referral(
             referral = frappe.get_doc("Patient Referral", ref_id)
         elif frappe.db.exists("Patient Referral", {"reference_number": ref_id}):
             referral = frappe.get_doc("Patient Referral", {"reference_number": ref_id})
+        elif clean_id and frappe.db.exists("Patient Referral", clean_id):
+            referral = frappe.get_doc("Patient Referral", clean_id)
+        elif clean_id and frappe.db.exists("Patient Referral", {"reference_number": clean_id}):
+            referral = frappe.get_doc("Patient Referral", {"reference_number": clean_id})
         else:
+            # Try normalized slash vs dash (e.g. 040926/2 vs 040926-2)
+            alt_id = clean_id.replace("/", "-")
+            if frappe.db.exists("Patient Referral", alt_id):
+                referral = frappe.get_doc("Patient Referral", alt_id)
+            elif frappe.db.exists("Patient Referral", {"reference_number": alt_id}):
+                referral = frappe.get_doc("Patient Referral", {"reference_number": alt_id})
+
+        if not referral:
             # Fuzzy match on patient_name
-            name_search = transliterate_to_roman(ref_id)
+            name_search = transliterate_to_roman(clean_id or ref_id)
             results = frappe.get_all("Patient Referral",
                 filters={"patient_name": ["like", f"%{name_search}%"]},
                 fields=["name"],
@@ -2018,7 +2047,10 @@ def get_referral(
 
         raw_patient_name = None
         if getattr(referral, "raw_patient_data", None):
-            raw_patient_name = frappe.db.get_value("Raw Patient Data", referral.raw_patient_data, "patient_name_raw")
+            if frappe.db.exists("DocType", "Raw Patient Referral Data"):
+                raw_patient_name = frappe.db.get_value("Raw Patient Referral Data", referral.raw_patient_data, "patient_name_raw")
+            elif frappe.db.exists("DocType", "Raw Patient Data"):
+                raw_patient_name = frappe.db.get_value("Raw Patient Data", referral.raw_patient_data, "patient_name_raw")
 
         patient_name_display = format_patient_name(referral.patient_name, raw_patient_name, lang)
         gender_display = format_gender(referral.patient_gender, lang)
@@ -2034,8 +2066,18 @@ def get_referral(
 
         referred_by_who_display = format_referred_by_who(referral.referred_by_who, lang) or referral.referred_by_who or ""
 
+        ref_date_display = ""
+        if referral.referral_date:
+            try:
+                ref_date_display = getdate(referral.referral_date).strftime("%d-%m-%Y")
+            except Exception:
+                ref_date_display = str(referral.referral_date)
+
+        referred_to_display = f"{facility_display} ({opd_display})" if opd_display and opd_display != facility_display else facility_display
+
         # Flat structure for Glific
         res = {
+            "success": True,
             "patient_name": patient_name_display,
             "patient_age": age_display,
             "age": age_display,
@@ -2044,26 +2086,57 @@ def get_referral(
             "patient_village": village_display,
             "village_name": village_display,
             "village": village_display,
-            "referral_date": str(referral.referral_date),
+            "patient_taluka": referral.patient_taluka or "",
+            "patient_phone": referral.patient_phone or "",
+            "referral_date": ref_date_display,
+            "referral_date_raw": str(referral.referral_date or ""),
             "hospital": facility_display,
+            "facility": facility_display,
             "opd": opd_display,
             "opd_department": opd_display,
+            "referred_to": referred_to_display,
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
             "reference_number": referral.reference_number,
+            "referral_id": referral.reference_number,
             "visit_count": referral.visit_count or 0,
-            "status": referral.status,
+            "status": referral.status or "",
         }
 
-        # Nested structure for backward compatibility
-        res["success"] = True
+        # Nested structure for backward compatibility and Glific message parsing
+        res["message"] = {
+            "success": True,
+            "reference_number": referral.reference_number,
+            "referral_id": referral.reference_number,
+            "patient_name": patient_name_display,
+            "patient_age": age_display,
+            "age": age_display,
+            "patient_gender": gender_display,
+            "gender": gender_display,
+            "patient_village": village_display,
+            "village_name": village_display,
+            "village": village_display,
+            "referral_date": ref_date_display,
+            "hospital": facility_display,
+            "facility": facility_display,
+            "opd": opd_display,
+            "opd_department": opd_display,
+            "referred_to": referred_to_display,
+            "referred_by_who": referred_by_who_display,
+            "referredbywho": referred_by_who_display,
+            "referred_by": referred_by_who_display,
+            "visit_count": referral.visit_count or 0,
+            "status": referral.status or "",
+        }
+
         res["referral"] = {
             "reference_number": referral.reference_number,
-            "referral_date": str(referral.referral_date),
-            "status": referral.status,
+            "referral_id": referral.reference_number,
+            "referral_date": ref_date_display,
+            "status": referral.status or "",
             "referrer_name": referrer_name,
-            "referrer_phone": referral.referrer_phone,
+            "referrer_phone": referral.referrer_phone or "",
             "phc": phc_name,
             "patient_name": patient_name_display,
             "patient_father_name": format_patient_name(referral.patient_father_name, lang=lang),
@@ -2073,27 +2146,19 @@ def get_referral(
             "patient_taluka": referral.patient_taluka or "",
             "patient_phone": referral.patient_phone or "",
             "hospital": facility_display,
+            "facility": facility_display,
             "opd_category": referral.opd_category or "",
             "opd_department": opd_display,
+            "opd": opd_display,
+            "referred_to": referred_to_display,
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
             "referred_doctor": referral.referred_doctor or "",
             "additional_notes": referral.additional_notes or "",
-            "match_status": referral.match_status,
+            "match_status": referral.match_status or "",
             "tribal_classification": referral.tribal_classification or "",
-        }
-        res["message"] = {
-            "reference_number": referral.reference_number,
-            "patient_name": patient_name_display,
-            "patient_age": age_display,
-            "patient_gender": gender_display,
-            "hospital": facility_display,
-            "opd": opd_display,
-            "village_name": village_display,
-            "referred_by_who": referred_by_who_display,
-            "referredbywho": referred_by_who_display,
-            "referred_by": referred_by_who_display,
+            "visit_count": referral.visit_count or 0,
         }
 
         return res
@@ -2903,8 +2968,9 @@ def get_pending_followups(
 
     raw_names = {}
     if all_raw_ids:
+        raw_doctype = "Raw Patient Referral Data" if frappe.db.exists("DocType", "Raw Patient Referral Data") else "Raw Patient Data"
         for rp in frappe.get_all(
-            "Raw Patient Data",
+            raw_doctype,
             filters={"name": ["in", list(all_raw_ids)]},
             fields=["name", "patient_name_raw"],
         ):
