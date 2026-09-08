@@ -2929,7 +2929,7 @@ def get_pending_followups(
 
     if not referrals and not visited_referrals:
         if village_name:
-            no_rec_txt = f"या गावात ({resolved_village_name_mr or village_name}) सध्या कोणतेही प्रलंबित किंवा भेट दिलेले रुग्ण नाहीत ✅" if lang == "mr" else f"No pending or visited patients found in {village_name} ✅"
+            no_rec_txt = f"या गावात ({resolved_village_name_mr or village_name}), या कालावधीत कोणतेही रुग्ण रेफर केले नाहीत ✅" if lang == "mr" else f"No pending or visited patients found in {village_name} ✅"
             return {
                 "formatted_text": no_rec_txt,
                 "count": 0,
