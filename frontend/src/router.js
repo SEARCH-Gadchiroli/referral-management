@@ -41,6 +41,11 @@ const routes = [
     name: 'DashboardEmbed',
     component: () => import('@/pages/Dashboards.vue'),
   },
+  {
+    path: '/census',
+    name: 'CensusDashboard',
+    component: () => import('@/pages/CensusDashboard.vue'),
+  },
 ]
 
 let router = createRouter({

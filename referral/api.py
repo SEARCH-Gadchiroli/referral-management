@@ -4401,3 +4401,510 @@ def get_portal_village_sessions(search: str = None, session_conducted: str = Non
         "current_page": page,
         "page_size": page_size
     }
+
+
+# ==============================================================================
+# CENSUS ANALYTICS & HOUSEHOLD EXPLORER APIs (System Manager Only)
+# ==============================================================================
+
+def check_census_access():
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Authentication required to access Census data.", frappe.AuthenticationError)
+    roles = frappe.get_roles(user)
+    if "System Manager" not in roles and user != "Administrator":
+        frappe.throw("Access denied. Only users with the System Manager role can view census data.", frappe.PermissionError)
+
+
+@frappe.whitelist()
+def get_current_user_profile() -> dict:
+    """
+    Returns current logged in user details including System Manager role verification flag.
+    """
+    user = frappe.session.user
+    if user == "Guest":
+        return {
+            "user": "Guest",
+            "full_name": "Guest",
+            "roles": ["Guest"],
+            "is_system_manager": False
+        }
+    roles = frappe.get_roles(user)
+    is_system_manager = "System Manager" in roles or user == "Administrator"
+    full_name = frappe.utils.get_fullname(user) or user
+    return {
+        "user": user,
+        "full_name": full_name,
+        "roles": roles,
+        "is_system_manager": is_system_manager
+    }
+
+
+@frappe.whitelist()
+def get_census_villages() -> dict:
+    """
+    Returns all 232 Dhanora taluka tribal villages from Village Profile with census household counts and population.
+    Only accessible by users with the System Manager role.
+    """
+    try:
+        check_census_access()
+        query = """
+            SELECT 
+                vp.village_name,
+                vp.village_name_marathi,
+                vp.village_number,
+                COUNT(ch.name) as total_households,
+                COALESCE(SUM(ch.total_family_members), 0) as estimated_population
+            FROM `tabVillage Profile` vp
+            LEFT JOIN `tabCensus Household` ch ON (ch.village = vp.name OR ch.village = vp.village_name OR ch.village_number = vp.village_number)
+            WHERE (vp.taluka = 'Dhanora' OR vp.taluka LIKE '%Dhanora%' OR vp.taluka IS NULL)
+              AND vp.village_number >= 1 AND vp.village_number <= 232
+            GROUP BY vp.village_name, vp.village_name_marathi, vp.village_number
+            ORDER BY total_households DESC, vp.village_number ASC
+        """
+        villages = frappe.db.sql(query, as_dict=True)
+        
+        # Total counts strictly across the 232 tribal villages
+        total_hh = sum(int(v.get("total_households", 0) or 0) for v in villages)
+        total_pop = int(sum(float(v.get("estimated_population", 0) or 0) for v in villages))
+
+        return {
+            "success": True,
+            "villages": villages,
+            "total_villages": len(villages),
+            "total_households": total_hh,
+            "total_population": total_pop
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_census_villages API Error")
+        return {"success": False, "error": str(e)}
+
+
+@frappe.whitelist()
+def get_village_census_analytics(village: str = None) -> dict:
+    """
+    High-performance aggregation for a village (or all 232 tribal villages if village='ALL' or empty)
+    delivering metrics for:
+    1. Demographics & Population (Age cohorts, gender, sex ratio, education brackets)
+    2. Housing & Sanitation (Electricity, house ownership, toilets, bathrooms, bednets, farm wells)
+    3. Health & Social Welfare (Ayushman Bharat, MJPJAY, Ration Cards)
+    4. Land & Livestock (Farm land acres, cattle, bullocks, goats, buffalo, poultry)
+    5. Caste & Social composition (Tribal and community profiles)
+    Only accessible by users with the System Manager role.
+    """
+    try:
+        check_census_access()
+        cache_key = f"census_analytics_v5:{village or 'ALL'}"
+        cached = frappe.cache().get_value(cache_key)
+        if cached:
+            return cached
+
+        condition = ""
+        values = {}
+        if village and village != "ALL" and str(village).strip():
+            v_clean = str(village).strip()
+            v_num = frappe.db.get_value("Village Profile", {"village_name": v_clean}, "village_number") or frappe.db.get_value("Village Profile", {"name": v_clean}, "village_number")
+            if v_num:
+                condition = "WHERE (ch.village = %(village)s OR ch.village_number = %(v_num)s)"
+                values["village"] = v_clean
+                values["v_num"] = v_num
+            else:
+                condition = "WHERE (ch.village = %(village)s)"
+                values["village"] = v_clean
+        else:
+            # Default to all 232 tribal villages
+            condition = "WHERE ch.village_number >= 1 AND ch.village_number <= 232"
+
+        # 1. Total Households & Amenities summary
+        hh_summary_query = f"""
+            SELECT 
+                COUNT(ch.name) as total_households,
+                COALESCE(SUM(ch.total_family_members), 0) as total_family_members,
+                COALESCE(AVG(ch.total_family_members), 0) as avg_family_size,
+                COALESCE(SUM(ch.wet_land_acre + (ch.wet_land_guntha/40.0)), 0) as total_wet_land_acres,
+                COALESCE(SUM(ch.dry_land_acre + (ch.dry_land_guntha/40.0)), 0) as total_dry_land_acres,
+                COALESCE(SUM(CASE WHEN ch.electricity_connection LIKE '%%Yes%%' OR ch.electricity_connection = '1' THEN 1 ELSE 0 END), 0) as electricity_count,
+                COALESCE(SUM(CASE WHEN ch.house_ownership = '1' OR ch.house_ownership LIKE '%%Own%%' OR ch.house_ownership LIKE '%%own%%' THEN 1 ELSE 0 END), 0) as own_house_count,
+                COALESCE(SUM(CASE WHEN ch.toilet_present LIKE '%%Yes%%' OR ch.toilet_present = '1' THEN 1 ELSE 0 END), 0) as toilet_present_count,
+                COALESCE(SUM(CASE WHEN ch.toilet_usage LIKE '%%Yes%%' OR ch.toilet_usage = '1' THEN 1 ELSE 0 END), 0) as toilet_usage_count,
+                COALESCE(SUM(CASE WHEN ch.separate_bathroom LIKE '%%Yes%%' OR ch.separate_bathroom = '1' THEN 1 ELSE 0 END), 0) as separate_bathroom_count,
+                COALESCE(SUM(CASE WHEN ch.bednet_available LIKE '%%Yes%%' OR ch.bednet_available = '1' THEN 1 ELSE 0 END), 0) as bednet_available_count,
+                COALESCE(SUM(CASE WHEN ch.bednet_usage LIKE '%%Yes%%' OR ch.bednet_usage = '1' THEN 1 ELSE 0 END), 0) as bednet_usage_count,
+                COALESCE(SUM(CASE WHEN ch.well_in_farm LIKE '%%Yes%%' OR ch.well_in_farm = '1' THEN 1 ELSE 0 END), 0) as well_in_farm_count,
+                COALESCE(SUM(CASE WHEN ch.cowshed_present LIKE '%%Yes%%' OR ch.cowshed_present = '1' THEN 1 ELSE 0 END), 0) as cowshed_count
+            FROM `tabCensus Household` ch
+            {condition}
+        """
+        hh_stats = frappe.db.sql(hh_summary_query, values, as_dict=True)[0]
+        total_hh = hh_stats.get("total_households", 0)
+
+        # 2. Family Members Demographics (Age cohorts, Gender, Education, Marital Status)
+        cfm_where = "WHERE cfm.parenttype = 'Census Household'"
+        if condition:
+            cfm_where += f" AND cfm.parent IN (SELECT name FROM `tabCensus Household` ch {condition})"
+
+        cfm_query = f"""
+            SELECT 
+                cfm.gender,
+                cfm.age,
+                cfm.education,
+                cfm.marital_status,
+                cfm.currently_studying
+            FROM `tabCensus Family Member` cfm
+            {cfm_where}
+        """
+        members = frappe.db.sql(cfm_query, values, as_dict=True)
+        total_population = len(members)
+
+        def is_male(g):
+            g_str = str(g or "").strip().lower()
+            return g_str in ["1", "male", "m", "पुरुष"]
+
+        def is_female(g):
+            g_str = str(g or "").strip().lower()
+            return g_str in ["2", "female", "f", "स्त्री", "महिला"]
+
+        male_count = sum(1 for m in members if is_male(m.get("gender")))
+        female_count = sum(1 for m in members if is_female(m.get("gender")))
+        other_gender_count = total_population - (male_count + female_count)
+
+        sex_ratio = round((female_count / male_count * 1000), 1) if male_count > 0 else 0
+
+        # Master lookup caches
+        edu_masters = {str(d.name): d.education_name for d in frappe.db.get_all("Education Master", fields=["name", "education_name"])} if frappe.db.exists("DocType", "Education Master") else {}
+        marital_masters = {str(d.name): d.status_name for d in frappe.db.get_all("Marital Status Master", fields=["name", "status_name"])} if frappe.db.exists("DocType", "Marital Status Master") else {}
+        caste_masters = {str(d.caste_code): d.caste_name for d in frappe.db.get_all("Caste Master", fields=["caste_code", "caste_name"])} if frappe.db.exists("DocType", "Caste Master") else {}
+        health_masters = {str(d.scheme_code): d.scheme_name for d in frappe.db.get_all("Health Scheme Master", fields=["scheme_code", "scheme_name"])} if frappe.db.exists("DocType", "Health Scheme Master") else {"0": "None", "1": "Ayushman Bharat", "2": "Mahatma Jyotirao Phule (MJPJAY)"}
+        ration_masters = {str(d.card_code): d.card_name for d in frappe.db.get_all("Ration Card Master", fields=["card_code", "card_name"])} if frappe.db.exists("DocType", "Ration Card Master") else {"1": "Yellow (BPL)", "2": "Keshari (APL)", "3": "White", "4": "Not Available"}
+        livestock_masters = {str(d.animal_code): d.animal_name for d in frappe.db.get_all("Livestock Master", fields=["animal_code", "animal_name"])} if frappe.db.exists("DocType", "Livestock Master") else {
+            "1": "Cow (गाय)", "2": "Bullock (बैल)", "3": "Buffalo (म्हैस)", "4": "Bull (सांड)",
+            "5": "Goat (शेळी)", "6": "Poultry / Chicken (कोंबडी)", "7": "Dog (कुत्रा)", "8": "Pig (डुक्कर)"
+        }
+
+        # Age Cohorts
+        age_cohorts = {
+            "u5": 0,       # 0 - 5 years (Early childhood)
+            "school": 0,   # 6 - 18 years (School age)
+            "youth": 0,    # 19 - 35 years (Youth / Working)
+            "middle": 0,   # 36 - 60 years (Middle age)
+            "senior": 0    # 60+ years (Elderly)
+        }
+        for m in members:
+            try:
+                a = int(m.get("age") or 0)
+                if a <= 5:
+                    age_cohorts["u5"] += 1
+                elif a <= 18:
+                    age_cohorts["school"] += 1
+                elif a <= 35:
+                    age_cohorts["youth"] += 1
+                elif a <= 60:
+                    age_cohorts["middle"] += 1
+                else:
+                    age_cohorts["senior"] += 1
+            except (ValueError, TypeError):
+                pass
+
+        # Structured Education Tiers & Refined Currently Studying Count
+        edu_counts = defaultdict(int)
+        marital_counts = defaultdict(int)
+        studying_count = 0
+        
+        education_brackets = {
+            "primary": {"label": "Primary (Class 1–4)", "count": 0, "codes": ["1", "2", "3", "4"]},
+            "middle": {"label": "Upper Primary (Class 5–8)", "count": 0, "codes": ["5", "6", "7", "8"]},
+            "secondary": {"label": "Secondary (Class 9–10)", "count": 0, "codes": ["9", "10"]},
+            "higher_secondary": {"label": "Higher Secondary (Class 11–12)", "count": 0, "codes": ["11", "12"]},
+            "graduate_plus": {"label": "Graduation & Above", "count": 0, "codes": ["13", "14"]},
+            "literate_only": {"label": "Literate (No Formal School)", "count": 0, "codes": ["98"]},
+            "illiterate": {"label": "Illiterate / No Schooling", "count": 0, "codes": ["99", "0", None, ""]}
+        }
+        
+        formal_school_codes = set(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"])
+
+        for m in members:
+            raw_edu = str(m.get("education") or "").strip()
+            
+            # Map into structured brackets
+            if raw_edu in education_brackets["primary"]["codes"]:
+                education_brackets["primary"]["count"] += 1
+            elif raw_edu in education_brackets["middle"]["codes"]:
+                education_brackets["middle"]["count"] += 1
+            elif raw_edu in education_brackets["secondary"]["codes"]:
+                education_brackets["secondary"]["count"] += 1
+            elif raw_edu in education_brackets["higher_secondary"]["codes"]:
+                education_brackets["higher_secondary"]["count"] += 1
+            elif raw_edu in education_brackets["graduate_plus"]["codes"]:
+                education_brackets["graduate_plus"]["count"] += 1
+            elif raw_edu == "98":
+                education_brackets["literate_only"]["count"] += 1
+            else:
+                education_brackets["illiterate"]["count"] += 1
+
+            edu_label = edu_masters.get(raw_edu, raw_edu) or "Illiterate / No Schooling"
+            if edu_label == "None" or not edu_label.strip() or raw_edu in ["0", "99"]:
+                edu_label = "Illiterate / No Schooling"
+            edu_counts[edu_label] += 1
+
+            raw_mar = str(m.get("marital_status") or "")
+            mar_label = marital_masters.get(raw_mar, raw_mar) or "Unspecified"
+            marital_counts[mar_label] += 1
+
+            # Count studying strictly if enrolled in formal class brackets (1-14) and studying status is active
+            if raw_edu in formal_school_codes and str(m.get("currently_studying") or "").lower() in ["1", "yes", "1=yes"]:
+                studying_count += 1
+
+        # 3. Categorical Distributions for Households
+        def get_field_distribution(field_name):
+            where_sub = f"WHERE {field_name} IS NOT NULL AND {field_name} != ''"
+            if condition:
+                where_sub = f"{condition} AND {field_name} IS NOT NULL AND {field_name} != ''"
+            q = f"""
+                SELECT {field_name} as label, COUNT(*) as count 
+                FROM `tabCensus Household` ch
+                {where_sub}
+                GROUP BY {field_name}
+                ORDER BY count DESC
+            """
+            return frappe.db.sql(q, values, as_dict=True)
+
+        # 4. Livestock Distribution
+        ls_parent_where = ""
+        if condition:
+            ls_parent_where = f"WHERE parent IN (SELECT name FROM `tabCensus Household` ch {condition}) AND animal_type IS NOT NULL AND animal_type != '' AND animal_type != '10'"
+        else:
+            ls_parent_where = "WHERE animal_type IS NOT NULL AND animal_type != '' AND animal_type != '10'"
+
+        ls_query = f"""
+            SELECT animal_type as code, SUM(quantity) as count
+            FROM `tabCensus Livestock`
+            {ls_parent_where}
+            GROUP BY animal_type
+            ORDER BY count DESC
+        """
+        raw_livestock = frappe.db.sql(ls_query, values, as_dict=True)
+        livestock_dist = []
+        for ls in raw_livestock:
+            code_str = str(ls.get("code") or "")
+            name = livestock_masters.get(code_str, f"Animal #{code_str}")
+            livestock_dist.append({
+                "code": code_str,
+                "label": name,
+                "count": int(ls.get("count") or 0)
+            })
+
+        # 5. Caste & Social Distribution
+        caste_raw = get_field_distribution("caste_of_head")
+        caste_dist = []
+        for c in caste_raw:
+            lbl = str(c.get("label") or "")
+            caste_name = caste_masters.get(lbl, lbl)
+            caste_dist.append({"label": caste_name, "count": c.get("count")})
+
+        religion_dist = get_field_distribution("religion_of_head")
+
+        # 6. Health Schemes Distribution
+        health_raw = get_field_distribution("health_scheme_card")
+        health_scheme_dist = []
+        for h in health_raw:
+            lbl = str(h.get("label") or "")
+            scheme_name = health_masters.get(lbl, lbl)
+            health_scheme_dist.append({
+                "code": lbl,
+                "label": scheme_name,
+                "count": h.get("count"),
+                "pct": round((h.get("count") / total_hh * 100), 1) if total_hh else 0
+            })
+
+        # 7. Ration Cards Distribution
+        ration_raw = get_field_distribution("ration_card")
+        ration_dist = []
+        for r in ration_raw:
+            lbl = str(r.get("label") or "")
+            ration_name = ration_masters.get(lbl, lbl)
+            ration_dist.append({
+                "code": lbl,
+                "label": ration_name,
+                "count": r.get("count"),
+                "pct": round((r.get("count") / total_hh * 100), 1) if total_hh else 0
+            })
+
+        result = {
+            "success": True,
+            "village": village or "ALL",
+            "kpis": {
+                "total_households": total_hh,
+                "total_population": total_population if total_population > 0 else int(hh_stats.get("total_family_members", 0)),
+                "male_population": male_count,
+                "female_population": female_count,
+                "other_population": other_gender_count,
+                "sex_ratio": sex_ratio,
+                "avg_family_size": round(float(hh_stats.get("avg_family_size", 0)), 1),
+                "children_u5": age_cohorts["u5"],
+                "senior_citizens": age_cohorts["senior"],
+                "total_wet_land_acres": round(float(hh_stats.get("total_wet_land_acres", 0)), 2),
+                "total_dry_land_acres": round(float(hh_stats.get("total_dry_land_acres", 0)), 2),
+                "electricity_pct": round((hh_stats.get("electricity_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "own_house_pct": round((hh_stats.get("own_house_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "toilet_present_pct": round((hh_stats.get("toilet_present_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "toilet_usage_pct": round((hh_stats.get("toilet_usage_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "separate_bathroom_pct": round((hh_stats.get("separate_bathroom_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "bednet_available_pct": round((hh_stats.get("bednet_available_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "bednet_usage_pct": round((hh_stats.get("bednet_usage_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "well_in_farm_pct": round((hh_stats.get("well_in_farm_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "cowshed_pct": round((hh_stats.get("cowshed_count", 0) / total_hh * 100), 1) if total_hh else 0
+            },
+            "demographics": {
+                "age_cohorts": age_cohorts,
+                "gender": {
+                    "male": male_count,
+                    "female": female_count,
+                    "other": other_gender_count
+                },
+                "education_brackets": list(education_brackets.values()),
+                "education": sorted([{"label": k, "count": v} for k, v in edu_counts.items()], key=lambda x: x["count"], reverse=True),
+                "marital_status": sorted([{"label": k, "count": v} for k, v in marital_counts.items()], key=lambda x: x["count"], reverse=True),
+                "studying_count": studying_count
+            },
+            "housing_and_sanitation": {
+                "electricity_pct": round((hh_stats.get("electricity_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "own_house_pct": round((hh_stats.get("own_house_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "toilet_present_pct": round((hh_stats.get("toilet_present_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "toilet_usage_pct": round((hh_stats.get("toilet_usage_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "separate_bathroom_pct": round((hh_stats.get("separate_bathroom_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "bednet_available_pct": round((hh_stats.get("bednet_available_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "well_in_farm_pct": round((hh_stats.get("well_in_farm_count", 0) / total_hh * 100), 1) if total_hh else 0,
+                "cowshed_pct": round((hh_stats.get("cowshed_count", 0) / total_hh * 100), 1) if total_hh else 0
+            },
+            "welfare_and_social": {
+                "caste": caste_dist,
+                "religion": religion_dist,
+                "ration_cards": ration_dist,
+                "health_schemes": health_scheme_dist,
+                "livestock": livestock_dist
+            }
+        }
+
+        # Cache for 1 hour
+        frappe.cache().set_value(cache_key, result, expires_in_sec=3600)
+        return result
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_village_census_analytics API Error")
+        return {"success": False, "error": str(e)}
+
+
+@frappe.whitelist()
+def search_census_households(village: str = None, house_number: str = None, query: str = None, page: int = 1, page_size: int = 24) -> dict:
+    """
+    Search and paginated listing of Census Households with filters for village, house number, or general search string.
+    Only accessible by users with the System Manager role.
+    """
+    try:
+        check_census_access()
+        page = max(int(page or 1), 1)
+        page_size = min(max(int(page_size or 24), 1), 100)
+        offset = (page - 1) * page_size
+
+        conditions = []
+        values = {}
+
+        if village and village != "ALL" and str(village).strip():
+            v_clean = str(village).strip()
+            v_num = frappe.db.get_value("Village Profile", {"village_name": v_clean}, "village_number") or frappe.db.get_value("Village Profile", {"name": v_clean}, "village_number")
+            if v_num:
+                conditions.append("(ch.village = %(village)s OR ch.village_number = %(v_num)s)")
+                values["village"] = v_clean
+                values["v_num"] = v_num
+            else:
+                conditions.append("ch.village = %(village)s")
+                values["village"] = v_clean
+
+        if house_number and str(house_number).strip():
+            conditions.append("ch.house_number = %(house_number)s")
+            values["house_number"] = str(house_number).strip()
+
+        if query and str(query).strip():
+            q_clean = f"%{str(query).strip()}%"
+            conditions.append("""(
+                ch.name LIKE %(q)s 
+                OR ch.mobile_number LIKE %(q)s
+                OR ch.name IN (SELECT parent FROM `tabCensus Family Member` WHERE member_name LIKE %(q)s)
+            )""")
+            values["q"] = q_clean
+
+        where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+        count_query = f"SELECT COUNT(*) FROM `tabCensus Household` ch {where_clause}"
+        total_count = frappe.db.sql(count_query, values)[0][0]
+        total_pages = (total_count + page_size - 1) // page_size
+
+        sql = f"""
+            SELECT 
+                ch.name as household_id,
+                COALESCE(ch.village, vp.village_name, CONCAT('Village #', ch.village_number)) as village,
+                ch.village_number,
+                ch.house_number,
+                ch.family_number,
+                (SELECT member_name FROM `tabCensus Family Member` cfm WHERE cfm.parent = ch.name AND (cfm.identification_number = 1 OR cfm.idx = 1) LIMIT 1) as head_of_household,
+                ch.mobile_number,
+                ch.total_family_members,
+                ch.caste_of_head,
+                ch.religion_of_head,
+                ch.electricity_connection,
+                ch.toilet_present,
+                ch.ration_card,
+                ch.health_scheme_card,
+                (ch.wet_land_acre + (ch.wet_land_guntha/40.0) + ch.dry_land_acre + (ch.dry_land_guntha/40.0)) as total_land_acres
+            FROM `tabCensus Household` ch
+            LEFT JOIN `tabVillage Profile` vp ON (ch.village_number = vp.village_number OR ch.village = vp.name)
+            {where_clause}
+            ORDER BY ch.village_number ASC, ch.house_number ASC, ch.family_number ASC
+            LIMIT {offset}, {page_size}
+        """
+        records = frappe.db.sql(sql, values, as_dict=True)
+
+        return {
+            "success": True,
+            "households": records,
+            "total_records": total_count,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "search_census_households API Error")
+        return {"success": False, "error": str(e)}
+
+
+@frappe.whitelist()
+def get_household_dossier(household_id: str) -> dict:
+    """
+    Fetches the full dossier of a Census Household including all members and asset tables.
+    Only accessible by users with the System Manager role.
+    """
+    try:
+        check_census_access()
+        if not household_id or not frappe.db.exists("Census Household", household_id):
+            return {"success": False, "error": "Household not found"}
+
+        doc = frappe.get_doc("Census Household", household_id)
+        data = doc.as_dict()
+
+        # Set head_of_household if not explicitly stored
+        if not data.get("head_of_household"):
+            members = data.get("family_members") or []
+            if members:
+                head = next((m for m in members if m.get("identification_number") == 1), members[0])
+                data["head_of_household"] = head.get("member_name")
+
+        return {
+            "success": True,
+            "household": data
+        }
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_household_dossier API Error")
+        return {"success": False, "error": str(e)}
+
+
+
