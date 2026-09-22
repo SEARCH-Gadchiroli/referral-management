@@ -508,9 +508,8 @@ def google_input_transliterate(text: str, target_lang: str = "mr") -> str | None
     diacritical markers), this handles natural English spellings of Indian names
     correctly — e.g. "Manasvini" → "मनस्विनी", "Sakshi" → "साक्षी".
 
-    Returns the top suggestion joined as a string, or None on failure.
-    Note: This is an unofficial Google API endpoint; the fallback chain in
-    format_patient_name() ensures we never depend solely on it.
+    Fetches top candidates (num=8) and verifies phonetic alignment to prevent
+    overzealous dictionary auto-corrections (e.g. 'maniram' -> 'मंदिरं', 'nuruti' -> 'निऋती').
     """
     import requests
 
@@ -535,7 +534,7 @@ def google_input_transliterate(text: str, target_lang: str = "mr") -> str | None
         params = {
             "text": word.lower(),
             "itc": f"{target_lang}-t-i0-und",
-            "num": 1,
+            "num": 8,
             "cp": 0,
             "cs": 1,
             "ie": "utf-8",
@@ -545,7 +544,25 @@ def google_input_transliterate(text: str, target_lang: str = "mr") -> str | None
             response = requests.get(url, params=params, timeout=3)
             data = response.json()
             if data[0] == "SUCCESS" and data[1] and data[1][0] and data[1][0][1]:
-                transliterated_words.append(data[1][0][1][0])  # Top suggestion
+                candidates = data[1][0][1]
+                selected = candidates[0]
+                if len(candidates) > 1:
+                    try:
+                        from rapidfuzz import fuzz
+                        c0_roman = transliterate_to_roman(candidates[0]).lower().replace(" ", "")
+                        c0_sim = fuzz.ratio(word.lower(), c0_roman)
+                        # If top candidate is a solid phonetic match (>= 88%), trust Google's language model
+                        if c0_sim < 88:
+                            best_sim = c0_sim
+                            for cand in candidates[1:]:
+                                cand_roman = transliterate_to_roman(cand).lower().replace(" ", "")
+                                sim = fuzz.ratio(word.lower(), cand_roman)
+                                if sim > best_sim:
+                                    best_sim = sim
+                                    selected = cand
+                    except Exception:
+                        pass
+                transliterated_words.append(selected)
             else:
                 transliterated_words.append(word)
         except Exception:
@@ -662,6 +679,23 @@ def translate_to_english(text: str) -> str:
             "Translation Error"
         )
         return text
+
+
+def devanagari_skeleton(text: str) -> str:
+    """
+    Normalizes a Devanagari string to a phonetic skeleton for robust search matching:
+    - Normalizes Marathi 'ळ' to 'ल' (common keyboard substitution)
+    - Normalizes 'ष' to 'श'
+    - Normalizes short/long vowels: ी/ि -> ि, ू/ु -> ु, े/ै/ो/ौ -> standardized
+    - Strips anusvara (ं), visarga (ः), nukta (़), virama (्), and aa-matra (ा)
+    """
+    if not text:
+        return ""
+    t = text.replace("ळ", "ल").replace("ष", "श")
+    t = t.replace("ी", "ि").replace("ू", "ु").replace("े", "ि").replace("ै", "ि").replace("ो", "ु").replace("ौ", "ु")
+    for ch in ("ं", "ः", "़", "्", "ा"):
+        t = t.replace(ch, "")
+    return t.strip()
 
 
 def resolve_village(village_raw: str, taluka: str = None) -> str | None:
@@ -3695,68 +3729,126 @@ def search_and_resolve_village(village_input: str = None, taluka: str = None, co
             "matches": []
         }
 
-    # 1. Try resolving exact/transliterated match using resolve_village
-    resolved_village = resolve_village(village_clean)
-    if resolved_village:
-        v_taluka = frappe.db.get_value("Village Profile", resolved_village, "taluka")
-        resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
-
-        if not resolved_taluka or v_taluka == resolved_taluka:
-            display_name = village_display_name(resolved_village, lang)
-            return {
-                "success": True,
-                "resolved": True,
-                "village_name": resolved_village,
-                "formatted_text": village_msg("resolved", lang, name=display_name),
-                "matches": []
-            }
-
-    # 2. If not resolved exactly, find similar villages under the specified taluka
+    # 1. Try exact match (English or Marathi) in specified taluka first
+    # Auto-resolve ONLY on exact match. Partial inputs (e.g. 3-letter prefixes)
+    # should show the candidate options list as designed.
     resolved_taluka = resolve_taluka(taluka_clean) if taluka_clean else None
-    filters = {}
-    if resolved_taluka:
-        filters["taluka"] = resolved_taluka
+    exact_village = None
 
+    if resolved_taluka:
+        exact_village = frappe.db.get_value(
+            "Village Profile", {"village_name": village_clean, "taluka": resolved_taluka}, "name"
+        )
+        if not exact_village and is_devanagari(village_clean):
+            exact_village = frappe.db.get_value(
+                "Village Profile", {"village_name_marathi": village_clean, "taluka": resolved_taluka}, "name"
+            )
+        if not exact_village:
+            # Case-insensitive English in taluka
+            v_match = frappe.db.sql("""
+                SELECT name FROM `tabVillage Profile`
+                WHERE LOWER(village_name) = LOWER(%(name)s) AND taluka = %(taluka)s
+                LIMIT 1
+            """, {"name": village_clean, "taluka": resolved_taluka}, as_dict=True)
+            if v_match:
+                exact_village = v_match[0].name
+
+    if not exact_village and len(village_clean) >= 4:
+        # Full exact match across all talukas (only if 4+ characters)
+        exact_village = frappe.db.get_value(
+            "Village Profile", {"village_name": village_clean}, "name"
+        )
+        if not exact_village and is_devanagari(village_clean):
+            exact_village = frappe.db.get_value(
+                "Village Profile", {"village_name_marathi": village_clean}, "name"
+            )
+
+    if exact_village:
+        display_name = village_display_name(exact_village, lang)
+        return {
+            "success": True,
+            "resolved": True,
+            "village_name": exact_village,
+            "formatted_text": village_msg("resolved", lang, name=display_name),
+            "matches": []
+        }
+
+    # 2. Multi-tier phonetic & fuzzy candidate search
+    from rapidfuzz import fuzz
+
+    query = village_clean.strip().lower()
+    q_is_dev = is_devanagari(query)
+    q_skel = devanagari_skeleton(query) if q_is_dev else ""
+    q_roman = transliterate_to_roman(query).strip().lower() if q_is_dev else query
+
+    def score_villages(village_list):
+        scored = []
+        for v in village_list:
+            name_eng = (v.village_name or "").strip().lower()
+            name_mr = (v.village_name_marathi or "").strip().lower()
+            if not name_eng and not name_mr:
+                continue
+
+            mr_skel = devanagari_skeleton(name_mr) if name_mr else ""
+            v_roman = transliterate_to_roman(name_mr).strip().lower() if name_mr else name_eng
+
+            score = 0
+            if query == name_eng or (name_mr and query == name_mr):
+                score = 100
+            elif name_mr and name_mr.startswith(query):
+                score = 90
+            elif name_eng and name_eng.startswith(query):
+                score = 90
+            elif q_skel and mr_skel and mr_skel.startswith(q_skel):
+                score = 85
+            elif name_mr and query in name_mr:
+                score = 75
+            elif name_eng and query in name_eng:
+                score = 75
+            elif q_skel and mr_skel and q_skel in mr_skel:
+                score = 70
+            elif (name_eng and name_eng.startswith(q_roman)) or (v_roman and v_roman.startswith(q_roman)):
+                score = 65
+            else:
+                # Check if individual words inside multi-word English names start with q_roman (e.g. 'Amgaon' in 'Made Amgaon')
+                matched_word = False
+                if len(q_roman) >= 3:
+                    for w in name_eng.split():
+                        if w.startswith(q_roman):
+                            score = 60
+                            matched_word = True
+                            break
+                if not matched_word:
+                    rf = max(
+                        fuzz.ratio(q_roman, name_eng),
+                        fuzz.ratio(q_roman, v_roman) if v_roman else 0
+                    )
+                    if rf >= 75:
+                        score = rf * 0.6
+
+            if score > 0:
+                scored.append((score, v.name))
+        return scored
+
+    # Search in taluka first
+    filters = {"taluka": resolved_taluka} if resolved_taluka else {}
     villages = frappe.get_all(
         "Village Profile",
         filters=filters,
         fields=["name", "village_name", "village_name_marathi"]
     )
+    matches = score_villages(villages)
 
-    query = village_clean.strip().lower()
-    matches = []
+    # If no matches found in taluka, fallback to search across all talukas
+    if not matches and resolved_taluka:
+        all_villages = frappe.get_all(
+            "Village Profile",
+            fields=["name", "village_name", "village_name_marathi"]
+        )
+        matches = score_villages(all_villages)
 
-    for v in villages:
-        name_eng = (v.village_name or "").strip().lower()
-        name_mr = (v.village_name_marathi or "").strip().lower()
-
-        score = 0
-        if query == name_eng or query == name_mr:
-            score = 100
-        elif name_eng.startswith(query) or name_mr.startswith(query):
-            score = 80
-        elif query in name_eng or name_eng in query:
-            score = 50
-        elif query in name_mr or name_mr in query:
-            score = 50
-        else:
-            if is_devanagari(village_clean):
-                query_roman = transliterate_to_roman(village_clean).strip().lower()
-                if query_roman == name_eng or query_roman.startswith(name_eng) or name_eng.startswith(query_roman):
-                    score = 70
-                elif query_roman in name_eng or name_eng in query_roman:
-                    score = 40
-            else:
-                if v.village_name_marathi:
-                    v_mar_roman = transliterate_to_roman(v.village_name_marathi).strip().lower()
-                    if query == v_mar_roman or query.startswith(v_mar_roman) or v_mar_roman.startswith(query):
-                        score = 70
-                    elif query in v_mar_roman or v_mar_roman in query:
-                        score = 40
-        if score > 0:
-            matches.append((score, v.name))
-
-    matches.sort(key=lambda x: x[0], reverse=True)
+    # Sort matches by score descending, then by length ascending (prefer direct concise names)
+    matches.sort(key=lambda x: (x[0], -len(x[1])), reverse=True)
 
     unique_matches = []
     seen = set()
