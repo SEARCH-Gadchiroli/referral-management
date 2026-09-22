@@ -419,14 +419,28 @@ def format_patient_name(name: str, raw_name: str = None, lang: str = "mr") -> st
         return val.strip()
 
     # If name is in Roman script, translate/transliterate to Devanagari
+    # Fallback chain: Google Translate → Google Input Tools → ITRANS (lowercased)
     try:
         translated = GoogleTranslator(source="en", target=lang).translate(val)
-        return translated.strip() if translated else val
+        if translated and translated.strip():
+            return translated.strip()
     except Exception:
-        try:
-            return transliterate(val, sanscript.ITRANS, sanscript.DEVANAGARI)
-        except Exception:
-            return val
+        pass
+
+    # Google Input Tools — phonetically accurate for Indian names
+    try:
+        git_result = google_input_transliterate(val, target_lang=lang)
+        if git_result:
+            return git_result
+    except Exception:
+        pass
+
+    # Last resort: ITRANS with lowercased input to avoid uppercase letter bugs
+    # (uppercase M = anusvara, I = ī, R = ṝ in ITRANS)
+    try:
+        return transliterate(val.lower(), sanscript.ITRANS, sanscript.DEVANAGARI)
+    except Exception:
+        return val
 
 
 def format_gender(gender: str, lang: str = "mr") -> str:
@@ -485,6 +499,60 @@ def format_age_display(age) -> str:
 def is_devanagari(text: str) -> bool:
     """Check if text contains Devanagari script"""
     return any("\u0900" <= c <= "\u097F" for c in (text or ""))
+
+
+def google_input_transliterate(text: str, target_lang: str = "mr") -> str | None:
+    """
+    Use Google Input Tools API for phonetically accurate Roman → Devanagari
+    transliteration. Unlike ITRANS (which treats uppercase letters as special
+    diacritical markers), this handles natural English spellings of Indian names
+    correctly — e.g. "Manasvini" → "मनस्विनी", "Sakshi" → "साक्षी".
+
+    Returns the top suggestion joined as a string, or None on failure.
+    Note: This is an unofficial Google API endpoint; the fallback chain in
+    format_patient_name() ensures we never depend solely on it.
+    """
+    import requests
+
+    if not text or not text.strip():
+        return None
+
+    url = "https://inputtools.google.com/request"
+    words = text.strip().split()
+    transliterated_words = []
+
+    for word in words:
+        # Skip words that are already Devanagari
+        if is_devanagari(word):
+            transliterated_words.append(word)
+            continue
+
+        # Skip very short non-alpha tokens (numbers, punctuation)
+        if len(word) <= 1 and not word.isalpha():
+            transliterated_words.append(word)
+            continue
+
+        params = {
+            "text": word.lower(),
+            "itc": f"{target_lang}-t-i0-und",
+            "num": 1,
+            "cp": 0,
+            "cs": 1,
+            "ie": "utf-8",
+            "oe": "utf-8",
+        }
+        try:
+            response = requests.get(url, params=params, timeout=3)
+            data = response.json()
+            if data[0] == "SUCCESS" and data[1] and data[1][0] and data[1][0][1]:
+                transliterated_words.append(data[1][0][1][0])  # Top suggestion
+            else:
+                transliterated_words.append(word)
+        except Exception:
+            transliterated_words.append(word)
+
+    result = " ".join(transliterated_words).strip()
+    return result if result and is_devanagari(result) else None
 
 
 def _iast_to_english(iast_text: str) -> str:
@@ -600,6 +668,7 @@ def resolve_village(village_raw: str, taluka: str = None) -> str | None:
     """
     Resolve village name to Village Profile record.
     Tries: original text, Marathi name, transliterated, case-insensitive, fuzzy.
+    Handles both Devanagari input (from Glific chatbot) and Roman input.
     If taluka is provided, prioritizes villages in that taluka.
     Returns None if no match found (never falls back to a random village).
     """
@@ -664,7 +733,40 @@ def resolve_village(village_raw: str, taluka: str = None) -> str | None:
         frappe.logger().info(f"[resolve_village] Case-insensitive English match found: {village[0].name}")
         return village[0].name
 
-    # Try transliterated version
+    # 3. Fuzzy LIKE matching on Marathi name (for Devanagari input from Glific)
+    # Handles partial/variant spellings — e.g. "मेंढा" matching "मेंढाटोला"
+    if is_devanagari(village_raw) and len(village_raw) >= 2:
+        # Try substring match: input contained in village_name_marathi OR vice versa
+        fuzzy_query = """
+            SELECT name, village_name, village_name_marathi FROM `tabVillage Profile`
+            WHERE village_name_marathi LIKE %(pattern)s
+               OR %(raw)s LIKE CONCAT('%%', village_name_marathi, '%%')
+        """
+        params = {"pattern": f"%{village_raw}%", "raw": village_raw}
+
+        if taluka:
+            fuzzy_query += " AND taluka = %(taluka)s"
+            params["taluka"] = taluka
+
+        fuzzy_query += """
+            ORDER BY
+                CASE
+                    WHEN village_name_marathi = %(raw)s THEN 0
+                    WHEN village_name_marathi LIKE CONCAT(%(raw)s, '%%') THEN 1
+                    WHEN village_name_marathi LIKE CONCAT('%%', %(raw)s, '%%') THEN 2
+                    ELSE 3
+                END,
+                ABS(CHAR_LENGTH(village_name_marathi) - CHAR_LENGTH(%(raw)s)) ASC
+            LIMIT 1
+        """
+        village = frappe.db.sql(fuzzy_query, params, as_dict=True)
+        if village:
+            frappe.logger().info(
+                f"[resolve_village] Fuzzy Marathi match: '{village_raw}' → '{village[0].village_name}' (marathi: '{village[0].village_name_marathi}')"
+            )
+            return village[0].name
+
+    # 4. Try transliterated version (Devanagari → Roman → match English village_name)
     if is_devanagari(village_raw):
         transliterated = transliterate_to_roman(village_raw)
         frappe.logger().info(f"[resolve_village] Transliterated to: '{transliterated}'")
@@ -711,11 +813,40 @@ def resolve_village(village_raw: str, taluka: str = None) -> str | None:
                     )
                     return village[0].name
 
+    # 5. For Roman-script input: try Google Input Tools to get Devanagari, then match on Marathi name
+    if not is_devanagari(village_raw) and len(village_raw) >= 3:
+        try:
+            devanagari_name = google_input_transliterate(village_raw, target_lang="mr")
+            if devanagari_name:
+                frappe.logger().info(f"[resolve_village] Google Input transliterated to: '{devanagari_name}'")
+                # Exact Marathi match
+                village = frappe.db.get_value(
+                    "Village Profile", {"village_name_marathi": devanagari_name}, "name"
+                )
+                if village:
+                    frappe.logger().info(f"[resolve_village] Google Input Marathi exact match found: {village}")
+                    return village
+
+                # Fuzzy Marathi LIKE match
+                village = frappe.db.sql("""
+                    SELECT name, village_name, village_name_marathi FROM `tabVillage Profile`
+                    WHERE village_name_marathi LIKE %(pattern)s
+                    ORDER BY ABS(CHAR_LENGTH(village_name_marathi) - CHAR_LENGTH(%(name)s)) ASC
+                    LIMIT 1
+                """, {"pattern": f"%{devanagari_name}%", "name": devanagari_name}, as_dict=True)
+                if village:
+                    frappe.logger().info(
+                        f"[resolve_village] Google Input fuzzy Marathi match: '{village_raw}' → '{devanagari_name}' → '{village[0].village_name}'"
+                    )
+                    return village[0].name
+        except Exception as e:
+            frappe.logger().info(f"[resolve_village] Google Input Tools failed: {e}")
+
     # No match found — log available villages and return None
-    all_villages = frappe.get_all("Village Profile", fields=["name", "village_name"])
+    all_villages = frappe.get_all("Village Profile", fields=["name", "village_name"], limit=15)
     village_names = [v.get("village_name", v.get("name")) for v in all_villages]
     frappe.logger().warning(
-        f"No village match found for '{village_raw}' (transliterated: '{transliterate_to_roman(village_raw) if is_devanagari(village_raw) else 'N/A'}') — leaving unset for manual correction. Available villages: {village_names[:10]}"
+        f"No village match found for '{village_raw}' (transliterated: '{transliterate_to_roman(village_raw) if is_devanagari(village_raw) else 'N/A'}') — leaving unset for manual correction. Sample villages: {village_names[:10]}"
     )
     return None
 

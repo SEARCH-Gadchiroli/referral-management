@@ -97,3 +97,66 @@ class VillageProfile(Document):
 		if self.district and not self.state:
 			district_doc = frappe.get_doc("District", self.district)
 			self.state = district_doc.state
+
+
+def get_list(doctype, txt, filters, limit_start, limit_page_length, order_by=None):
+	"""
+	Custom get_list for Village Profile Link field search.
+	Enables substring matching on both English (village_name) and Marathi
+	(village_name_marathi) names so users can find villages by typing partial
+	names in either script.
+
+	Default Frappe Link search only does prefix match on `name` — this is
+	insufficient for 1500+ villages, especially when users type in Devanagari.
+	"""
+	txt = (txt or "").strip()
+	if not txt:
+		return frappe.get_all(
+			"Village Profile",
+			filters=filters,
+			fields=["name", "village_name", "village_name_marathi", "taluka", "village_number"],
+			order_by="village_name asc",
+			start=limit_start,
+			page_length=limit_page_length,
+		)
+
+	# Build condition list for parameterized SQL
+	conditions = []
+	params = {"txt_like": f"%{txt}%", "txt_prefix": f"{txt}%", "txt_exact": txt}
+
+	# Search across English name, Marathi name, taluka, and village number
+	conditions.append("""(
+		village_name LIKE %(txt_like)s
+		OR village_name_marathi LIKE %(txt_like)s
+		OR name LIKE %(txt_like)s
+		OR taluka LIKE %(txt_prefix)s
+		OR CAST(village_number AS CHAR) LIKE %(txt_prefix)s
+	)""")
+
+	# Apply any additional filters passed by Frappe
+	filter_conditions = ""
+	if filters:
+		if isinstance(filters, dict):
+			for key, val in filters.items():
+				param_key = f"filter_{key}"
+				filter_conditions += f" AND `{key}` = %({param_key})s"
+				params[param_key] = val
+
+	query = f"""
+		SELECT name, village_name, village_name_marathi, taluka, village_number
+		FROM `tabVillage Profile`
+		WHERE {conditions[0]} {filter_conditions}
+		ORDER BY
+			CASE
+				WHEN village_name = %(txt_exact)s OR village_name_marathi = %(txt_exact)s THEN 0
+				WHEN village_name LIKE %(txt_prefix)s OR village_name_marathi LIKE %(txt_prefix)s THEN 1
+				WHEN village_name LIKE %(txt_like)s OR village_name_marathi LIKE %(txt_like)s THEN 2
+				ELSE 3
+			END,
+			village_name ASC
+		LIMIT %(limit_start)s, %(limit_page_length)s
+	"""
+	params["limit_start"] = limit_start or 0
+	params["limit_page_length"] = limit_page_length or 20
+
+	return frappe.db.sql(query, params, as_dict=True)

@@ -338,6 +338,8 @@
     "name": "Village Profile",
     "naming_rule": "By fieldname",
     "owner": "Administrator",
+    "search_fields": "village_name_marathi, taluka, village_number",
+    "title_field": "village_name",
     "permissions": [
         {
             "create": 1,
