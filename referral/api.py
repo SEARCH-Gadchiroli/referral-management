@@ -1119,6 +1119,7 @@ VALID_DOCTORS = [
     "Dr Adhya Dubey",
     "Dr Sanjeev Kumar",
     "Dr Ashwini Shinde",
+    "Dr Sayali Shinde",
     "Dr Mrunali Chaudhari",
     "Dr Shrirang Pathak",
     "Dr Pritam Dorlikar",
@@ -1132,14 +1133,36 @@ VALID_DOCTORS = [
 def resolve_referred_doctor(doctor_raw: str) -> str:
     if not doctor_raw:
         return ""
-    
+
+    raw_clean = doctor_raw.strip().lower()
+
+    # Direct check for "Other" in Marathi, Hindi, English
+    other_variants = {
+        "other", "others", "itar", "anya", "none", "na", "n/a",
+        "इतर", "अन्य", "इतर डॉक्टर", "अन्य डॉक्टर", "डॉ इतर", "डॉ. इतर",
+        "dr. itar", "dr itar", "dr. other", "dr other", "dr. anya", "dr anya"
+    }
+    if raw_clean in other_variants:
+        return "Other"
+
     cleaned = doctor_raw.strip()
     if is_devanagari(cleaned):
         cleaned = transliterate_to_roman(cleaned)
 
     cleaned_lower = cleaned.lower()
+    if cleaned_lower in other_variants:
+        return "Other"
+
     import re
-    dr_stripped = re.sub(r'^(dr\.|dr|da[ăāॅॉ\u0945\u0949\u0306\u0902]?\.|da[ăāॅॉ\u0945\u0949\u0306\u0902]?|डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|डा|डाॉ\.|डाॉ)\s*', '', cleaned_lower, flags=re.IGNORECASE).strip()
+    dr_stripped = re.sub(
+        r'^(dr\.|dr|da[ăāॅॉ\u0945\u0949\u0306\u0902]?\.|da[ăāॅॉ\u0945\u0949\u0306\u0902]?|डॉक्टर|डाक्टर|डॉ\.|डॉ|डाॅ\.|डाॅ|डा\.|डा|डाॉ\.|डाॉ)\s*',
+        '',
+        cleaned_lower,
+        flags=re.IGNORECASE
+    ).strip()
+
+    if dr_stripped in other_variants:
+        return "Other"
 
     doctor_keywords = {
         "kunal": "Dr Kunal Vidhale",
@@ -1149,6 +1172,9 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         "sanjeev": "Dr Sanjeev Kumar",
         "kumar": "Dr Sanjeev Kumar",
         "ashwini": "Dr Ashwini Shinde",
+        "sayali": "Dr Sayali Shinde",
+        "sayli": "Dr Sayali Shinde",
+        "सायली": "Dr Sayali Shinde",
         "shinde": "Dr Ashwini Shinde",
         "mrunali": "Dr Mrunali Chaudhari",
         "chaudhari": "Dr Mrunali Chaudhari",
@@ -1162,8 +1188,6 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         "agrawal": "Dr Aditya Agrawal",
         "ganesh": "Dr Ganesh Kudmethe",
         "kudmethe": "Dr Ganesh Kudmethe",
-        "other": "Other",
-        "इतर": "Other"
     }
 
     for doc in VALID_DOCTORS:
@@ -1174,7 +1198,9 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         if kw in dr_stripped or kw in cleaned_lower:
             return doc
 
-    return "Other" if cleaned_lower in ("other", "इतर") else (f"Dr. {dr_stripped.title()}" if dr_stripped else doctor_raw.strip())
+    # If not recognized as one of the 10 specific SEARCH doctors, default to "Other"
+    # because referred_doctor is a strict Frappe Select field.
+    return "Other"
 
 
 def resolve_taluka(taluka_raw: str) -> str | None:

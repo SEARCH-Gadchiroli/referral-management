@@ -288,7 +288,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Referred Doctor",
-   "options": "\nDr Kunal Vidhale\nDr Adhya Dubey\nDr Sanjeev Kumar\nDr Ashwini Shinde\nDr Mrunali Chaudhari\nDr Shrirang Pathak\nDr Pritam Dorlikar\nDr Rohini Wankhede\nDr Aditya Agrawal\nDr Ganesh Kudmethe\nOther"
+   "options": "\nDr Kunal Vidhale\nDr Adhya Dubey\nDr Sanjeev Kumar\nDr Ashwini Shinde\nDr Sayali Shinde\nDr Mrunali Chaudhari\nDr Shrirang Pathak\nDr Pritam Dorlikar\nDr Rohini Wankhede\nDr Aditya Agrawal\nDr Ganesh Kudmethe\nOther"
   },
   {
    "fieldname": "additional_notes",

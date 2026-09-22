@@ -41,6 +41,7 @@ class PatientReferral(Document):
             "Dr Adhya Dubey",
             "Dr Sanjeev Kumar",
             "Dr Ashwini Shinde",
+            "Dr Sayali Shinde",
             "Dr Mrunali Chaudhari",
             "Dr Shrirang Pathak",
             "Dr Pritam Dorlikar",
