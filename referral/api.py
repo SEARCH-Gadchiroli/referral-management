@@ -1126,6 +1126,7 @@ VALID_DOCTORS = [
     "Dr Rohini Wankhede",
     "Dr Aditya Agrawal",
     "Dr Ganesh Kudmethe",
+    "Dr Parmanand Nikas",
     "Other"
 ]
 
@@ -1188,6 +1189,8 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         "agrawal": "Dr Aditya Agrawal",
         "ganesh": "Dr Ganesh Kudmethe",
         "kudmethe": "Dr Ganesh Kudmethe",
+        "parmanand": "Dr Parmanand Nikas",
+        "nikas": "Dr Parmanand Nikas",
     }
 
     for doc in VALID_DOCTORS:
