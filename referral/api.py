@@ -4104,6 +4104,40 @@ def _apply_multi_filter(conditions, values, field_sql, param_name, raw_val):
 		values[param_name] = tuple(items)
 
 
+def _get_user_referral_departments(user=None):
+	"""
+	Return the list of assigned referral departments for the user if not Administrator.
+	Supports both the new Table MultiSelect child table `referral_departments`
+	and the legacy single `referral_department` field for backwards compatibility.
+	"""
+	u = user or frappe.session.user
+	if not u or u in ("Administrator", "Guest"):
+		return []
+
+	# Check child table referral_departments (Table MultiSelect)
+	if frappe.db.table_exists("User Referral Department"):
+		depts = frappe.get_all(
+			"User Referral Department",
+			filters={"parent": u, "parenttype": "User"},
+			pluck="department"
+		)
+		if depts:
+			return [d for d in depts if d]
+
+	# Fallback to single referral_department Select field
+	single = frappe.db.get_value("User", u, "referral_department")
+	if single:
+		return [single]
+
+	return []
+
+
+def _get_user_referral_department(user=None):
+	"""Legacy single department getter for backward compatibility."""
+	depts = _get_user_referral_departments(user)
+	return ", ".join(depts) if depts else None
+
+
 def _get_filtered_referrals(form_dict):
 	search = form_dict.get("search", "").strip()
 	status = form_dict.get("status")
@@ -4141,7 +4175,17 @@ def _get_filtered_referrals(form_dict):
 	_apply_multi_filter(conditions, values, "opd_category", "opd_category", opd_category)
 	_apply_multi_filter(conditions, values, "opd_departments", "opd_department", opd_department)
 	_apply_multi_filter(conditions, values, "facility_visited", "facility_visited", facility_visited)
-	_apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
+
+	user_depts = _get_user_referral_departments()
+	if user_depts:
+		if len(user_depts) == 1:
+			conditions.append("referred_by_who = %(user_referral_dept)s")
+			values["user_referral_dept"] = user_depts[0]
+		else:
+			conditions.append("referred_by_who IN %(user_referral_depts)s")
+			values["user_referral_depts"] = tuple(user_depts)
+	else:
+		_apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
 	_apply_multi_filter(conditions, values, "referrer_name", "referrer_name", referrer_name)
 	_apply_multi_filter(conditions, values, "referrer_department", "referrer_department", referrer_department)
 	_apply_multi_filter(conditions, values, "patient_gender", "gender", gender)
@@ -4387,9 +4431,22 @@ def get_portal_referral_filter_options() -> dict:
     if frappe.session.user == "Guest":
         frappe.throw(_("Authentication required"), frappe.PermissionError)
 
+    user_depts = _get_user_referral_departments()
+
     def get_distinct(field):
-        rows = frappe.db.sql(f"SELECT DISTINCT {field} FROM `tabPatient Referral` WHERE {field} IS NOT NULL AND {field} != ''")
+        extra_cond = ""
+        vals = {}
+        if user_depts:
+            if len(user_depts) == 1:
+                extra_cond = " AND referred_by_who = %(user_dept)s"
+                vals["user_dept"] = user_depts[0]
+            else:
+                extra_cond = " AND referred_by_who IN %(user_depts)s"
+                vals["user_depts"] = tuple(user_depts)
+        rows = frappe.db.sql(f"SELECT DISTINCT {field} FROM `tabPatient Referral` WHERE {field} IS NOT NULL AND {field} != ''{extra_cond}", vals)
         return sorted([r[0] for r in rows if r[0]])
+
+    referred_by_whos = user_depts if user_depts else get_distinct("referred_by_who")
 
     return {
         "villages": get_distinct("patient_village"),
@@ -4400,12 +4457,14 @@ def get_portal_referral_filter_options() -> dict:
         "opd_categories": get_distinct("opd_category"),
         "opd_departments": get_distinct("opd_departments"),
         "facilities_visited": get_distinct("facility_visited"),
-        "referred_by_whos": get_distinct("referred_by_who"),
+        "referred_by_whos": referred_by_whos,
         "referrer_names": get_distinct("referrer_name"),
         "referrer_departments": get_distinct("referrer_department"),
         "referring_doctors": get_distinct("referred_doctor"),
         "genders": get_distinct("patient_gender"),
-        "statuses": ["Pending", "Follow-up In Progress", "Visited", "Closed - Not Visited", "No-Show", "Cancelled"]
+        "statuses": ["Pending", "Follow-up In Progress", "Visited", "Closed - Not Visited", "No-Show", "Cancelled"],
+        "user_departments": user_depts,
+        "user_department": ", ".join(user_depts) if user_depts else None
     }
 
 
@@ -4457,7 +4516,18 @@ def get_portal_referrals(
     _apply_multi_filter(conditions, values, "opd_category", "opd_category", opd_category)
     _apply_multi_filter(conditions, values, "opd_departments", "opd_department", opd_department)
     _apply_multi_filter(conditions, values, "facility_visited", "facility_visited", facility_visited)
-    _apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
+
+    user_depts = _get_user_referral_departments()
+    if user_depts:
+        if len(user_depts) == 1:
+            conditions.append("referred_by_who = %(user_referral_dept)s")
+            values["user_referral_dept"] = user_depts[0]
+        else:
+            conditions.append("referred_by_who IN %(user_referral_depts)s")
+            values["user_referral_depts"] = tuple(user_depts)
+    else:
+        _apply_multi_filter(conditions, values, "referred_by_who", "referred_by_who", referred_by_who)
+
     _apply_multi_filter(conditions, values, "referrer_name", "referrer_name", referrer_name)
     _apply_multi_filter(conditions, values, "referrer_department", "referrer_department", referrer_department)
     _apply_multi_filter(conditions, values, "patient_gender", "gender", gender)
@@ -4567,7 +4637,9 @@ def get_portal_referrals(
         "total_records": total_records,
         "total_pages": total_pages,
         "current_page": page,
-        "page_size": page_size
+        "page_size": page_size,
+        "user_departments": user_depts,
+        "user_department": ", ".join(user_depts) if user_depts else None
     }
 
 
@@ -4684,11 +4756,14 @@ def get_current_user_profile() -> dict:
     roles = frappe.get_roles(user)
     is_system_manager = "System Manager" in roles or user == "Administrator"
     full_name = frappe.utils.get_fullname(user) or user
+    user_depts = _get_user_referral_departments(user)
     return {
         "user": user,
         "full_name": full_name,
         "roles": roles,
-        "is_system_manager": is_system_manager
+        "is_system_manager": is_system_manager,
+        "referral_departments": user_depts,
+        "referral_department": ", ".join(user_depts) if user_depts else None
     }
 
 

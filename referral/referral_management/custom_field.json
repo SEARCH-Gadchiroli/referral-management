@@ -1,0 +1,14 @@
+[
+  {
+    "doctype": "Custom Field",
+    "dt": "User",
+    "module": "Referral Management",
+    "fieldname": "referral_department",
+    "fieldtype": "Select",
+    "label": "Referral Department",
+    "insert_after": "role_profile_name",
+    "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nArogyadoot\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist",
+    "description": "If set, the user will only see Patient Referral records matching this department.",
+    "translatable": 0
+  }
+]

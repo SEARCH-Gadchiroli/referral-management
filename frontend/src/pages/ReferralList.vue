@@ -4,7 +4,16 @@
     <!-- Header -->
     <div class="sm:flex sm:items-center sm:justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Patient Referrals</h1>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Patient Referrals</h1>
+          <span
+            v-if="effectiveUserDepts.length"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+          >
+            <FeatherIcon name="lock" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            Showing: {{ effectiveUserDepts.join(', ') }}
+          </span>
+        </div>
         <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Monitor secondary hospital referrals and track patient arrival status.</p>
       </div>
       <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-2">
@@ -195,6 +204,8 @@
       :is-open="filterDrawerOpen"
       :filters="filters"
       :options="filterOptions"
+      :user-department="userDepartment"
+      :user-departments="userDepartments"
       @close="filterDrawerOpen = false"
       @apply="onApplyFilters"
       @reset="resetAllFilters"
@@ -254,10 +265,18 @@ export default {
         start_date: '',
         end_date: '',
       },
+      userDepartment: null,
+      userDepartments: [],
       searchTimeout: null,
     }
   },
   computed: {
+    effectiveUserDepts() {
+      if (this.userDepartments && this.userDepartments.length) {
+        return this.userDepartments
+      }
+      return this.userDepartment ? [this.userDepartment] : []
+    },
     activeFilterCount() {
       const keys = [
         'status', 'gender', 'min_age', 'max_age', 'village', 'taluka',
@@ -266,6 +285,7 @@ export default {
         'referrer_department', 'referring_doctor', 'start_date', 'end_date'
       ]
       return keys.filter(k => {
+        if (k === 'referred_by_who' && this.effectiveUserDepts.length > 0) return false
         const val = this.filters[k]
         if (Array.isArray(val)) return val.length > 0
         return Boolean(val)
@@ -298,6 +318,12 @@ export default {
         const data = await res.json()
         if (data.message) {
           this.filterOptions = data.message
+          if (data.message.user_departments) {
+            this.userDepartments = data.message.user_departments
+          }
+          if (data.message.user_department) {
+            this.userDepartment = data.message.user_department
+          }
         }
       } catch (e) {
         console.warn('Failed to load filter options', e)
@@ -322,7 +348,7 @@ export default {
         opd_category: [],
         opd_department: [],
         facility_visited: [],
-        referred_by_who: [],
+        referred_by_who: [...this.effectiveUserDepts],
         referrer_name: [],
         referrer_department: [],
         referring_doctor: [],
@@ -367,9 +393,13 @@ export default {
         if (data.message && data.message.records) {
           this.referrals = data.message.records
           this.totalRecords = data.message.total_records || this.referrals.length
+          this.userDepartment = data.message.user_department || null
+          this.userDepartments = data.message.user_departments || (this.userDepartment ? [this.userDepartment] : [])
         } else {
           this.referrals = []
           this.totalRecords = 0
+          this.userDepartment = null
+          this.userDepartments = []
         }
       } catch (e) {
         console.error('Failed to load referrals', e)

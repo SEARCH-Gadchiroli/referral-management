@@ -5,6 +5,15 @@ app_description = "Patient referral system via WhatsApp"
 app_email = "searchgadchiroli.tech@gmail.com"
 app_license = "mit"
 
+# Fixtures
+# --------
+fixtures = [
+    {
+        "doctype": "Custom Field",
+        "filters": [["module", "=", "Referral Management"]]
+    }
+]
+
 # Apps
 # ------------------
 
@@ -44,7 +53,6 @@ app_license = "mit"
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 

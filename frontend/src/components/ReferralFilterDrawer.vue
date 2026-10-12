@@ -136,7 +136,24 @@
           />
 
           <!-- Point of Referral -->
+          <div v-if="effectiveUserDepts.length" class="space-y-1">
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Point of Referral</label>
+            <div class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center justify-between">
+              <div class="flex flex-wrap items-center gap-1.5 font-semibold text-blue-700 dark:text-blue-300">
+                <FeatherIcon name="lock" class="w-3.5 h-3.5 text-blue-600" />
+                <span
+                  v-for="d in effectiveUserDepts"
+                  :key="d"
+                  class="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 px-2 py-0.5 rounded-md text-[11px]"
+                >
+                  {{ d }}
+                </span>
+              </div>
+              <span class="text-[10px] uppercase font-bold text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded whitespace-nowrap ml-2">Assigned Depts</span>
+            </div>
+          </div>
           <MultiSelectDropdown
+            v-else
             label="Point of Referral"
             placeholder="All Points of Referral"
             :options="options.referred_by_whos || []"
@@ -231,12 +248,31 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    userDepartment: {
+      type: String,
+      default: null,
+    },
+    userDepartments: {
+      type: Array,
+      default: () => [],
+    },
   },
   emits: ['close', 'apply', 'reset'],
   data() {
     return {
       localFilters: {},
     }
+  },
+  computed: {
+    effectiveUserDepts() {
+      if (this.userDepartments && this.userDepartments.length) {
+        return this.userDepartments
+      }
+      if (this.userDepartment) {
+        return [this.userDepartment]
+      }
+      return []
+    },
   },
   watch: {
     filters: {
@@ -278,7 +314,7 @@ export default {
         opd_category: [],
         opd_department: [],
         facility_visited: [],
-        referred_by_who: [],
+        referred_by_who: [...this.effectiveUserDepts],
         referrer_name: [],
         referrer_department: [],
         referring_doctor: [],
