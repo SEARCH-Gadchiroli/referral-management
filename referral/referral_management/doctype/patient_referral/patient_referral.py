@@ -48,6 +48,8 @@ class PatientReferral(Document):
             "Dr Rohini Wankhede",
             "Dr Aditya Agrawal",
             "Dr Ganesh Kudmethe",
+            "Dr Parmanand Nikas",
+            "Dr Datta Bhalavi",
             "Other",
         ]
         referring_doctor: DF.Data | None
@@ -399,4 +401,3 @@ def confirm_census_match(
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "confirm_census_match Error")
         return {"success": False, "error": str(e)}
-

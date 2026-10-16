@@ -1127,6 +1127,7 @@ VALID_DOCTORS = [
     "Dr Aditya Agrawal",
     "Dr Ganesh Kudmethe",
     "Dr Parmanand Nikas",
+    "Dr Datta Bhalavi",
     "Other"
 ]
 
@@ -1191,6 +1192,8 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         "kudmethe": "Dr Ganesh Kudmethe",
         "parmanand": "Dr Parmanand Nikas",
         "nikas": "Dr Parmanand Nikas",
+        "datta": "Dr Datta Bhalavi",
+        "bhalavi": "Dr Datta Bhalavi",
     }
 
     for doc in VALID_DOCTORS:
@@ -1201,7 +1204,7 @@ def resolve_referred_doctor(doctor_raw: str) -> str:
         if kw in dr_stripped or kw in cleaned_lower:
             return doc
 
-    # If not recognized as one of the 10 specific SEARCH doctors, default to "Other"
+    # If not recognized as a listed SEARCH doctor, default to "Other"
     # because referred_doctor is a strict Frappe Select field.
     return "Other"
 
@@ -5324,6 +5327,5 @@ def get_household_dossier(household_id: str) -> dict:
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "get_household_dossier API Error")
         return {"success": False, "error": str(e)}
-
 
 
