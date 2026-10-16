@@ -56,8 +56,17 @@
       </div>
 
       <!-- Results Count Bar -->
-      <div class="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-3">
-        <span>Found <strong>{{ totalRecords }}</strong> households in directory</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800 pt-3">
+        <div class="flex items-center gap-2">
+          <span>Found <strong>{{ totalRecords }}</strong> households in directory</span>
+          <span
+            v-if="isMaskedMode"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold text-[11px]"
+          >
+            <FeatherIcon name="shield" class="w-3 h-3 text-amber-500" />
+            <span>DPDP Protected View</span>
+          </span>
+        </div>
         <span v-if="totalPages > 1">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
       </div>
     </div>
@@ -109,8 +118,17 @@
             <span class="px-2 py-0.5 rounded-md bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 font-semibold">
               {{ hh.total_family_members }} Members
             </span>
-            <span v-if="hh.caste_of_head" class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span
+              v-if="hh.caste_of_head && !hh.is_dpdp_masked"
+              class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+            >
               {{ hh.caste_of_head }}
+            </span>
+            <span
+              v-else-if="hh.is_dpdp_masked"
+              class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-400 font-medium text-[10px]"
+            >
+              🔒 PII Protected
             </span>
             <span v-if="hh.total_land_acres > 0" class="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
               {{ hh.total_land_acres.toFixed(1) }} ac
@@ -187,6 +205,7 @@ const totalRecords = ref(0)
 const totalPages = ref(1)
 const currentPage = ref(1)
 const loading = ref(false)
+const isMaskedMode = ref(false)
 
 // Modal state
 const isModalOpen = ref(false)
@@ -238,6 +257,7 @@ const fetchHouseholds = async (page = 1) => {
       households.value = data.households || []
       totalRecords.value = data.total_records || 0
       totalPages.value = data.total_pages || 1
+      isMaskedMode.value = Boolean(data.is_dpdp_masked)
     }
   } catch (err) {
     console.error('Error fetching households:', err)

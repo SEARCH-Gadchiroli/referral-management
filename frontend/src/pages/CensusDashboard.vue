@@ -8,9 +8,9 @@
         <p class="mt-4 text-sm font-medium text-slate-500">Verifying role permissions...</p>
       </div>
 
-      <!-- Access Denied State (For Non-System Managers) -->
+      <!-- Access Denied State (For Unauthorized Users) -->
       <div
-        v-else-if="!isSystemManager"
+        v-else-if="!canViewCensus"
         class="bg-white dark:bg-slate-900 rounded-3xl p-10 border border-slate-200 dark:border-slate-800 shadow-sm max-w-xl mx-auto text-center space-y-4 my-12"
       >
         <div class="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
@@ -18,7 +18,7 @@
         </div>
         <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">Access Restricted</h2>
         <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-          Census infographics and household registry data are confidential and restricted strictly to users with the <strong>System Manager</strong> role.
+          Census infographics and household registry data are confidential and restricted strictly to authorized program administrators.
         </p>
         <div class="pt-4">
           <router-link
@@ -37,9 +37,25 @@
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-lg">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div class="space-y-2.5">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-950 border border-teal-800 text-teal-300 text-xs font-semibold">
-                <FeatherIcon name="database" class="w-3.5 h-3.5" />
-                <span>Dhanora Taluka 232 Tribal Villages Registry</span>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-950 border border-teal-800 text-teal-300 text-xs font-semibold">
+                  <FeatherIcon name="database" class="w-3.5 h-3.5" />
+                  <span>Dhanora Taluka 232 Tribal Villages Registry</span>
+                </div>
+                <div
+                  v-if="!isUnmasked"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs font-semibold"
+                >
+                  <FeatherIcon name="shield" class="w-3.5 h-3.5 text-emerald-400" />
+                  <span>DPDP Protected View (Masked PII)</span>
+                </div>
+                <div
+                  v-else
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950 border border-indigo-800 text-indigo-300 text-xs font-semibold"
+                >
+                  <FeatherIcon name="check-circle" class="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Full Registry Access (Admin)</span>
+                </div>
               </div>
               <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Census Infographics & Household Explorer</h1>
               <p class="text-sm text-slate-300 max-w-2xl leading-relaxed">
@@ -128,6 +144,8 @@ import HouseholdExplorer from '@/components/census/HouseholdExplorer.vue'
 
 const isCheckingPermission = ref(true)
 const isSystemManager = ref(false)
+const canViewCensus = ref(false)
+const isUnmasked = ref(false)
 
 const activeTab = ref('infographics')
 const selectedVillage = ref('ALL')
@@ -145,9 +163,13 @@ const checkPermission = async () => {
     const json = await res.json()
     const data = json.message || {}
     isSystemManager.value = Boolean(data.is_system_manager)
+    canViewCensus.value = Boolean(data.can_view_census || data.is_system_manager)
+    isUnmasked.value = Boolean(data.can_view_census_unmasked || data.is_system_manager)
   } catch (err) {
     console.error('Error checking user permissions:', err)
     isSystemManager.value = false
+    canViewCensus.value = false
+    isUnmasked.value = false
   } finally {
     isCheckingPermission.value = false
   }

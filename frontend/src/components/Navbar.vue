@@ -102,7 +102,7 @@
             </router-link>
 
             <router-link
-              v-if="isSystemManager"
+              v-if="canViewCensus"
               to="/census"
               custom
               v-slot="{ href, navigate, isActive }"
@@ -225,7 +225,7 @@
           Village Health Education
         </router-link>
         <router-link
-          v-if="isSystemManager"
+          v-if="canViewCensus"
           to="/census"
           @click="mobileMenuOpen = false"
           class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
@@ -263,6 +263,9 @@ export default {
   computed: {
     isSystemManager() {
       return Boolean(this.user.data?.is_system_manager)
+    },
+    canViewCensus() {
+      return Boolean(this.user.data?.can_view_census || this.user.data?.is_system_manager)
     },
   },
   setup() {

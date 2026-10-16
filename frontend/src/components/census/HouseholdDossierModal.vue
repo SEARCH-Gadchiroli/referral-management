@@ -39,6 +39,15 @@
       </div>
 
       <div v-else-if="household" class="p-6 overflow-y-auto space-y-6">
+        <!-- DPDP Notice Banner (if masked) -->
+        <div
+          v-if="household.is_dpdp_masked"
+          class="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-200 text-xs font-medium"
+        >
+          <FeatherIcon name="shield" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span><strong>DPDP Privacy Notice:</strong> Contact details and socio-economic asset inventories are redacted under data minimization guidelines.</span>
+        </div>
+
         <!-- 1. Family Head & Basic Info Cards -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
           <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
@@ -58,7 +67,8 @@
           <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Caste / Religion</span>
             <div class="font-bold text-slate-900 dark:text-slate-100 mt-0.5 text-sm truncate">
-              {{ household.caste_of_head || '—' }} {{ household.religion_of_head ? `(${household.religion_of_head})` : '' }}
+              <span v-if="household.is_dpdp_masked" class="text-slate-400 italic font-normal text-xs">🔒 Restricted (DPDP)</span>
+              <span v-else>{{ household.caste_of_head || '—' }} {{ household.religion_of_head ? `(${household.religion_of_head})` : '' }}</span>
             </div>
           </div>
 

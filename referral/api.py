@@ -4241,7 +4241,9 @@ def _get_filtered_referrals(form_dict):
 def export_referrals_excel():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Authentication required"), frappe.PermissionError)
-	if "System Manager" not in frappe.get_roles() and not frappe.has_permission("Patient Referral", "read"):
+	user_roles = frappe.get_roles()
+	admin_roles = ("System Manager", "Referral Admin User")
+	if not any(r in admin_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
 		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
 
 	from frappe.utils.xlsxutils import make_xlsx
@@ -4297,7 +4299,9 @@ def export_referrals_excel():
 def export_referrals_pdf():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Authentication required"), frappe.PermissionError)
-	if "System Manager" not in frappe.get_roles() and not frappe.has_permission("Patient Referral", "read"):
+	user_roles = frappe.get_roles()
+	admin_roles = ("System Manager", "Referral Admin User")
+	if not any(r in admin_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
 		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
 
 	from frappe.utils.pdf import get_pdf
@@ -4728,22 +4732,62 @@ def get_portal_village_sessions(search: str = None, session_conducted: str = Non
 
 
 # ==============================================================================
-# CENSUS ANALYTICS & HOUSEHOLD EXPLORER APIs (System Manager Only)
+# ==============================================================================
+# CENSUS ANALYTICS & HOUSEHOLD EXPLORER APIs (DPDP 3-Tier Privacy Architecture)
 # ==============================================================================
 
-def check_census_access():
+def check_census_macro_access():
+    """
+    Tier 1 & 2 Access Control:
+    Allows System Manager, Census Admin, Referral Admin User, MMU Admin, and Tribal Health Admin
+    to view macro infographics and search directory with DPDP masking applied.
+    """
     user = frappe.session.user
     if user == "Guest":
         frappe.throw("Authentication required to access Census data.", frappe.AuthenticationError)
+    if user == "Administrator":
+        return True
     roles = frappe.get_roles(user)
-    if "System Manager" not in roles and user != "Administrator":
-        frappe.throw("Access denied. Only users with the System Manager role can view census data.", frappe.PermissionError)
+    allowed = ("System Manager", "Census Admin", "Referral Admin User", "MMU Admin", "Tribal Health Admin")
+    if not any(r in allowed for r in roles):
+        frappe.throw("Access denied. Authorized roles only.", frappe.PermissionError)
+    return True
+
+
+def is_census_unmasked_authorized():
+    """
+    Tier 3 Microdata Access Control:
+    Full unmasked personal contact and socio-economic microdata is restricted strictly to
+    System Manager and Census Admin (central registry leads).
+    """
+    user = frappe.session.user
+    if user == "Administrator":
+        return True
+    roles = frappe.get_roles(user)
+    return "System Manager" in roles or "Census Admin" in roles
+
+
+def mask_phone_number(phone):
+    """Mask phone number under DPDP compliance: e.g. 98******12."""
+    if not phone:
+        return ""
+    p = str(phone).strip()
+    if len(p) >= 10:
+        return f"{p[:2]}{'*' * (len(p) - 4)}{p[-2:]}"
+    elif len(p) > 4:
+        return f"{p[:1]}{'*' * (len(p) - 2)}{p[-1:]}"
+    return "****"
+
+
+def check_census_access():
+    """Backward compatibility alias for census access."""
+    return check_census_macro_access()
 
 
 @frappe.whitelist()
 def get_current_user_profile() -> dict:
     """
-    Returns current logged in user details including System Manager role verification flag.
+    Returns current logged in user details including DPDP access flags.
     """
     user = frappe.session.user
     if user == "Guest":
@@ -4751,10 +4795,23 @@ def get_current_user_profile() -> dict:
             "user": "Guest",
             "full_name": "Guest",
             "roles": ["Guest"],
-            "is_system_manager": False
+            "is_system_manager": False,
+            "can_view_census": False,
+            "can_view_census_unmasked": False
         }
     roles = frappe.get_roles(user)
     is_system_manager = "System Manager" in roles or user == "Administrator"
+    is_referral_admin = "Referral Admin User" in roles or is_system_manager
+    is_mmu_admin = "MMU Admin" in roles or is_system_manager
+    is_census_admin = "Census Admin" in roles or is_system_manager
+
+    # Tier 1 & 2: Macro analytics & masked household search
+    can_view_census = (
+        is_system_manager or is_census_admin or is_referral_admin or is_mmu_admin or ("Tribal Health Admin" in roles)
+    )
+    # Tier 3: Unmasked personal & socio-economic microdata
+    can_view_census_unmasked = is_system_manager or is_census_admin
+
     full_name = frappe.utils.get_fullname(user) or user
     user_depts = _get_user_referral_departments(user)
     return {
@@ -4762,6 +4819,11 @@ def get_current_user_profile() -> dict:
         "full_name": full_name,
         "roles": roles,
         "is_system_manager": is_system_manager,
+        "is_referral_admin": is_referral_admin,
+        "is_mmu_admin": is_mmu_admin,
+        "is_census_admin": is_census_admin,
+        "can_view_census": can_view_census,
+        "can_view_census_unmasked": can_view_census_unmasked,
         "referral_departments": user_depts,
         "referral_department": ", ".join(user_depts) if user_depts else None
     }
@@ -5190,6 +5252,17 @@ def search_census_households(village: str = None, house_number: str = None, quer
             LIMIT {offset}, {page_size}
         """
         records = frappe.db.sql(sql, values, as_dict=True)
+        is_unmasked = is_census_unmasked_authorized()
+        for r in records:
+            if not is_unmasked:
+                r["mobile_number"] = mask_phone_number(r.get("mobile_number"))
+                r["caste_of_head"] = "Restricted (DPDP)"
+                r["religion_of_head"] = "Restricted (DPDP)"
+                r["ration_card"] = "Restricted"
+                r["total_land_acres"] = 0
+                r["is_dpdp_masked"] = True
+            else:
+                r["is_dpdp_masked"] = False
 
         return {
             "success": True,
@@ -5197,7 +5270,8 @@ def search_census_households(village: str = None, house_number: str = None, quer
             "total_records": total_count,
             "total_pages": total_pages,
             "current_page": page,
-            "page_size": page_size
+            "page_size": page_size,
+            "is_dpdp_masked": not is_unmasked
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "search_census_households API Error")
@@ -5207,8 +5281,7 @@ def search_census_households(village: str = None, house_number: str = None, quer
 @frappe.whitelist()
 def get_household_dossier(household_id: str) -> dict:
     """
-    Fetches the full dossier of a Census Household including all members and asset tables.
-    Only accessible by users with the System Manager role.
+    Fetches the dossier of a Census Household with DPDP privacy protection applied for operational roles.
     """
     try:
         check_census_access()
@@ -5218,6 +5291,8 @@ def get_household_dossier(household_id: str) -> dict:
         doc = frappe.get_doc("Census Household", household_id)
         data = doc.as_dict()
 
+        is_unmasked = is_census_unmasked_authorized()
+
         # Set head_of_household if not explicitly stored
         if not data.get("head_of_household"):
             members = data.get("family_members") or []
@@ -5225,9 +5300,26 @@ def get_household_dossier(household_id: str) -> dict:
                 head = next((m for m in members if m.get("identification_number") == 1), members[0])
                 data["head_of_household"] = head.get("member_name")
 
+        if not is_unmasked:
+            data["mobile_number"] = mask_phone_number(data.get("mobile_number"))
+            data["caste_of_head"] = "Restricted (DPDP)"
+            data["religion_of_head"] = "Restricted (DPDP)"
+            data["ration_card"] = "Restricted"
+            data["wet_land_acre"] = 0
+            data["dry_land_acre"] = 0
+            # Redact detailed asset tables under DPDP data minimization
+            data["livestock"] = []
+            data["household_items"] = []
+            data["water_sources"] = []
+            data["cooking_fuel"] = []
+            data["is_dpdp_masked"] = True
+        else:
+            data["is_dpdp_masked"] = False
+
         return {
             "success": True,
-            "household": data
+            "household": data,
+            "is_dpdp_masked": not is_unmasked
         }
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "get_household_dossier API Error")
