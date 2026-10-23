@@ -172,6 +172,7 @@ DEPARTMENT_KEYWORDS = {
     "Physiotherapy": "Physiotherapy",
     "फिजिओथेरपी": "Physiotherapy",
     "फिजियोथेरेपी": "Physiotherapy",
+    "भौतिकोपचार":"Physiotherapy",
     # Medicine
     "औषध": "Medicine",
     "मेडिसिन": "Medicine",
@@ -279,6 +280,7 @@ OPD_TRANSLATIONS = {
         "Pain Management OPD": "वेदना व्यवस्थापन",
         "Pain Management": "वेदना व्यवस्थापन",
         "Physiotherapy": "फिजिओथेरपी",
+        "Physiotherapy":"भौतिकोपचार",
         "Regular OPD": "नियमित ओपीडी",
         "Specialist OPD": "तज्ञ ओपीडी",
         "Surgical OPD": "शस्त्रक्रिया ओपीडी",
