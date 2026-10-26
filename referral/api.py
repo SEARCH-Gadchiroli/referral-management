@@ -4247,8 +4247,8 @@ def export_referrals_excel():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Authentication required"), frappe.PermissionError)
 	user_roles = frappe.get_roles()
-	admin_roles = ("System Manager", "Referral Admin User")
-	if not any(r in admin_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
+	allowed_roles = ("System Manager", "Referral Admin User", "Referral User")
+	if not any(r in allowed_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
 		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
 
 	from frappe.utils.xlsxutils import make_xlsx
@@ -4305,8 +4305,8 @@ def export_referrals_pdf():
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Authentication required"), frappe.PermissionError)
 	user_roles = frappe.get_roles()
-	admin_roles = ("System Manager", "Referral Admin User")
-	if not any(r in admin_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
+	allowed_roles = ("System Manager", "Referral Admin User", "Referral User")
+	if not any(r in allowed_roles for r in user_roles) and not frappe.has_permission("Patient Referral", "export") and not frappe.has_permission("Patient Referral", "read"):
 		frappe.throw(_("You do not have permission to export referrals."), frappe.PermissionError)
 
 	from frappe.utils.pdf import get_pdf
@@ -4807,12 +4807,22 @@ def get_current_user_profile() -> dict:
     roles = frappe.get_roles(user)
     is_system_manager = "System Manager" in roles or user == "Administrator"
     is_referral_admin = "Referral Admin User" in roles or is_system_manager
+    is_referral_user = "Referral User" in roles or is_referral_admin
+    can_access_referrals = is_referral_user or is_referral_admin or is_system_manager
+
     is_mmu_admin = "MMU Admin" in roles or is_system_manager
+    is_mmu_user = "MMU User" in roles or is_mmu_admin
+    can_access_mmu = is_mmu_user or is_mmu_admin or is_system_manager
+
+    is_tribal_health_admin = "Tribal Health Admin" in roles or is_system_manager
+    is_tribal_health_user = "Tribal Health User" in roles or is_tribal_health_admin
+    can_access_tribal_health = is_tribal_health_user or is_tribal_health_admin or is_system_manager
+
     is_census_admin = "Census Admin" in roles or is_system_manager
 
     # Tier 1 & 2: Macro analytics & masked household search
     can_view_census = (
-        is_system_manager or is_census_admin or is_referral_admin or is_mmu_admin or ("Tribal Health Admin" in roles)
+        is_system_manager or is_census_admin or is_referral_admin or is_mmu_admin or is_tribal_health_admin
     )
     # Tier 3: Unmasked personal & socio-economic microdata
     can_view_census_unmasked = is_system_manager or is_census_admin
@@ -4825,7 +4835,14 @@ def get_current_user_profile() -> dict:
         "roles": roles,
         "is_system_manager": is_system_manager,
         "is_referral_admin": is_referral_admin,
+        "is_referral_user": is_referral_user,
+        "can_access_referrals": can_access_referrals,
         "is_mmu_admin": is_mmu_admin,
+        "is_mmu_user": is_mmu_user,
+        "can_access_mmu": can_access_mmu,
+        "is_tribal_health_admin": is_tribal_health_admin,
+        "is_tribal_health_user": is_tribal_health_user,
+        "can_access_tribal_health": can_access_tribal_health,
         "is_census_admin": is_census_admin,
         "can_view_census": can_view_census,
         "can_view_census_unmasked": can_view_census_unmasked,

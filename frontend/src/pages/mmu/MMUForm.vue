@@ -723,7 +723,10 @@ export default {
       try {
         const res = await fetch('/api/method/mmu.mmu.doctype.mmu_patient_record.mmu_patient_record.get_master_data')
         const data = await res.json()
-        if (data.message) {
+        if (data.message?.error) {
+          this.feedbackMsg = data.message.error
+          this.feedbackError = true
+        } else if (data.message) {
           this.masterData = data.message
         }
       } catch (e) {
@@ -927,14 +930,15 @@ export default {
         })
 
         const data = await res.json()
-        if (res.ok && !data.exc) {
+        const errorMsg = data.message?.error || data.error || (data.message?.message && typeof data.message.message === 'string' && data.message.message.includes('not authorized') ? data.message.message : null)
+        if (res.ok && !data.exc && !errorMsg) {
           this.feedbackMsg = 'Record saved successfully!'
           this.feedbackError = false
           setTimeout(() => {
             this.$router.push('/mmu')
           }, 600)
         } else {
-          this.feedbackMsg = data._server_messages ? JSON.parse(data._server_messages).join(' ') : (data.exception || data.message || 'Failed to save record.')
+          this.feedbackMsg = errorMsg || (data._server_messages ? JSON.parse(data._server_messages).join(' ') : (data.exception || data.message || 'Failed to save record.'))
           this.feedbackError = true
         }
       } catch (err) {
@@ -958,10 +962,11 @@ export default {
           },
           body: JSON.stringify({ record_name: this.editId }),
         })
-        if (res.ok) {
+        const data = await res.json()
+        if (res.ok && !data.message?.error) {
           this.$router.push('/mmu')
         } else {
-          alert('Failed to delete record.')
+          alert(data.message?.error || data.error || 'Failed to delete record.')
         }
       } finally {
         this.saving = false

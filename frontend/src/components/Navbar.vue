@@ -42,6 +42,7 @@
             </router-link>
 
             <router-link
+              v-if="canAccessMMU"
               to="/mmu"
               custom
               v-slot="{ href, navigate, isActive }"
@@ -62,6 +63,7 @@
             </router-link>
 
             <router-link
+              v-if="canAccessReferrals"
               to="/referrals"
               custom
               v-slot="{ href, navigate, isActive }"
@@ -82,6 +84,7 @@
             </router-link>
 
             <router-link
+              v-if="canAccessTribalHealth"
               to="/village-health"
               custom
               v-slot="{ href, navigate, isActive }"
@@ -201,6 +204,7 @@
           Home
         </router-link>
         <router-link
+          v-if="canAccessMMU"
           to="/mmu"
           @click="mobileMenuOpen = false"
           class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
@@ -209,6 +213,7 @@
           MMU Visits
         </router-link>
         <router-link
+          v-if="canAccessReferrals"
           to="/referrals"
           @click="mobileMenuOpen = false"
           class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
@@ -217,6 +222,7 @@
           Referrals
         </router-link>
         <router-link
+          v-if="canAccessTribalHealth"
           to="/village-health"
           @click="mobileMenuOpen = false"
           class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium"
@@ -263,6 +269,15 @@ export default {
   computed: {
     isSystemManager() {
       return Boolean(this.user.data?.is_system_manager)
+    },
+    canAccessMMU() {
+      return Boolean(this.user.data?.can_access_mmu || this.user.data?.is_system_manager)
+    },
+    canAccessReferrals() {
+      return Boolean(this.user.data?.can_access_referrals || this.user.data?.is_system_manager)
+    },
+    canAccessTribalHealth() {
+      return Boolean(this.user.data?.can_access_tribal_health || this.user.data?.is_system_manager)
     },
     canViewCensus() {
       return Boolean(this.user.data?.can_view_census || this.user.data?.is_system_manager)

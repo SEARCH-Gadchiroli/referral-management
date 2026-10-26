@@ -28,7 +28,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         <!-- MMU Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-rose-200 dark:hover:border-rose-900/50 transition-all duration-200 flex flex-col justify-between group">
+        <div v-if="canAccessMMU" class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-rose-200 dark:hover:border-rose-900/50 transition-all duration-200 flex flex-col justify-between group">
           <div>
             <div class="w-12 h-12 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 group-hover:scale-105 transition-transform">
               <FeatherIcon name="truck" class="w-6 h-6 shrink-0" />
@@ -57,7 +57,7 @@
         </div>
 
         <!-- Referrals Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/50 transition-all duration-200 flex flex-col justify-between group">
+        <div v-if="canAccessReferrals" class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900/50 transition-all duration-200 flex flex-col justify-between group">
           <div>
             <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 group-hover:scale-105 transition-transform">
               <FeatherIcon name="file-text" class="w-6 h-6 shrink-0" />
@@ -80,7 +80,7 @@
         </div>
 
         <!-- Village Health Card -->
-        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-900/50 transition-all duration-200 flex flex-col justify-between group">
+        <div v-if="canAccessTribalHealth" class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-900/50 transition-all duration-200 flex flex-col justify-between group">
           <div>
             <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 group-hover:scale-105 transition-transform">
               <FeatherIcon name="users" class="w-6 h-6 shrink-0" />
@@ -132,12 +132,38 @@
 </template>
 
 <script>
-import { FeatherIcon } from 'frappe-ui'
+import { FeatherIcon, createResource } from 'frappe-ui'
 
 export default {
   name: 'Home',
   components: {
     FeatherIcon,
+  },
+  setup() {
+    const user = createResource({
+      url: 'referral.api.get_current_user_profile',
+      auto: true,
+      transform: (data) => {
+        return data || { full_name: 'Signed In', is_system_manager: false }
+      },
+    })
+    return {
+      user,
+    }
+  },
+  computed: {
+    isSystemManager() {
+      return Boolean(this.user.data?.is_system_manager)
+    },
+    canAccessMMU() {
+      return Boolean(this.user.data?.can_access_mmu || this.user.data?.is_system_manager)
+    },
+    canAccessReferrals() {
+      return Boolean(this.user.data?.can_access_referrals || this.user.data?.is_system_manager)
+    },
+    canAccessTribalHealth() {
+      return Boolean(this.user.data?.can_access_tribal_health || this.user.data?.is_system_manager)
+    },
   },
 }
 </script>
