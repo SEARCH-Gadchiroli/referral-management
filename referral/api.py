@@ -3,7 +3,7 @@ from collections import defaultdict
 from deep_translator import GoogleTranslator
 from indic_transliteration import sanscript
 from indic_transliteration.sanscript import transliterate
-from frappe.utils import getdate, today, cint
+from frappe.utils import getdate, today, cint, get_datetime
 from frappe import _
 
 VALID_DEPARTMENTS = [
@@ -2377,7 +2377,6 @@ def record_supervisor_visit(
     visit_date: str = None,
     patient_visited: str = None,
     facility_visited: str = None,
-    confirmation_date: str = None,
     patient_health_status: str = None,
     supervisor_name: str = None,
     non_visit_reason: str = None,
@@ -2408,8 +2407,6 @@ def record_supervisor_visit(
                             patient_visited = data.get("patient_visited") or data.get("visited")
                         if not facility_visited:
                             facility_visited = data.get("facility_visited")
-                        if not confirmation_date:
-                            confirmation_date = data.get("confirmation_date")
                         if not patient_health_status:
                             patient_health_status = data.get("patient_health_status")
                         if not supervisor_name:
@@ -2433,7 +2430,6 @@ def record_supervisor_visit(
         visit_date = clean_glific_value(visit_date)
         patient_visited = clean_glific_value(patient_visited)
         facility_visited = clean_glific_value(facility_visited)
-        confirmation_date = clean_glific_value(confirmation_date)
         patient_health_status = clean_glific_value(patient_health_status)
         supervisor_name = clean_glific_value(supervisor_name)
         non_visit_reason = clean_glific_value(non_visit_reason)
@@ -2523,16 +2519,10 @@ def record_supervisor_visit(
 
         # Handle fields based on visited state
         if is_visited:
-            confirmation_date_parsed = parse_date(confirmation_date)
-            # If confirmation_date parsing failed, fallback to visit_date
-            if not confirmation_date_parsed:
-                confirmation_date_parsed = visit_date_parsed
-                
             resolved_facility = resolve_facility_type(facility_visited)
             reason_code = None
             other_text = None
         else:
-            confirmation_date_parsed = None
             resolved_facility = None
             
             reason_code = resolve_non_visit_reason(non_visit_reason)
@@ -2548,7 +2538,6 @@ def record_supervisor_visit(
             "visit_date": visit_date_parsed,
             "patient_visited": 1 if is_visited else 0,
             "facility_visited": resolved_facility,
-            "confirmation_date": confirmation_date_parsed,
             "patient_health_status": resolve_patient_health_status(patient_health_status) if is_visited else None,
             "non_visit_reason_code": reason_code if not is_visited else None,
             "non_visit_reason_text": other_text if (not is_visited and reason_code == "Other") else None,
@@ -2560,7 +2549,7 @@ def record_supervisor_visit(
         if is_visited:
             referral.status = "Visited"
             referral.facility_visited = resolved_facility
-            referral.visit_date = confirmation_date_parsed
+            referral.visit_date = visit_date_parsed
         elif new_visit_number >= 3:
             referral.status = "Closed - Not Visited"
         else:
@@ -4224,6 +4213,15 @@ def _get_filtered_referrals(form_dict):
 		conditions.append("patient_age <= %(max_age)s")
 		values["max_age"] = frappe.utils.cint(max_age)
 
+	_apply_census_linkage_filter(conditions, form_dict.get("census_linkage"))
+	_apply_supervisor_filters(
+		conditions,
+		values,
+		form_dict.get("supervisor_name"),
+		form_dict.get("supervisor_visit_start"),
+		form_dict.get("supervisor_visit_end"),
+	)
+
 	where_clause = " AND ".join(conditions) if conditions else "1=1"
 
 	query = f"""
@@ -4234,12 +4232,36 @@ def _get_filtered_referrals(form_dict):
 			patient_village, patient_taluka, service_facility_type, opd_category,
 			other_facility_name, patient_phone, phc, opd_departments, referred_doctor,
 			referred_by_who, additional_notes, hospital_registration_number, visit_date, 
-			facility_visited, tribal_classification, creation
+			facility_visited, tribal_classification, census_match, census_member_id,
+			matched_member_name, match_status, creation
 		FROM `tabPatient Referral`
 		WHERE {where_clause}
 		ORDER BY referral_date DESC, creation DESC
 	"""
 	return frappe.db.sql(query, values, as_dict=True)
+
+
+def _latest_supervisor_visits(referral_names: list) -> dict:
+	"""Latest Supervisor Visit per referral, keyed by referral name.
+
+	One batched query — exports are unbounded, so a per-row child lookup would be N+1.
+	"""
+	if not referral_names:
+		return {}
+
+	rows = frappe.db.sql("""
+		SELECT sv.parent, sv.visit_date, sv.supervisor_name, sv.creation
+		FROM `tabSupervisor Visit` sv
+		INNER JOIN (
+			SELECT parent, MAX(visit_number) AS max_visit
+			FROM `tabSupervisor Visit`
+			WHERE parenttype = 'Patient Referral' AND parent IN %(names)s
+			GROUP BY parent
+		) latest ON latest.parent = sv.parent AND latest.max_visit = sv.visit_number
+		WHERE sv.parenttype = 'Patient Referral'
+	""", {"names": tuple(referral_names)}, as_dict=True)
+
+	return {r["parent"]: r for r in rows}
 
 
 @frappe.whitelist()
@@ -4262,10 +4284,15 @@ def export_referrals_excel():
 		"Patient Name", "Father's Name", "Gender", "Age", "Phone",
 		"Village", "Taluka", "Tribal Classification", "Service Facility Type",
 		"OPD Category", "OPD Department", "Referred Doctor", "PHC",
-		"Facility Visited", "Hospital Reg No", "Visit Date", "Notes"
+		"Facility Visited", "Hospital Reg No", "Visit Date",
+		"Citizen Linkage", "Census Member ID", "Census Household",
+		"Supervisor Visit Date", "Supervisor Name", "Supervisor Recorded On", "Notes"
 	]]
 
+	supervisor_map = _latest_supervisor_visits([r.get("name") for r in referrals if r.get("name")])
+
 	for ref in referrals:
+		visit = supervisor_map.get(ref.get("name")) or {}
 		data.append([
 			ref.get("reference_number") or "",
 			format_date(ref.get("referral_date")) if ref.get("referral_date") else "",
@@ -4291,6 +4318,12 @@ def export_referrals_excel():
 			ref.get("facility_visited") or "",
 			ref.get("hospital_registration_number") or "",
 			format_date(ref.get("visit_date")) if ref.get("visit_date") else "",
+			_census_linkage(ref)["census_linkage_label"],
+			ref.get("census_member_id") or "",
+			ref.get("census_match") or "",
+			_fmt_date(visit.get("visit_date")),
+			visit.get("supervisor_name") or "",
+			_fmt_datetime(visit.get("creation")),
 			frappe.utils.strip_html(ref.get("additional_notes") or "") if ref.get("additional_notes") else ""
 		])
 
@@ -4330,7 +4363,9 @@ def export_referrals_pdf():
 		("service_facility_type", "Service Facility"), ("facility_visited", "Facility Visited"),
 		("referred_by_who", "Point of Referral"), ("referrer_name", "Referrer"),
 		("referrer_department", "Referrer Dept"), ("referring_doctor", "Doctor"),
-		("tribal_classification", "Tribal"), ("start_date", "From Date"), ("end_date", "To Date")
+		("tribal_classification", "Tribal"), ("start_date", "From Date"), ("end_date", "To Date"),
+		("census_linkage", "Citizen Linkage"), ("supervisor_name", "Supervisor"),
+		("supervisor_visit_start", "Supervisor Visit From"), ("supervisor_visit_end", "Supervisor Visit To")
 	]:
 		val = frappe.form_dict.get(key, "").strip()
 		if val:
@@ -4472,8 +4507,146 @@ def get_portal_referral_filter_options() -> dict:
         "referring_doctors": get_distinct("referred_doctor"),
         "genders": get_distinct("patient_gender"),
         "statuses": ["Pending", "Follow-up In Progress", "Visited", "Closed - Not Visited", "No-Show", "Cancelled"],
+        "census_linkages": list(CENSUS_LINKAGE_SQL.keys()),
+        "supervisor_names": _distinct_supervisor_names(user_depts),
         "user_departments": user_depts,
         "user_department": ", ".join(user_depts) if user_depts else None
+    }
+
+
+# Portal "Citizen Linkage" buckets. `census_member_id` is only populated by the matcher
+# for Auto-Matched / Manually Verified referrals, so it is the authoritative signal.
+CENSUS_LINKAGE_SQL = {
+    "In Census": "(census_member_id IS NOT NULL AND census_member_id != '')",
+    "Needs Review": "((census_member_id IS NULL OR census_member_id = '') AND match_status = 'Multiple Matches')",
+    "Not in Census": "((census_member_id IS NULL OR census_member_id = '') AND (match_status IS NULL OR match_status != 'Multiple Matches'))",
+}
+
+
+def _apply_census_linkage_filter(conditions, raw_val):
+    items = [i for i in _parse_multi_filter_values(raw_val) if i in CENSUS_LINKAGE_SQL]
+    if not items or len(items) == len(CENSUS_LINKAGE_SQL):
+        return
+    conditions.append("(" + " OR ".join(CENSUS_LINKAGE_SQL[i] for i in items) + ")")
+
+
+def _apply_supervisor_filters(conditions, values, supervisor_name=None, visit_start=None, visit_end=None):
+    """Restrict to referrals having a Supervisor Visit that matches the given criteria.
+
+    Correlated EXISTS rather than a JOIN so a referral with three follow-ups is not
+    multiplied into three rows (which would corrupt the portal's total_records count).
+    """
+    sub = ["sv.parent = `tabPatient Referral`.name", "sv.parenttype = 'Patient Referral'"]
+
+    names = _parse_multi_filter_values(supervisor_name)
+    if names:
+        sub.append("sv.supervisor_name IN %(supervisor_names)s")
+        values["supervisor_names"] = tuple(names)
+    if visit_start and str(visit_start).strip():
+        sub.append("sv.visit_date >= %(supervisor_visit_start)s")
+        values["supervisor_visit_start"] = str(visit_start).strip()
+    if visit_end and str(visit_end).strip():
+        sub.append("sv.visit_date <= %(supervisor_visit_end)s")
+        values["supervisor_visit_end"] = str(visit_end).strip()
+
+    if len(sub) == 2:
+        return
+
+    conditions.append(f"EXISTS (SELECT 1 FROM `tabSupervisor Visit` sv WHERE {' AND '.join(sub)})")
+
+
+def _distinct_supervisor_names(user_depts=None):
+    """Supervisor names that can actually return rows.
+
+    Joined to the parent so names surviving only on orphaned child rows (deleted
+    referrals) are not offered, and scoped to the user's departments like every
+    other dropdown.
+    """
+    values = {}
+    dept_cond = ""
+    if user_depts:
+        dept_cond = " AND pr.referred_by_who IN %(user_depts)s"
+        values["user_depts"] = tuple(user_depts)
+
+    rows = frappe.db.sql(f"""
+        SELECT DISTINCT sv.supervisor_name
+        FROM `tabSupervisor Visit` sv
+        INNER JOIN `tabPatient Referral` pr ON pr.name = sv.parent
+        WHERE sv.parenttype = 'Patient Referral'
+          AND sv.supervisor_name IS NOT NULL AND sv.supervisor_name != ''
+          {dept_cond}
+    """, values)
+    return sorted(r[0] for r in rows if r[0])
+
+
+def _fmt_date(value):
+    """dd-mm-yyyy, or '' when absent/unparseable."""
+    if not value:
+        return ""
+    try:
+        return getdate(value).strftime("%d-%m-%Y")
+    except Exception:
+        return str(value)
+
+
+def _fmt_datetime(value):
+    """dd-mm-yyyy HH:MM, or '' when absent/unparseable."""
+    if not value:
+        return ""
+    try:
+        return get_datetime(value).strftime("%d-%m-%Y %H:%M")
+    except Exception:
+        return str(value)
+
+
+def _census_linkage(ref: dict) -> dict:
+    """Is this referred patient already a citizen in the Census registry?
+
+    `census_member_id` is only populated by the matcher for Auto-Matched /
+    Manually Verified referrals, so it is the authoritative 'linked' signal;
+    'Multiple Matches' means the matcher found candidates but needs a human.
+    """
+    status = ref.get("match_status") or "Unmatched"
+    if ref.get("census_member_id"):
+        return {
+            "census_linked": 1,
+            "census_linkage_state": "linked",
+            "census_linkage_label": "In Census",
+        }
+    if status == "Multiple Matches":
+        return {
+            "census_linked": 0,
+            "census_linkage_state": "review",
+            "census_linkage_label": "Needs Review",
+        }
+    return {
+        "census_linked": 0,
+        "census_linkage_state": "unlinked",
+        "census_linkage_label": "Not in Census",
+    }
+
+
+def _supervisor_summary(visits: list) -> dict:
+    """Flatten the latest supervisor follow-up onto the referral row.
+
+    Two distinct dates are surfaced deliberately:
+      - supervisor_visit_date: the date the supervisor entered in the Glific flow
+      - supervisor_recorded_on: when that submission landed in the system
+        (the child row's `creation`, written server-side and never from the payload)
+    """
+    if not visits:
+        return {
+            "supervisor_visit_date": "",
+            "supervisor_name": "",
+            "supervisor_recorded_on": "",
+            "supervisor_visit_count": 0,
+        }
+    latest = visits[-1]
+    return {
+        "supervisor_visit_date": latest.get("visit_date") or "",
+        "supervisor_name": latest.get("supervisor_name") or "",
+        "supervisor_recorded_on": latest.get("recorded_on") or "",
+        "supervisor_visit_count": len(visits),
     }
 
 
@@ -4498,6 +4671,10 @@ def get_portal_referrals(
     max_age: str = None,
     start_date: str = None,
     end_date: str = None,
+    census_linkage: str = None,
+    supervisor_name: str = None,
+    supervisor_visit_start: str = None,
+    supervisor_visit_end: str = None,
     page: int = 1,
     page_size: int = 25
 ) -> dict:
@@ -4570,6 +4747,9 @@ def get_portal_referrals(
         conditions.append("referral_date <= %(end_date)s")
         values["end_date"] = str(end_date).strip()
 
+    _apply_census_linkage_filter(conditions, census_linkage)
+    _apply_supervisor_filters(conditions, values, supervisor_name, supervisor_visit_start, supervisor_visit_end)
+
     where_clause = " AND ".join(conditions) if conditions else "1=1"
 
     total_count_query = f"SELECT COUNT(*) FROM `tabPatient Referral` WHERE {where_clause}"
@@ -4595,21 +4775,11 @@ def get_portal_referrals(
     referrals = frappe.db.sql(query, values, as_dict=True)
 
     for ref in referrals:
-        if ref.get("referral_date"):
-            try:
-                ref["referral_date"] = getdate(ref["referral_date"]).strftime("%d-%m-%Y")
-            except Exception:
-                pass
-        if ref.get("referral_recorded_date"):
-            try:
-                ref["referral_recorded_date"] = getdate(ref["referral_recorded_date"]).strftime("%d-%m-%Y")
-            except Exception:
-                pass
-        if ref.get("visit_date"):
-            try:
-                ref["visit_date"] = getdate(ref["visit_date"]).strftime("%d-%m-%Y")
-            except Exception:
-                pass
+        for date_field in ("referral_date", "referral_recorded_date", "visit_date"):
+            if ref.get(date_field):
+                ref[date_field] = _fmt_date(ref[date_field])
+
+        ref.update(_census_linkage(ref))
 
         if ref.get("mmu_patient_record") and frappe.db.exists("DocType", "MMU Patient Record"):
             try:
@@ -4625,13 +4795,20 @@ def get_portal_referrals(
             except Exception:
                 ref["mmu_details"] = None
 
-        ref["supervisor_visits"] = frappe.db.get_values(
+        supervisor_visits = frappe.db.get_values(
             "Supervisor Visit",
             {"parent": ref["name"], "parenttype": "Patient Referral"},
-            ["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "non_visit_reason_text", "supervisor_name", "supervisor_phone"],
+            ["visit_number", "visit_date", "patient_visited", "facility_visited", "patient_health_status", "non_visit_reason_code", "non_visit_reason_text", "supervisor_name", "supervisor_phone", "creation"],
             as_dict=True,
             order_by="visit_number asc"
         ) or []
+
+        for visit in supervisor_visits:
+            visit["recorded_on"] = _fmt_datetime(visit.pop("creation", None))
+            visit["visit_date"] = _fmt_date(visit.get("visit_date"))
+
+        ref["supervisor_visits"] = supervisor_visits
+        ref.update(_supervisor_summary(supervisor_visits))
 
         ref["mhd_followups"] = frappe.db.get_values(
             "MHD Followup",

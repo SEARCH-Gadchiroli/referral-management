@@ -14,7 +14,6 @@ class SupervisorVisit(Document):
 		visit_date: DF.Date
 		patient_visited: DF.Check
 		facility_visited: DF.Literal["", "SEARCH", "Government", "Other"]
-		confirmation_date: DF.Date | None
 		non_visit_reason_code: DF.Literal["", "NV-01", "NV-02", "NV-03", "NV-04", "NV-05", "NV-06", "NV-07", "NV-08"]
 		non_visit_reason_text: DF.SmallText | None
 		observations: DF.SmallText | None

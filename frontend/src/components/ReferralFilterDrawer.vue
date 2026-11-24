@@ -184,6 +184,40 @@
             v-model="localFilters.referring_doctor"
           />
 
+          <!-- Citizen Linkage (Census) -->
+          <MultiSelectDropdown
+            label="Citizen Linkage"
+            placeholder="All Linkage States"
+            :options="options.census_linkages || []"
+            v-model="localFilters.census_linkage"
+          />
+
+          <!-- Supervisor Name -->
+          <MultiSelectDropdown
+            label="Supervisor Name"
+            placeholder="All Supervisors"
+            :options="options.supervisor_names || []"
+            v-model="localFilters.supervisor_name"
+          />
+
+          <!-- Supervisor Visit Date Range -->
+          <div>
+            <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Supervisor Visit Date</label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <input
+                type="date"
+                v-model="localFilters.supervisor_visit_start"
+                class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
+              />
+              <input
+                type="date"
+                v-model="localFilters.supervisor_visit_end"
+                class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800 text-xs"
+              />
+            </div>
+            <p class="mt-1 text-[11px] text-slate-400">Matches referrals with a follow-up visit in this range.</p>
+          </div>
+
           <!-- Date Range -->
           <div class="grid grid-cols-2 gap-2.5">
             <div>
@@ -284,7 +318,7 @@ export default {
         for (const [k, v] of Object.entries(val || {})) {
           if (Array.isArray(v)) {
             copy[k] = [...v]
-          } else if (typeof v === 'string' && ['status', 'gender', 'village', 'taluka', 'tribal_classification', 'phc', 'service_facility_type', 'opd_category', 'opd_department', 'facility_visited', 'referred_by_who', 'referrer_name', 'referrer_department', 'referring_doctor'].includes(k)) {
+          } else if (typeof v === 'string' && ['status', 'gender', 'village', 'taluka', 'tribal_classification', 'phc', 'service_facility_type', 'opd_category', 'opd_department', 'facility_visited', 'referred_by_who', 'referrer_name', 'referrer_department', 'referring_doctor', 'census_linkage', 'supervisor_name'].includes(k)) {
             copy[k] = v ? v.split(',').map(s => s.trim()).filter(Boolean) : []
           } else {
             copy[k] = v
@@ -320,6 +354,10 @@ export default {
         referring_doctor: [],
         start_date: '',
         end_date: '',
+        census_linkage: [],
+        supervisor_name: [],
+        supervisor_visit_start: '',
+        supervisor_visit_end: '',
       }
       this.$emit('reset')
       this.$emit('close')

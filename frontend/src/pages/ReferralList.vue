@@ -99,7 +99,7 @@
       </div>
     </div>
 
-    <!-- Referrals Table: Exactly 10 Columns -->
+    <!-- Referrals Table -->
     <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
       
       <div v-if="loading" class="p-16 text-center text-slate-500 dark:text-slate-400">
@@ -127,6 +127,9 @@
               <th class="px-4 py-3.5">Village</th>
               <th class="px-4 py-3.5">OPD Department</th>
               <th class="px-4 py-3.5">Referral Date</th>
+              <th class="px-4 py-3.5">Citizen Linkage</th>
+              <th class="px-4 py-3.5">Supervisor Visit Date</th>
+              <th class="px-4 py-3.5">Supervisor Name</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-800 dark:text-slate-200">
@@ -191,6 +194,48 @@
               <!-- 10. Referral Date -->
               <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
                 {{ ref.referral_date || '-' }}
+              </td>
+
+              <!-- 11. Citizen Linkage (Census) -->
+              <td class="px-4 py-3.5 whitespace-nowrap">
+                <span
+                  class="px-2.5 py-1 rounded-full text-xs font-bold"
+                  :class="censusBadgeClass(ref.census_linkage_state)"
+                >
+                  {{ ref.census_linkage_label || 'Not in Census' }}
+                </span>
+                <span
+                  v-if="ref.census_member_id"
+                  class="block mt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400"
+                >
+                  {{ ref.census_member_id }}
+                </span>
+              </td>
+
+              <!-- 12. Supervisor Visit Date (entered in flow) + recorded in system -->
+              <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                <span v-if="ref.supervisor_visit_date" class="font-medium text-slate-800 dark:text-slate-200">
+                  {{ ref.supervisor_visit_date }}
+                </span>
+                <span v-else>-</span>
+                <span
+                  v-if="ref.supervisor_recorded_on"
+                  class="block mt-1 text-[11px] text-slate-400"
+                  title="When the supervisor's flow submission was recorded in the system"
+                >
+                  Recorded {{ ref.supervisor_recorded_on }}
+                </span>
+              </td>
+
+              <!-- 13. Supervisor Name -->
+              <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+                {{ ref.supervisor_name || '-' }}
+                <span
+                  v-if="ref.supervisor_visit_count > 1"
+                  class="ml-1 text-[11px] text-slate-400"
+                >
+                  ({{ ref.supervisor_visit_count }} visits)
+                </span>
               </td>
             </tr>
           </tbody>
@@ -264,6 +309,10 @@ export default {
         referring_doctor: [],
         start_date: '',
         end_date: '',
+        census_linkage: [],
+        supervisor_name: [],
+        supervisor_visit_start: '',
+        supervisor_visit_end: '',
       },
       userDepartment: null,
       userDepartments: [],
@@ -282,7 +331,8 @@ export default {
         'status', 'gender', 'min_age', 'max_age', 'village', 'taluka',
         'tribal_classification', 'phc', 'service_facility_type', 'opd_category',
         'opd_department', 'facility_visited', 'referred_by_who', 'referrer_name',
-        'referrer_department', 'referring_doctor', 'start_date', 'end_date'
+        'referrer_department', 'referring_doctor', 'start_date', 'end_date',
+        'census_linkage', 'supervisor_name', 'supervisor_visit_start', 'supervisor_visit_end'
       ]
       return keys.filter(k => {
         if (k === 'referred_by_who' && this.effectiveUserDepts.length > 0) return false
@@ -300,6 +350,11 @@ export default {
     this.loadReferrals()
   },
   methods: {
+    censusBadgeClass(state) {
+      if (state === 'linked') return 'bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300'
+      if (state === 'review') return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+    },
     statusBadgeClass(status) {
       if (status === 'Visited') return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
       if (status === 'Follow-up In Progress') return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
@@ -354,6 +409,10 @@ export default {
         referring_doctor: [],
         start_date: '',
         end_date: '',
+        census_linkage: [],
+        supervisor_name: [],
+        supervisor_visit_start: '',
+        supervisor_visit_end: '',
       }
       this.loadReferrals()
     },

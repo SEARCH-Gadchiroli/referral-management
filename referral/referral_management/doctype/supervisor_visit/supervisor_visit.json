@@ -8,7 +8,6 @@
   "visit_date",
   "patient_visited",
   "facility_visited",
-  "confirmation_date",
   "patient_health_status",
   "non_visit_reason_code",
   "non_visit_reason_text",
@@ -42,11 +41,6 @@
    "fieldtype": "Select",
    "label": "Facility Actually Visited",
    "options": "\nSEARCH\nGovernment Hospital\nOther"
-  },
-  {
-   "fieldname": "confirmation_date",
-   "fieldtype": "Date",
-   "label": "Confirmation Date"
   },
   {
    "depends_on": "eval:doc.patient_visited==1",

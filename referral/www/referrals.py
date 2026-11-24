@@ -161,15 +161,18 @@ def get_context(context):
 		ref["supervisor_visits"] = frappe.db.get_values(
 			"Supervisor Visit",
 			{"parent": ref["name"], "parenttype": "Patient Referral"},
-			["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "supervisor_name", "supervisor_phone"],
+			["visit_number", "visit_date", "patient_visited", "facility_visited", "patient_health_status", "non_visit_reason_code", "supervisor_name", "supervisor_phone", "creation"],
 			as_dict=True,
 			order_by="visit_number asc"
 		) or []
 		for visit in ref["supervisor_visits"]:
 			if visit.get("visit_date"):
 				visit["visit_date"] = format_to_dd_mm_yyyy(visit["visit_date"])
-			if visit.get("confirmation_date"):
-				visit["confirmation_date"] = format_to_dd_mm_yyyy(visit["confirmation_date"])
+			visit["recorded_on"] = (
+				frappe.utils.get_datetime(visit["creation"]).strftime("%d-%m-%Y %H:%M")
+				if visit.get("creation") else ""
+			)
+			visit.pop("creation", None)
 
 		ref["mhd_followups"] = frappe.db.get_values(
 			"MHD Followup",

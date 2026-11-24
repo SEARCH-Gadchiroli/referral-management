@@ -147,6 +147,12 @@
           </div>
 
           <!-- Census Citizen Linkage -->
+          <div v-if="!referral?.census_member_id && !referral?.census_match" class="flex items-center gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs">
+            <FeatherIcon name="user-x" class="w-4 h-4 text-slate-400 shrink-0" />
+            <span class="font-semibold text-slate-600 dark:text-slate-300">
+              {{ referral?.match_status === 'Multiple Matches' ? 'Census linkage needs review — multiple candidates matched' : 'Patient is not linked to the Census registry' }}
+            </span>
+          </div>
           <div v-if="referral?.census_match || referral?.census_member_id">
             <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-1.5">
               <FeatherIcon name="users" class="w-4 h-4 text-violet-600 shrink-0" />
@@ -266,7 +272,8 @@
                 <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold text-[11px]">
                   <tr>
                     <th class="px-3 py-2 text-left">Visit #</th>
-                    <th class="px-3 py-2 text-left">Visit Date</th>
+                    <th class="px-3 py-2 text-left" title="Date the supervisor entered in the flow">Visit Date</th>
+                    <th class="px-3 py-2 text-left" title="When this flow submission was recorded in the system">Recorded On</th>
                     <th class="px-3 py-2 text-left">Visited?</th>
                     <th class="px-3 py-2 text-left">Facility / Reason</th>
                     <th class="px-3 py-2 text-left">Supervisor</th>
@@ -275,7 +282,10 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                   <tr v-for="v in referral.supervisor_visits" :key="v.visit_number">
                     <td class="px-3 py-2 font-bold">{{ v.visit_number }}</td>
-                    <td class="px-3 py-2">{{ v.visit_date }}</td>
+                    <td class="px-3 py-2">
+                      {{ v.visit_date || '-' }}
+                    </td>
+                    <td class="px-3 py-2 text-slate-500 dark:text-slate-400 whitespace-nowrap">{{ v.recorded_on || '-' }}</td>
                     <td class="px-3 py-2">
                       <span v-if="v.patient_visited" class="text-emerald-600 font-medium">Yes</span>
                       <span v-else class="text-rose-500 font-medium">No</span>
