@@ -7,6 +7,7 @@
   "visit_number",
   "visit_date",
   "patient_visited",
+  "followup_type",
   "facility_visited",
   "confirmation_date",
   "patient_health_status",
@@ -35,6 +36,14 @@
    "fieldname": "patient_visited",
    "fieldtype": "Check",
    "label": "Patient Visited",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "followup_type",
+   "fieldtype": "Select",
+   "label": "Follow-up Type",
+   "options": "\nIn person\nVirtual",
+   "reqd": 1,
    "in_list_view": 1
   },
   {

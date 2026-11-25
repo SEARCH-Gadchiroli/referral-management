@@ -360,7 +360,7 @@ REFERRED_BY_WHO_TRANSLATIONS = {
         "Muktipath Karyakarta": "मुक्तिपथ कार्यकर्ता",
         "MHD counsellor": "एमएचडी समुपदेशक",
         "Supervisor": "सुपरवायझर",
-        "Optometrist": "नेत्र तपासणी अधिकारी",
+        "Vision Technician": "विजन टेक्नीशियन",
         "MPU Physiotherapist": "फिजिओथेरपिस्ट",
         "CHW": "आरोग्यदूत",
     },
@@ -371,7 +371,7 @@ REFERRED_BY_WHO_TRANSLATIONS = {
         "Muktipath Karyakarta": "मुक्तिपथ कार्यकर्ता",
         "MHD counsellor": "एमएचडी परामर्शदाता",
         "Supervisor": "सुपरवाइजर",
-        "Optometrist": "नेत्र जांच अधिकारी",
+        "Vision Technician": "विजन टेक्नीशियन",
         "MPU Physiotherapist": "फिजियोथेरेपिस्ट",
         "CHW": "आरोग्यदूत",
     },
@@ -382,7 +382,7 @@ REFERRED_BY_WHO_TRANSLATIONS = {
         "Muktipath Karyakarta": "Muktipath Karyakarta",
         "MHD counsellor": "MHD counsellor",
         "Supervisor": "Supervisor",
-        "Optometrist": "Optometrist",
+        "Vision Technician": "Vision Technician",
         "MPU Physiotherapist": "MPU Physiotherapist",
         "CHW": "CHW",
     }
@@ -1108,8 +1108,17 @@ def resolve_referred_by_who(role_raw: str) -> str:
         return "CHW"
     if "supervisor" in cleaned or "सुपरवायझर" in cleaned or "सुपरवाइजर" in cleaned:
         return "Supervisor"
-    if "optometrist" in cleaned or "ऑप्टोमेट्रिस्ट" in cleaned or "नेत्र" in cleaned:
-        return "Optometrist"
+    if (
+        "vision technician" in cleaned
+        or "vision" in cleaned
+        or "techni" in cleaned
+        or "दृष्टी तंत्रज्ञ" in cleaned
+        or "विजन टेक्नीशियन" in cleaned
+        or "optometrist" in cleaned
+        or "ऑप्टोमेट्रिस्ट" in cleaned
+        or "नेत्र" in cleaned
+    ):
+        return "Vision Technician"
     if "mpu" in cleaned or "physiotherap" in cleaned or "फिजिओथेरपिस्ट" in cleaned or "फिजियो" in cleaned:
         return "MPU Physiotherapist"
         
@@ -1572,6 +1581,38 @@ def resolve_patient_health_status(status_input: str) -> str | None:
             return val
             
     return mapping.get(clean_val, None)
+
+
+def resolve_followup_type(followup_type_input: str) -> str | None:
+    if not followup_type_input:
+        return None
+
+    clean_val = followup_type_input.strip().lower()
+    if clean_val in (
+        "in person",
+        "in-person",
+        "inperson",
+        "प्रत्यक्ष",
+        "प्रत्यक्ष भेट",
+        "व्यक्तिगत",
+        "स्वयं",
+    ):
+        return "In person"
+    if clean_val in (
+        "virtual",
+        "virtual (online)",
+        "virtually",
+        "व्हर्च्युअल (ऑनलाईन)",
+        "व्हर्च्युअल",
+        "ऑनलाईन",
+        "ऑनलाइन",
+        "व्हर्चुअल (ऑनलाइन)",
+        "व्हर्चुअल",
+        "व्हर्च्युअल",
+        "दूरस्थ",
+    ):
+        return "Virtual"
+    return None
 
 
 def resolve_facility_type(facility_input: str) -> str | None:
@@ -2380,6 +2421,7 @@ def record_supervisor_visit(
     confirmation_date: str = None,
     patient_health_status: str = None,
     supervisor_name: str = None,
+    followup_type: str = None,
     non_visit_reason: str = None,
     other_non_visit_reason: str = None,
     non_visit_reason_text: str = None,
@@ -2414,6 +2456,8 @@ def record_supervisor_visit(
                             patient_health_status = data.get("patient_health_status")
                         if not supervisor_name:
                             supervisor_name = data.get("supervisor_name")
+                        if not followup_type:
+                            followup_type = data.get("followup_type")
                         if not non_visit_reason:
                             non_visit_reason = data.get("non_visit_reason")
                         if not other_non_visit_reason:
@@ -2436,6 +2480,8 @@ def record_supervisor_visit(
         confirmation_date = clean_glific_value(confirmation_date)
         patient_health_status = clean_glific_value(patient_health_status)
         supervisor_name = clean_glific_value(supervisor_name)
+        followup_type_raw = clean_glific_value(followup_type)
+        followup_type_resolved = resolve_followup_type(followup_type_raw)
         non_visit_reason = clean_glific_value(non_visit_reason)
         other_non_visit_reason = clean_glific_value(
             other_non_visit_reason
@@ -2465,6 +2511,16 @@ def record_supervisor_visit(
             return {
                 "success": False,
                 "error": "Missing patient_visited"
+            }
+        if not followup_type_raw:
+            return {
+                "success": False,
+                "error": "Missing followup_type"
+            }
+        if followup_type_raw and not followup_type_resolved:
+            return {
+                "success": False,
+                "error": "Invalid followup_type. Expected In person or Virtual."
             }
 
         # 1. Look up referral
@@ -2547,6 +2603,7 @@ def record_supervisor_visit(
             "visit_number": new_visit_number,
             "visit_date": visit_date_parsed,
             "patient_visited": 1 if is_visited else 0,
+            "followup_type": followup_type_resolved,
             "facility_visited": resolved_facility,
             "confirmation_date": confirmation_date_parsed,
             "patient_health_status": resolve_patient_health_status(patient_health_status) if is_visited else None,
@@ -4628,7 +4685,7 @@ def get_portal_referrals(
         ref["supervisor_visits"] = frappe.db.get_values(
             "Supervisor Visit",
             {"parent": ref["name"], "parenttype": "Patient Referral"},
-            ["visit_number", "visit_date", "patient_visited", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "non_visit_reason_text", "supervisor_name", "supervisor_phone"],
+            ["visit_number", "visit_date", "patient_visited", "followup_type", "facility_visited", "confirmation_date", "patient_health_status", "non_visit_reason_code", "non_visit_reason_text", "supervisor_name", "supervisor_phone"],
             as_dict=True,
             order_by="visit_number asc"
         ) or []
@@ -5329,5 +5386,3 @@ def get_household_dossier(household_id: str) -> dict:
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), "get_household_dossier API Error")
         return {"success": False, "error": str(e)}
-
-

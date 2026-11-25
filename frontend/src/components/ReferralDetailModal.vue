@@ -268,6 +268,7 @@
                     <th class="px-3 py-2 text-left">Visit #</th>
                     <th class="px-3 py-2 text-left">Visit Date</th>
                     <th class="px-3 py-2 text-left">Visited?</th>
+                    <th class="px-3 py-2 text-left">Follow-up Type</th>
                     <th class="px-3 py-2 text-left">Facility / Reason</th>
                     <th class="px-3 py-2 text-left">Supervisor</th>
                   </tr>
@@ -280,6 +281,7 @@
                       <span v-if="v.patient_visited" class="text-emerald-600 font-medium">Yes</span>
                       <span v-else class="text-rose-500 font-medium">No</span>
                     </td>
+                    <td class="px-3 py-2">{{ v.followup_type || '-' }}</td>
                     <td class="px-3 py-2">
                       <span v-if="v.patient_visited">{{ v.facility_visited || '-' }}</span>
                       <span v-else class="text-slate-600 dark:text-slate-400">

@@ -19,7 +19,7 @@
     "fieldtype": "Select",
     "label": "Referral Department",
     "insert_after": "referral_departments",
-    "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nArogyadoot\nCHW\nSupervisor\nOptometrist\nMPU Physiotherapist",
+    "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nArogyadoot\nCHW\nSupervisor\nVision Technician\nMPU Physiotherapist",
     "description": "If set, the user will only see Patient Referral records matching this department.",
     "translatable": 0
   }

@@ -13,6 +13,7 @@ class SupervisorVisit(Document):
 		visit_number: DF.Int
 		visit_date: DF.Date
 		patient_visited: DF.Check
+		followup_type: DF.Literal["", "In person", "Virtual"]
 		facility_visited: DF.Literal["", "SEARCH", "Government", "Other"]
 		confirmation_date: DF.Date | None
 		non_visit_reason_code: DF.Literal["", "NV-01", "NV-02", "NV-03", "NV-04", "NV-05", "NV-06", "NV-07", "NV-08"]

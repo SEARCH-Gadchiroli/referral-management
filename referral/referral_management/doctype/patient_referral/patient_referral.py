@@ -34,7 +34,7 @@ class PatientReferral(Document):
         raw_patient_data: DF.Link | None
         reference_number: DF.Data
         referral_date: DF.Date
-        referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Optometrist", "MPU Physiotherapist"]
+        referred_by_who: DF.Literal["", "MMU Doctor", "MHD counsellor", "Muktipath Karyakarta", "ASHA", "CHW", "Supervisor", "Vision Technician", "MPU Physiotherapist"]
         referred_doctor: DF.Literal[
             "",
             "Dr Kunal Vidhale",
