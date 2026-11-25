@@ -117,19 +117,19 @@
         <table class="min-w-full divide-y divide-slate-200/80 dark:divide-slate-800 text-left text-sm">
           <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider text-xs">
             <tr>
-              <th class="px-4 py-3.5">Ref Number</th>
-              <th class="px-4 py-3.5">Status</th>
-              <th class="px-4 py-3.5">Point of Referral</th>
-              <th class="px-4 py-3.5">Referrer Name</th>
-              <th class="px-4 py-3.5">Patient Name</th>
-              <th class="px-4 py-3.5">Age</th>
-              <th class="px-4 py-3.5">Gender</th>
-              <th class="px-4 py-3.5">Village</th>
-              <th class="px-4 py-3.5">OPD Department</th>
-              <th class="px-4 py-3.5">Referral Date</th>
-              <th class="px-4 py-3.5">Citizen Linkage</th>
-              <th class="px-4 py-3.5">Supervisor Visit Date</th>
-              <th class="px-4 py-3.5">Supervisor Name</th>
+              <th class="px-3 py-3">Ref No.</th>
+              <th class="px-3 py-3">Citizen Linkage</th>
+              <th class="px-3 py-3">Status</th>
+              <th class="px-3 py-3 w-28">Point of Referral</th>
+              <th class="px-3 py-3 w-32">Referrer</th>
+              <th class="px-3 py-3">Patient Name</th>
+              <th class="px-3 py-3">Age</th>
+              <th class="px-3 py-3">Gender</th>
+              <th class="px-3 py-3">Village</th>
+              <th class="px-3 py-3">OPD Department</th>
+              <th class="px-3 py-3">Referral Date</th>
+              <th class="px-3 py-3">Supervisor Visit Date</th>
+              <th class="px-3 py-3">Supervisor Name</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 text-slate-800 dark:text-slate-200">
@@ -140,64 +140,14 @@
               class="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors cursor-pointer"
             >
               <!-- 1. Ref Number -->
-              <td class="px-4 py-3.5 whitespace-nowrap">
+              <td class="px-3 py-3 whitespace-nowrap">
                 <span class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
                   {{ ref.reference_number || ref.name }}
                 </span>
               </td>
 
-              <!-- 2. Status -->
-              <td class="px-4 py-3.5 whitespace-nowrap">
-                <span
-                  class="px-2.5 py-1 rounded-full text-xs font-bold"
-                  :class="statusBadgeClass(ref.status)"
-                >
-                  {{ ref.status || 'Pending' }}
-                </span>
-              </td>
-
-              <!-- 3. Point of Referral -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                {{ ref.referred_by_who || '-' }}
-              </td>
-
-              <!-- 4. Referrer Name -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                {{ ref.referrer_name || '-' }}
-              </td>
-
-              <!-- 5. Patient Name -->
-              <td class="px-4 py-3.5 whitespace-nowrap font-semibold text-slate-900 dark:text-slate-100">
-                {{ ref.patient_name }}
-              </td>
-
-              <!-- 6. Age -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                {{ ref.patient_age ? ref.patient_age + ' yrs' : '-' }}
-              </td>
-
-              <!-- 7. Gender -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                {{ ref.patient_gender || '-' }}
-              </td>
-
-              <!-- 8. Village -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
-                {{ ref.patient_village || '-' }}
-              </td>
-
-              <!-- 9. OPD Department -->
-              <td class="px-4 py-3.5 whitespace-nowrap font-medium text-blue-700 dark:text-blue-400">
-                {{ ref.opd_departments || '-' }}
-              </td>
-
-              <!-- 10. Referral Date -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
-                {{ ref.referral_date || '-' }}
-              </td>
-
-              <!-- 11. Citizen Linkage (Census) -->
-              <td class="px-4 py-3.5 whitespace-nowrap">
+              <!-- 2. Citizen Linkage (Census) -->
+              <td class="px-3 py-3 whitespace-nowrap">
                 <span
                   class="px-2.5 py-1 rounded-full text-xs font-bold"
                   :class="censusBadgeClass(ref.census_linkage_state)"
@@ -212,8 +162,58 @@
                 </span>
               </td>
 
+              <!-- 3. Status -->
+              <td class="px-3 py-3 whitespace-nowrap">
+                <span
+                  class="px-2 py-0.5 rounded-full text-xs font-bold"
+                  :class="statusBadgeClass(ref.status)"
+                >
+                  {{ ref.status || 'Pending' }}
+                </span>
+              </td>
+
+              <!-- 4. Point of Referral -->
+              <td class="px-3 py-3 max-w-[7rem] truncate text-xs text-slate-600 dark:text-slate-400" :title="ref.referred_by_who">
+                {{ ref.referred_by_who || '-' }}
+              </td>
+
+              <!-- 5. Referrer Name -->
+              <td class="px-3 py-3 max-w-[8rem] truncate text-xs text-slate-600 dark:text-slate-400" :title="ref.referrer_name">
+                {{ ref.referrer_name || '-' }}
+              </td>
+
+              <!-- 6. Patient Name -->
+              <td class="px-3 py-3 whitespace-nowrap font-semibold text-slate-900 dark:text-slate-100">
+                {{ ref.patient_name }}
+              </td>
+
+              <!-- 7. Age -->
+              <td class="px-3 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                {{ ref.patient_age || '-' }}
+              </td>
+
+              <!-- 8. Gender -->
+              <td class="px-3 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                {{ ref.patient_gender || '-' }}
+              </td>
+
+              <!-- 9. Village -->
+              <td class="px-3 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300 font-medium">
+                {{ ref.patient_village || '-' }}
+              </td>
+
+              <!-- 10. OPD Department -->
+              <td class="px-3 py-3 whitespace-nowrap font-medium text-blue-700 dark:text-blue-400">
+                {{ ref.opd_departments || '-' }}
+              </td>
+
+              <!-- 11. Referral Date -->
+              <td class="px-3 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
+                {{ ref.referral_date || '-' }}
+              </td>
+
               <!-- 12. Supervisor Visit Date (entered in flow) + recorded in system -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-600 dark:text-slate-400">
+              <td class="px-3 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">
                 <span v-if="ref.supervisor_visit_date" class="font-medium text-slate-800 dark:text-slate-200">
                   {{ ref.supervisor_visit_date }}
                 </span>
@@ -228,7 +228,7 @@
               </td>
 
               <!-- 13. Supervisor Name -->
-              <td class="px-4 py-3.5 whitespace-nowrap text-slate-700 dark:text-slate-300">
+              <td class="px-3 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
                 {{ ref.supervisor_name || '-' }}
                 <span
                   v-if="ref.supervisor_visit_count > 1"
