@@ -142,8 +142,7 @@
   {
    "fieldname": "mmu_source",
    "fieldtype": "Select",
-   "label": "Which MMU is this referral from?",
-   "description": "English: Which MMU is this referral from?\nHindi: यह रेफरल किस MMU से है?\nMarathi: हा रेफरल कोणत्या MMU मधून आहे?",
+   "label": "MMU Source",
    "options": "\nMMU 1\nMMU 2",
    "depends_on": "eval:doc.referred_by_who=='MMU Doctor'"
   },
