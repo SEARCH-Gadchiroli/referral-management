@@ -25,6 +25,7 @@
   "service_facility_type",
   "opd_category_raw",
   "referred_by_who",
+  "mmu_source",
   "departments_raw",
   "other_facility_raw",
   "referring_doctor_raw",
@@ -128,6 +129,11 @@
    "fieldname": "referred_by_who",
    "fieldtype": "Data",
    "label": "Referred By Who"
+  },
+  {
+   "fieldname": "mmu_source",
+   "fieldtype": "Data",
+   "label": "MMU Source (Raw)"
   },
   {
    "fieldname": "departments_raw",

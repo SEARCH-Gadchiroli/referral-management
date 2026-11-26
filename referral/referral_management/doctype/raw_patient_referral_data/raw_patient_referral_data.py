@@ -36,6 +36,7 @@ class RawPatientReferralData(Document):
 		service_facility_type: DF.Data | None
 		other_facility_raw: DF.Data | None
 		referring_doctor_raw: DF.Data | None
+		mmu_source: DF.Data | None
 	# end: auto-generated types
 
 	pass

@@ -18,6 +18,7 @@
   "referrer_latitude",
   "referrer_longitude",
   "referred_by_who",
+  "mmu_source",
   "mmu_patient_record",
   "patient_section",
   "patient_name",
@@ -137,6 +138,14 @@
    "fieldtype": "Select",
    "label": "Referred By Who",
    "options": "\nMMU Doctor\nMHD counsellor\nMuktipath Karyakarta\nASHA\nArogyadoot\nCHW\nSupervisor\nVision Technician\nMPU Physiotherapist"
+  },
+  {
+   "fieldname": "mmu_source",
+   "fieldtype": "Select",
+   "label": "Which MMU is this referral from?",
+   "description": "English: Which MMU is this referral from?\nHindi: यह रेफरल किस MMU से है?\nMarathi: हा रेफरल कोणत्या MMU मधून आहे?",
+   "options": "\nMMU 1\nMMU 2",
+   "depends_on": "eval:doc.referred_by_who=='MMU Doctor'"
   },
   {
    "fieldname": "mmu_patient_record",

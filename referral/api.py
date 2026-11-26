@@ -1806,6 +1806,7 @@ def create_referral(
     longitude: str = "",
     patient_phone_raw: str = "",
     referred_by_who: str = "",
+    mmu_source: str = "",
     language: str = None,
     **kwargs
 ) -> dict:
@@ -1849,6 +1850,7 @@ def create_referral(
                         longitude = longitude or data.get("longitude") or ""
                         patient_phone_raw = patient_phone_raw or data.get("patient_phone_raw") or data.get("patient_phone") or ""
                         referred_by_who = referred_by_who or data.get("referred_by_who") or ""
+                        mmu_source = mmu_source or data.get("mmu_source") or data.get("mmu") or data.get("which_mmu") or ""
                         language = language or data.get("language") or ""
             except Exception as e:
                 frappe.log_error(f"Fallback JSON parsing failed: {str(e)}", "create_referral JSON Fallback Error")
@@ -1880,6 +1882,7 @@ def create_referral(
         additional_notes_raw = clean_glific_value(additional_notes_raw)
         patient_phone_raw = clean_glific_value(patient_phone_raw)
         referred_by_who = clean_glific_value(referred_by_who)
+        mmu_source = clean_glific_value(mmu_source)
         referrer_latitude = clean_glific_value(referrer_latitude)
         referrer_longitude = clean_glific_value(referrer_longitude)
         latitude = clean_glific_value(latitude)
@@ -1986,6 +1989,10 @@ def create_referral(
         
         # Resolve Referred By Who role (e.g. MMU Doctor, ASHA, etc.)
         referred_by_resolved = resolve_referred_by_who(referred_by_who)
+        mmu_source_clean = mmu_source.strip().lower().replace(" ", "")
+        mmu_source_resolved = "MMU 1" if mmu_source_clean in ("mmu1", "1") else (
+            "MMU 2" if mmu_source_clean in ("mmu2", "2") else ""
+        )
 
         # Save raw data exactly as received
         raw_doc = frappe.get_doc({
@@ -2006,6 +2013,7 @@ def create_referral(
             "service_facility_type": facility_type,
             "opd_category_raw": opd_category_raw or opd_category,
             "referred_by_who": referred_by_who,
+            "mmu_source": mmu_source_resolved,
             "departments_raw": department_input,
             "other_facility_raw": other_facility_raw or "",
             "referring_doctor_raw": doctor_input,
@@ -2029,6 +2037,7 @@ def create_referral(
             "referrer_latitude": actual_lat,
             "referrer_longitude": actual_lon,
             "referred_by_who": referred_by_resolved,
+            "mmu_source": mmu_source_resolved,
             "phc": phc or "",
             "patient_name": patient_name,
             "patient_father_name": father_name,
@@ -2163,6 +2172,7 @@ def create_referral(
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
+            "mmu_source": referral_doc.mmu_source or "",
             "patient_instruction": patient_instruction,
             "formatted_text": formatted_text,
             "summary_message": formatted_text,
@@ -2177,6 +2187,7 @@ def create_referral(
                 "referred_by_who": referred_by_who_display,
                 "referredbywho": referred_by_who_display,
                 "referred_by": referred_by_who_display,
+                "mmu_source": referral_doc.mmu_source or "",
                 "formatted_text": formatted_text,
                 "summary_message": formatted_text,
             }
@@ -2338,6 +2349,7 @@ def get_referral(
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
+            "mmu_source": referral.mmu_source or "",
             "reference_number": referral.reference_number,
             "referral_id": referral.reference_number,
             "visit_count": referral.visit_count or 0,
@@ -2366,6 +2378,7 @@ def get_referral(
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
+            "mmu_source": referral.mmu_source or "",
             "visit_count": referral.visit_count or 0,
             "status": referral.status or "",
         }
@@ -2394,6 +2407,7 @@ def get_referral(
             "referred_by_who": referred_by_who_display,
             "referredbywho": referred_by_who_display,
             "referred_by": referred_by_who_display,
+            "mmu_source": referral.mmu_source or "",
             "referred_doctor": referral.referred_doctor or "",
             "additional_notes": referral.additional_notes or "",
             "match_status": referral.match_status or "",

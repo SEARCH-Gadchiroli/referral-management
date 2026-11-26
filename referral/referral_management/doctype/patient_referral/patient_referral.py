@@ -21,6 +21,7 @@ class PatientReferral(Document):
         matched_member_age: DF.Int
         matched_member_name: DF.Data | None
         mmu_patient_record: DF.Link | None
+        mmu_source: DF.Literal["", "MMU 1", "MMU 2"]
         opd_category: DF.Literal["", "Regular OPD", "Specialist OPD", "Cataract Surgery"]
         opd_departments: DF.Literal["Medicine", "Gynaecology", "Orthopedics", "Spine", "Surgery", "Dental", "Mental Health Clinic", "Rheumatology OPD", "Cardiology", "Dermatology", "Diabetology", "ENT", "Gastrology", "Head & Neck", "Neurology + Epilepsy", "Oncology", "Pulmonology", "Sickle Cell", "Cataract Surgery", "Ophthalmology", "Plastic Surgery", "Urology", "Pain Management OPD"]
         patient_age: DF.Int

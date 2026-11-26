@@ -143,6 +143,10 @@
                 <span class="text-slate-400 block text-[11px]">PHC</span>
                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ referral?.phc || '-' }}</span>
               </div>
+              <div>
+                <span class="text-slate-400 block text-[11px]">MMU Source</span>
+                <span class="font-medium text-slate-800 dark:text-slate-200">{{ referral?.mmu_source || '-' }}</span>
+              </div>
             </div>
           </div>
 
